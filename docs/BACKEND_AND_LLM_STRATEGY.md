@@ -323,9 +323,9 @@ Store **raw LLM JSON** in `scan_results.payload jsonb` for debugging and re-rend
 
 ```
 prompts/
-  scan_v1.txt
-  xray_v1.txt
-  radar_v1.txt
+  scan.txt
+  xray.txt
+  radar.txt
 ```
 
 Table column: `prompt_version text`. Lets you improve prompts without breaking old reports.
@@ -512,6 +512,8 @@ market_snapshots (
 
 | Item | Path |
 |------|------|
+| Database design (detailed schema) | `future trace mobile/docs/DATABASE_DESIGN.md` |
+| GDPR / CCPA DB patterns (existing) | `Future-Trace/supabase/docs/COMPLIANCE.md` |
 | V1 web products | `future trace mobile/web/README.md` |
 | Mock entitlements (replace) | `web/src/lib/entitlements.ts` |
 | Gemini matcher (reuse pattern) | `Future-Trace/lib/matcherGemini.ts` |
