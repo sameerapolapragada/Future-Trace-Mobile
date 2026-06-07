@@ -31,11 +31,13 @@ select public.log_compliance_event('DATA_EXPORT');
 | `cleanup_integration_staging_raw()` | Staging payloads > **30 days** |
 | `cleanup_old_llm_jobs()` | Redacts `raw_response` after **90 days** |
 
-Scheduled via pg_cron (migration `20260605120200_career_intelligence_retention_cron.sql`):
+Scheduled via pg_cron (migrations `20260601120000`, `20260605120200`):
 
 - `data-minimization-cleanup` — `0 0 * * *` UTC
 - `integration-staging-cleanup` — `30 0 * * *` UTC
 - `llm-jobs-redaction-cleanup` — `0 1 * * *` UTC
+
+**Note:** Migrations do not run `CREATE EXTENSION pg_cron` (Supabase pre-installs it; doing so causes `SQLSTATE 2BP01`). Enable pg_cron in Dashboard if jobs are skipped.
 
 ## RLS summary
 
