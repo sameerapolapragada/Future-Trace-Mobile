@@ -1,0 +1,38 @@
+# Future Trace — Supabase CLI (Web-Dev branch)
+# Git → Supabase: push Web-Dev; migrations in supabase/migrations/ apply to linked branch.
+# Docs: https://supabase.com/docs/guides/deployment/branching/github-integration
+
+project_id = "sqooryqoncsjrwffosui"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000/auth/reset-password",
+  "https://future-trace.com/auth/reset-password",
+]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
