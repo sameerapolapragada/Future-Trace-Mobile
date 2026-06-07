@@ -1,8 +1,8 @@
-# Future Trace Mobile
+# Future-Trace-Mobile
 
-Premium mobile splash screen for the Future Trace AI career intelligence app.
+Premium mobile splash screen and V1 web app for the Future Trace AI career intelligence product.
 
-## Run
+## Run (Expo splash)
 
 ```bash
 cd "/Users/sammy/future trace mobile"
@@ -33,6 +33,14 @@ This means Expo Go on your phone could not reach the dev server. Try in order:
 6. Turn off **VPN** and allow **local network** access for Expo Go in iOS Settings.
 
 Then press `i` for iOS Simulator, `a` for Android, or scan the QR code with Expo Go.
+
+## Run (V1 web app)
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 ## Splash screen
 
