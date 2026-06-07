@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Future Trace",
+    "slug": "future-trace-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B0D17"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.futuretrace.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0D17"
+      },
+      "package": "com.futuretrace.mobile"
+    }
+  }
+}

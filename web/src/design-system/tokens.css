@@ -1,0 +1,551 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand — black canvas + electric blue / fiery orange-gold (logo palette) */
+  --color-navy: #000000;
+  --color-navy-light: #0a0a0a;
+  --color-navy-card: #0f0f0f;
+  --color-navy-elevated: #141414;
+  --color-surface: #000000;
+
+  --color-accent: #00b4ff;
+  --color-accent-purple: #ff5500;
+  --color-accent-soft: #007bff;
+  --color-accent-gold: #ffd700;
+  --color-accent-glow: #00d4ff;
+
+  --color-muted: #8a9199;
+  --color-muted-dim: #5c636a;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  --color-success: #34d399;
+  --color-warning: #ffd700;
+  --color-danger: #ff4500;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  --shadow-glow: 0 0 32px rgba(0, 180, 255, 0.16);
+  --shadow-glow-warm: 0 0 32px rgba(255, 85, 0, 0.2);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply m-0 min-h-svh bg-navy font-sans text-white;
+  }
+
+  #root {
+    @apply min-h-svh;
+  }
+
+  .ft-display-page {
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .ft-display-page h1,
+  .ft-display-page h2 {
+    letter-spacing: -0.03em;
+  }
+
+  .ft-display-page p,
+  .ft-display-page label,
+  .ft-display-page button,
+  .ft-display-page input {
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .ft-glass {
+    @apply rounded-2xl border border-white/8 bg-navy-card/85 backdrop-blur-md;
+  }
+
+  .ft-glass-elevated {
+    @apply rounded-2xl border border-white/10 bg-navy-elevated/90 backdrop-blur-md shadow-card;
+  }
+
+  .ft-gradient-text {
+    @apply bg-gradient-to-r from-accent to-accent-gold bg-clip-text text-transparent;
+  }
+
+  .ft-btn-primary {
+    @apply border-0 bg-gradient-to-r from-accent-purple to-accent-gold text-white shadow-lg shadow-accent-purple/25;
+    @apply hover:from-accent-purple/95 hover:to-accent-gold/95 hover:shadow-glow-warm;
+  }
+
+  .ft-btn-secondary {
+    @apply border-0 bg-gradient-to-r from-accent to-accent-purple text-white shadow-lg shadow-accent/20;
+    @apply hover:from-accent/95 hover:to-accent-purple/95;
+  }
+
+  .ft-brand-gradient {
+    @apply bg-gradient-to-r from-accent to-accent-purple;
+  }
+
+  .ft-avatar-gradient {
+    @apply bg-gradient-to-br from-accent-purple to-accent-gold text-white shadow-lg shadow-accent-purple/20;
+  }
+
+  .ft-focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-navy;
+  }
+
+  /* Onboarding career-paths illustration */
+  @keyframes onb-draw-path {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes onb-node-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.35);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes onb-node-pulse {
+    0%,
+    100% {
+      opacity: 0.28;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.18);
+    }
+  }
+
+  @keyframes onb-label-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes onb-current-role-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .onb-path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    opacity: 0;
+    animation:
+      onb-draw-path 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+      onb-path-fade-in 0.01s linear forwards;
+  }
+
+  @keyframes onb-path-fade-in {
+    to {
+      opacity: 0.85;
+    }
+  }
+
+  .onb-path-teal {
+    animation-delay: 0.75s, 0.75s;
+  }
+
+  .onb-path-purple {
+    animation-delay: 1.75s, 1.75s;
+  }
+
+  .onb-path-blue {
+    animation-delay: 2.75s, 2.75s;
+  }
+
+  .onb-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: onb-node-enter 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  .onb-node-teal {
+    animation-delay: 1.25s;
+  }
+
+  .onb-node-purple {
+    animation-delay: 2.25s;
+  }
+
+  .onb-node-blue {
+    animation-delay: 3.25s;
+  }
+
+  .onb-node-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    opacity: 0;
+    animation: onb-node-pulse 2.8s ease-in-out infinite;
+  }
+
+  .onb-node-teal .onb-node-pulse {
+    animation-delay: 1.65s;
+  }
+
+  .onb-node-purple .onb-node-pulse {
+    animation-delay: 2.65s;
+  }
+
+  .onb-node-blue .onb-node-pulse {
+    animation-delay: 3.65s;
+  }
+
+  .onb-label {
+    opacity: 0;
+    animation: onb-label-enter 0.4s ease-out forwards;
+  }
+
+  .onb-label-teal {
+    animation-delay: 1.4s;
+  }
+
+  .onb-label-purple {
+    animation-delay: 2.4s;
+  }
+
+  .onb-label-blue {
+    animation-delay: 3.4s;
+  }
+
+  .onb-label-current {
+    animation-delay: 0.35s;
+  }
+
+  .onb-current-role {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: onb-current-role-enter 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+    opacity: 0;
+    animation-delay: 0.1s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .onb-path,
+    .onb-node,
+    .onb-node-pulse,
+    .onb-label,
+    .onb-current-role,
+    .onb-resilience-center,
+    .onb-resilience-spoke,
+    .onb-resilience-node,
+    .onb-resilience-orbit,
+    .onb-market-card,
+    .onb-trend-bar,
+    .onb-role-row {
+      animation: none !important;
+      opacity: 1 !important;
+      stroke-dashoffset: 0 !important;
+      transform: none !important;
+    }
+
+    .onb-trend-bar {
+      width: var(--onb-bar-target) !important;
+    }
+  }
+
+  /* Onboarding screen 2 — resilience radar */
+  @keyframes onb-resilience-center-in {
+    from {
+      opacity: 0;
+      transform: scale(0.88);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes onb-resilience-spoke-in {
+    from {
+      opacity: 0;
+      stroke-dashoffset: 100;
+    }
+    to {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes onb-resilience-node-in {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes onb-resilience-orbit-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .onb-resilience-center {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: onb-resilience-center-in 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+    opacity: 0;
+    animation-delay: 0.1s;
+  }
+
+  .onb-resilience-orbit {
+    animation: onb-resilience-orbit-in 0.6s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.15s;
+  }
+
+  .onb-resilience-spoke {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: onb-resilience-spoke-in 0.45s ease-out forwards;
+    opacity: 0;
+  }
+
+  .onb-resilience-spoke-0 { animation-delay: 0.75s; }
+  .onb-resilience-spoke-1 { animation-delay: 1.25s; }
+  .onb-resilience-spoke-2 { animation-delay: 1.75s; }
+  .onb-resilience-spoke-3 { animation-delay: 2.25s; }
+  .onb-resilience-spoke-4 { animation-delay: 2.75s; }
+  .onb-resilience-spoke-5 { animation-delay: 3.25s; }
+
+  .onb-resilience-node {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: onb-resilience-node-in 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  .onb-resilience-node-0 { animation-delay: 0.85s; }
+  .onb-resilience-node-1 { animation-delay: 1.35s; }
+  .onb-resilience-node-2 { animation-delay: 1.85s; }
+  .onb-resilience-node-3 { animation-delay: 2.35s; }
+  .onb-resilience-node-4 { animation-delay: 2.85s; }
+  .onb-resilience-node-5 { animation-delay: 3.35s; }
+
+  /* Onboarding screen 3 — market radar preview */
+  @keyframes onb-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes onb-bar-grow {
+    from {
+      width: 0;
+    }
+    to {
+      width: var(--onb-bar-target);
+    }
+  }
+
+  @keyframes onb-role-row-in {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .onb-market-card {
+    animation: onb-card-in 0.55s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.1s;
+  }
+
+  .onb-trend-bar {
+    width: 0;
+    animation: onb-bar-grow 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .onb-trend-bar-0 {
+    animation-delay: 0.45s;
+  }
+
+  .onb-trend-bar-1 {
+    animation-delay: 0.75s;
+  }
+
+  .onb-trend-bar-2 {
+    animation-delay: 1.05s;
+  }
+
+  .onb-role-row {
+    animation: onb-role-row-in 0.45s ease-out forwards;
+    opacity: 0;
+  }
+
+  .onb-role-row-0 {
+    animation-delay: 1.35s;
+  }
+
+  .onb-role-row-1 {
+    animation-delay: 1.6s;
+  }
+
+  .onb-role-row-2 {
+    animation-delay: 1.85s;
+  }
+
+  /* Scan loading — AI analysis screen */
+  @keyframes scan-glow-breathe {
+    0%,
+    100% {
+      opacity: 0.45;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.75;
+      transform: scale(1.06);
+    }
+  }
+
+  @keyframes scan-ring-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes scan-ellipsis {
+    0%,
+    80%,
+    100% {
+      opacity: 0.25;
+      transform: translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+  }
+
+  @keyframes scan-secure-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35);
+    }
+    50% {
+      opacity: 1;
+      box-shadow: 0 0 8px 2px rgba(52, 211, 153, 0.45);
+    }
+  }
+
+  .scan-icon-glow {
+    animation: scan-glow-breathe 3s ease-in-out infinite;
+  }
+
+  .scan-icon-ring {
+    animation: scan-ring-spin 8s linear infinite;
+  }
+
+  .scan-ellipsis-dot {
+    animation: scan-ellipsis 1.2s ease-in-out infinite;
+  }
+
+  .scan-ellipsis-dot-2 {
+    animation-delay: 0.15s;
+  }
+
+  .scan-ellipsis-dot-3 {
+    animation-delay: 0.3s;
+  }
+
+  .scan-secure-dot {
+    animation: scan-secure-pulse 2s ease-in-out infinite;
+  }
+
+  /* Login — logo entrance + gentle float */
+  @keyframes login-logo-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.86) translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes login-logo-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes login-title-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .login-logo-enter {
+    animation: login-logo-enter 0.7s cubic-bezier(0.34, 1.35, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  .login-logo-float-wrap {
+    animation: login-logo-float 5s ease-in-out 0.75s infinite;
+  }
+
+  .login-title-enter {
+    animation: login-title-enter 0.55s ease-out 0.35s forwards;
+    opacity: 0;
+  }
+}
