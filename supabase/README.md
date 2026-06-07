@@ -31,7 +31,7 @@ Or paste each file in `migrations/` into the Supabase SQL Editor in timestamp or
 | `20260528*` – `20260604*` | Shared Future-Trace base (auth, profiles, GDPR, matcher, cron) |
 | `20260605120000` | Career intelligence tables, enums, indexes |
 | `20260605120100` | RLS, signup trigger, compliance RPC |
-| `20260605120200` | pg_cron retention jobs |
+| `20260605120400` | pg_cron retention jobs |
 | `20260605120300` | Seed products, roles, geo markets |
 
 ## Troubleshooting sync errors

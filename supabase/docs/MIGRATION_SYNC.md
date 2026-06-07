@@ -58,6 +58,23 @@ Current files in git (full chain):
 - `20260605120100_career_intelligence_compliance_rls.sql`
 - `20260605120200_career_intelligence_retention_cron.sql`
 - `20260605120300_career_intelligence_seed.sql`
+- `20260605120400_pg_cron_schedule_jobs.sql`
+
+## pg_cron error SQLSTATE 2BP01
+
+**Symptom:** `dependent privileges exist` on `create extension pg_cron`.
+
+**Cause:** Supabase pre-installs pg_cron. Migrations must **not** run `CREATE EXTENSION pg_cron WITH SCHEMA extensions`.
+
+**Fix:**
+
+1. Pull latest `Dev` (commit `1aefd96`+ removes `CREATE EXTENSION` from cron migrations).
+2. Re-deploy; migration `20260605120400` registers jobs safely if earlier cron migrations were skipped.
+3. Or paste `supabase/scripts/schedule_retention_cron.sql` into SQL Editor.
+4. If `20260601120000` is stuck as failed/applied, on dev only:
+   ```sql
+   delete from supabase_migrations.schema_migrations where version = '20260601120000';
+   ```
 
 ### Quick repair (run in SQL Editor)
 
