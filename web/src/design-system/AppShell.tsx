@@ -22,9 +22,9 @@ export function AppShell() {
 
       <main
         className={cn(
-          "flex-1",
+          "flex flex-1 flex-col",
           centered
-            ? "flex flex-col items-center justify-center px-6"
+            ? "items-center justify-center px-6"
             : "overflow-y-auto px-5 pb-6",
           header ? "pt-4" : "pt-[max(1rem,env(safe-area-inset-top))]",
           showNav && "pb-2"

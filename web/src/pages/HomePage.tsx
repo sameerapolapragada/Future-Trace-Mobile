@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
 import { Card, LogoMark, PrimaryButtonLink } from "../design-system";
 import { homeDashboard } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
+import { getFirstName } from "../lib/userDisplay";
 import { cn } from "../lib/cn";
 
 function SparkleIcon({ className }: { className?: string }) {
@@ -139,19 +141,74 @@ function CareerPathRow({
   );
 }
 
-export default function HomePage() {
-  const { entitlements } = useEntitlements();
-  const xrayTo = entitlements.hasCareerXRay ? "/xray" : "/career-xray";
-
+function HomeWelcomeHeader({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
   return (
-    <div className="ft-display-page relative space-y-5 pb-4">
-      <header className="flex items-center gap-3">
-        <LogoMark size={44} className="shrink-0" />
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted">Your AI Career Intelligence Dashboard</p>
-        </div>
-      </header>
+    <header className="flex items-center gap-3">
+      <LogoMark size={44} className="shrink-0" />
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Welcome, {firstName}</h1>
+        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+      </div>
+    </header>
+  );
+}
+
+function HomeActionButtons({ xrayTo, radarTo }: { xrayTo: string; radarTo: string }) {
+  return (
+    <div className="w-full space-y-3">
+      <PrimaryButtonLink to="/scan" fullWidth className="flex items-center justify-center gap-2">
+        <ScanCornersIcon />
+        Start New Scan
+      </PrimaryButtonLink>
+
+      <div className="grid grid-cols-2 gap-3">
+        <PrimaryButtonLink to={xrayTo} fullWidth className="flex items-center justify-center gap-2">
+          <SparkleIcon />
+          Career X-Ray
+        </PrimaryButtonLink>
+        <PrimaryButtonLink to={radarTo} fullWidth className="flex items-center justify-center gap-2">
+          <RadarIcon />
+          View Radar
+        </PrimaryButtonLink>
+      </div>
+    </div>
+  );
+}
+
+function HomeEmptyState({
+  firstName,
+  xrayTo,
+  radarTo,
+}: {
+  firstName: string;
+  xrayTo: string;
+  radarTo: string;
+}) {
+  return (
+    <div className="ft-display-page flex min-h-full flex-1 flex-col pb-4">
+      <HomeWelcomeHeader firstName={firstName} />
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <HomeActionButtons xrayTo={xrayTo} radarTo={radarTo} />
+      </div>
+    </div>
+  );
+}
+
+function HomeDashboard({
+  firstName,
+  xrayTo,
+  radarTo,
+}: {
+  firstName: string;
+  xrayTo: string;
+  radarTo: string;
+}) {
+  return (
+    <>
+      <HomeWelcomeHeader
+        firstName={firstName}
+        subtitle="Your AI Career Intelligence Dashboard"
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard
@@ -206,7 +263,7 @@ export default function HomePage() {
       <Card padding="md" className="border border-white/8 bg-navy-card shadow-none">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">AI Career Radar</h2>
-          <SectionLink to="/upgrade" label="View Radar" />
+          <SectionLink to={radarTo} label="View Radar" />
         </div>
         <div className="space-y-3.5">
           {homeDashboard.radarItems.map((item) => (
@@ -226,22 +283,8 @@ export default function HomePage() {
         </p>
       </Card>
 
-      <div className="space-y-3 pt-1">
-        <PrimaryButtonLink to="/scan" fullWidth className="flex items-center justify-center gap-2">
-          <ScanCornersIcon />
-          Start New Scan
-        </PrimaryButtonLink>
-
-        <div className="grid grid-cols-2 gap-3">
-          <PrimaryButtonLink to={xrayTo} fullWidth className="flex items-center justify-center gap-2">
-            <SparkleIcon />
-            Career X-Ray
-          </PrimaryButtonLink>
-          <PrimaryButtonLink to="/upgrade" fullWidth className="flex items-center justify-center gap-2">
-            <RadarIcon />
-            View Radar
-          </PrimaryButtonLink>
-        </div>
+      <div className="pt-1">
+        <HomeActionButtons xrayTo={xrayTo} radarTo={radarTo} />
       </div>
 
       <button
@@ -255,6 +298,32 @@ export default function HomePage() {
           <circle cx="12" cy="17" r="0.75" fill="currentColor" stroke="none" />
         </svg>
       </button>
+    </>
+  );
+}
+
+export default function HomePage() {
+  const { user } = useAuth();
+  const { entitlements, loading } = useEntitlements();
+  const firstName = getFirstName(user);
+  const xrayTo = entitlements.hasCareerXRay ? "/xray" : "/career-xray";
+  const radarTo = entitlements.hasRadar ? "/radar" : "/upgrade";
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
+
+  if (!entitlements.hasCompletedScan) {
+    return <HomeEmptyState firstName={firstName} xrayTo={xrayTo} radarTo={radarTo} />;
+  }
+
+  return (
+    <div className="ft-display-page relative space-y-5 pb-4">
+      <HomeDashboard firstName={firstName} xrayTo={xrayTo} radarTo={radarTo} />
     </div>
   );
 }

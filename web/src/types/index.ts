@@ -218,6 +218,7 @@ export type Entitlements = {
   freeScansRemaining: number;
   hasCareerXRay: boolean;
   hasRadar: boolean;
+  hasCompletedScan: boolean;
 };
 
 export type TransitionRadarPath = {

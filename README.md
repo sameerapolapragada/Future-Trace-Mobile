@@ -42,6 +42,14 @@ npm install
 npm run dev
 ```
 
+## Docs
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/MOBILE_VS_WEB.md](docs/MOBILE_VS_WEB.md) | Mobile vs web strategy, repo layout, native roadmap |
+| [docs/PENDING_IMPLEMENTATION_CHECKLIST.md](docs/PENDING_IMPLEMENTATION_CHECKLIST.md) | Week-by-week implementation checklist |
+| [docs/BACKEND_AND_LLM_STRATEGY.md](docs/BACKEND_AND_LLM_STRATEGY.md) | Backend, LLM, and cost strategy |
+
 ## Splash screen
 
 The splash UI lives in `components/SplashScreen.tsx` and includes:

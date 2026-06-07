@@ -1,63 +1,73 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../auth/useAuth";
+import {
+  DEFAULT_ENTITLEMENTS,
+  fetchUserEntitlements,
+  mergeEntitlements,
+} from "./entitlementsService";
 import type { Entitlements } from "../types";
 
-const STORAGE_KEY = "ft-entitlements";
-
-const DEFAULT: Entitlements = {
-  freeScansRemaining: 1,
-  hasCareerXRay: false,
-  hasRadar: false,
-};
-
-export function getEntitlements(): Entitlements {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULT, ...JSON.parse(raw) } : { ...DEFAULT };
-  } catch {
-    return { ...DEFAULT };
-  }
-}
-
-export function saveEntitlements(entitlements: Entitlements) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(entitlements));
-}
-
-export function unlockProduct(product: "xray" | "radar"): Entitlements {
-  const current = getEntitlements();
-  const next = {
-    ...current,
-    hasCareerXRay: product === "xray" || product === "radar" ? true : current.hasCareerXRay,
-    hasRadar: product === "radar" ? true : current.hasRadar,
-  };
-  saveEntitlements(next);
-  return next;
-}
-
-export function consumeFreeScan(): Entitlements {
-  const current = getEntitlements();
-  const next = {
-    ...current,
-    freeScansRemaining: Math.max(0, current.freeScansRemaining - 1),
-  };
-  saveEntitlements(next);
-  return next;
-}
-
 export function useEntitlements() {
-  const [entitlements, setEntitlements] = useState(getEntitlements);
+  const { userId, isAuthenticated } = useAuth();
+  const [entitlements, setEntitlements] = useState<Entitlements>(DEFAULT_ENTITLEMENTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(() => setEntitlements(getEntitlements()), []);
+  const refresh = useCallback(async () => {
+    if (!userId) {
+      setEntitlements(DEFAULT_ENTITLEMENTS);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
-  const unlock = useCallback(
-    (product: "xray" | "radar") => {
-      setEntitlements(unlockProduct(product));
-    },
-    []
-  );
+    setLoading(true);
+    setError(null);
 
-  const useScan = useCallback(() => {
-    setEntitlements(consumeFreeScan());
+    try {
+      const next = await fetchUserEntitlements(userId);
+      setEntitlements(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load entitlements");
+      setEntitlements(DEFAULT_ENTITLEMENTS);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setEntitlements(DEFAULT_ENTITLEMENTS);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    void refresh();
+  }, [isAuthenticated, refresh]);
+
+  /** Dev mock until Stripe checkout writes purchases (Week 3). */
+  const unlock = useCallback((product: "xray" | "radar") => {
+    setEntitlements((current) =>
+      mergeEntitlements(current, {
+        hasCareerXRay: product === "xray" || product === "radar" ? true : current.hasCareerXRay,
+        hasRadar: product === "radar" ? true : current.hasRadar,
+      })
+    );
   }, []);
 
-  return { entitlements, unlock, useScan, refresh };
+  /** Optimistic until POST /api/v1/scans consumes quota (Week 2). */
+  const useScan = useCallback(() => {
+    setEntitlements((current) =>
+      mergeEntitlements(current, {
+        freeScansRemaining: Math.max(0, current.freeScansRemaining - 1),
+      })
+    );
+  }, []);
+
+  const markScanComplete = useCallback(() => {
+    setEntitlements((current) => mergeEntitlements(current, { hasCompletedScan: true }));
+  }, []);
+
+  return { entitlements, loading, error, unlock, useScan, markScanComplete, refresh };
 }

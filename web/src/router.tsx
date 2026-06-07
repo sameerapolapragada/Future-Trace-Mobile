@@ -1,4 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { GuestRoute } from "./auth/GuestRoute";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { AppShell, PhoneFrame } from "./design-system/AppShell";
 import SplashPage from "./pages/SplashPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -29,32 +31,38 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          // Auth flow — no bottom nav
+          // Public onboarding flow
           { index: true, element: <SplashPage />, handle: { centered: true } },
           { path: "onboarding", element: <OnboardingPage /> },
-          { path: "login", element: <LoginPage /> },
-          { path: "scan-loading", element: <ScanLoadingPage />, handle: { centered: true } },
-          {
-            path: "canvas",
-            element: <ScanResultsPage />,
-            handle: withNav,
-          },
-          { path: "upgrade", element: <UpgradePage /> },
-          { path: "career-xray", element: <CareerXRayOfferPage /> },
 
-          // Main app — bottom nav
-          { path: "home", element: <HomePage />, handle: withNav },
-          { path: "scan", element: <CareerScanPage />, handle: withNav },
+          // Login only when signed out
           {
-            path: "results",
-            element: <ScanResultsPage />,
-            handle: withNav,
+            element: <GuestRoute />,
+            children: [{ path: "login", element: <LoginPage /> }],
           },
-          { path: "xray", element: <CareerXRayPage />, handle: withNav },
-          { path: "xray/opportunities", element: <CareerXRayOpportunitiesPage />, handle: withNav },
-          { path: "xray/role/:roleSlug", element: <RoleIntelligencePage /> },
-          { path: "radar", element: <RadarPage />, handle: withNav },
-          { path: "profile", element: <ProfilePage />, handle: withNav },
+
+          // App — requires Supabase session
+          {
+            element: <ProtectedRoute />,
+            children: [
+              { path: "scan-loading", element: <ScanLoadingPage />, handle: { centered: true } },
+              { path: "canvas", element: <ScanResultsPage />, handle: withNav },
+              { path: "upgrade", element: <UpgradePage /> },
+              { path: "career-xray", element: <CareerXRayOfferPage /> },
+              { path: "home", element: <HomePage />, handle: withNav },
+              { path: "scan", element: <CareerScanPage />, handle: withNav },
+              { path: "results", element: <ScanResultsPage />, handle: withNav },
+              { path: "xray", element: <CareerXRayPage />, handle: withNav },
+              {
+                path: "xray/opportunities",
+                element: <CareerXRayOpportunitiesPage />,
+                handle: withNav,
+              },
+              { path: "xray/role/:roleSlug", element: <RoleIntelligencePage /> },
+              { path: "radar", element: <RadarPage />, handle: withNav },
+              { path: "profile", element: <ProfilePage />, handle: withNav },
+            ],
+          },
 
           { path: "*", element: <Navigate to="/" replace /> },
         ],

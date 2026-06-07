@@ -1,14 +1,21 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
 import { LogoMarkWithGlow } from "../design-system";
 
 export default function SplashPage() {
   const navigate = useNavigate();
+  const { loading, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => navigate("/onboarding"), 2400);
+    if (loading) return;
+
+    const timer = setTimeout(() => {
+      navigate(isAuthenticated ? "/home" : "/onboarding", { replace: true });
+    }, 2400);
+
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-8 text-center">

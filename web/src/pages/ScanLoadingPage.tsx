@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEntitlements } from "../lib/entitlements";
 import { cn } from "../lib/cn";
 
 const STEPS = [
@@ -93,6 +94,7 @@ function LoadingEllipsis() {
 
 export default function ScanLoadingPage() {
   const navigate = useNavigate();
+  const { markScanComplete } = useEntitlements();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const completedCount = activeIndex;
@@ -104,6 +106,7 @@ export default function ScanLoadingPage() {
     }, STEP_INTERVAL_MS);
 
     const navTimer = window.setTimeout(() => {
+      markScanComplete();
       navigate("/canvas", { state: { scanId: "scan-1" }, replace: true });
     }, NAV_DELAY_MS);
 
@@ -111,7 +114,7 @@ export default function ScanLoadingPage() {
       window.clearInterval(stepTimer);
       window.clearTimeout(navTimer);
     };
-  }, [navigate]);
+  }, [navigate, markScanComplete]);
 
   return (
     <div className="flex w-full max-w-sm flex-1 flex-col justify-center px-1">

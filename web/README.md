@@ -35,11 +35,23 @@ No transformation roadmap, weekly plan, coaching tier, or $39 plan.
 
 Bottom nav: **Home · Scan · X-Ray · Radar · Profile**
 
-Mock entitlements persist in `sessionStorage` (demo purchases on upgrade page).
+## Authentication
+
+Supabase Auth (email/password). Session persists via Supabase client (localStorage).
+
+1. Copy `.env.example` → `.env.local` and set your project keys.
+2. Sign up or sign in at `/login`.
+3. Protected routes redirect to `/login` when signed out.
+4. Signed-in users visiting `/login` are redirected to `/home`.
+
+Auth modules: `src/lib/supabaseClient.ts`, `src/auth/AuthProvider.tsx`, `src/auth/useAuth.ts`, `src/auth/ProtectedRoute.tsx`.
+
+Mock product entitlements still use `sessionStorage` (separate from auth).
 
 ## Run
 
 ```bash
 cd "/Users/sammy/future trace mobile/web"
+cp .env.example .env.local   # add Supabase URL + anon key
 npm run dev
 ```
