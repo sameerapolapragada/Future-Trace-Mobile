@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { PaywallCard, PrimaryButtonLink } from "../design-system";
 import { getCareerXRaySnapshot, products, radarDashboard, userProfile } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
+import { useCheckoutReturn } from "../lib/useCheckoutReturn";
 import { cn } from "../lib/cn";
 import type { RadarMatchLevel } from "../types";
 
@@ -275,8 +276,10 @@ function RadarDashboardContent() {
 
 export default function RadarPage() {
   const navigate = useNavigate();
-  const { entitlements } = useEntitlements();
+  const { entitlements, refresh } = useEntitlements();
   const { radar } = products;
+
+  useCheckoutReturn(refresh);
 
   if (!entitlements.hasRadar) {
     return (

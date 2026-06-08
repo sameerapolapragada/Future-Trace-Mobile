@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { products } from "../data/mockData";
-import { useEntitlements } from "../lib/entitlements";
+import { isCheckoutConfigured, startCheckout } from "../lib/checkoutService";
 import { cn } from "../lib/cn";
 
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -48,12 +49,28 @@ function CheckIcon() {
 
 export default function UpgradePage() {
   const navigate = useNavigate();
-  const { unlock } = useEntitlements();
   const { radar } = products;
+  const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  function purchaseRadar() {
-    unlock("radar");
-    navigate("/radar");
+  async function handlePurchaseRadar() {
+    if (!isCheckoutConfigured()) {
+      setCheckoutError(
+        "Checkout is not configured. Set VITE_API_BASE_URL in web/.env.local and run the Future-Trace BFF."
+      );
+      return;
+    }
+
+    setLoading(true);
+    setCheckoutError(null);
+
+    try {
+      const url = await startCheckout("radar");
+      window.location.assign(url);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
+      setLoading(false);
+    }
   }
 
   return (
@@ -127,10 +144,11 @@ export default function UpgradePage() {
 
         <PrimaryButton
           fullWidth
-          onClick={purchaseRadar}
+          disabled={loading}
+          onClick={() => void handlePurchaseRadar()}
           className="mt-5 flex items-center justify-center gap-2"
         >
-          Start AI Career Radar
+          {loading ? "Redirecting to checkout…" : "Start AI Career Radar"}
         </PrimaryButton>
       </div>
 
@@ -145,8 +163,14 @@ export default function UpgradePage() {
         </button>
       </p>
 
+      {checkoutError ? (
+        <p className="relative text-center text-xs text-red-400" role="alert">
+          {checkoutError}
+        </p>
+      ) : null}
+
       <p className="relative text-center text-[11px] leading-relaxed text-muted">
-        Demo mode — payment simulated, no charge. Secure checkout. Your data stays private.
+        Secure Stripe checkout. Purchases unlock X-Ray and Radar in your account after payment.
       </p>
     </div>
   );

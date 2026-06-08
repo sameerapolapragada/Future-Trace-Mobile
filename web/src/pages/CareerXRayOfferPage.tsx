@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { products, transitionRadarPreview } from "../data/mockData";
+import { isCheckoutConfigured, startCheckout } from "../lib/checkoutService";
 import { useEntitlements } from "../lib/entitlements";
 import { cn } from "../lib/cn";
 
@@ -89,22 +91,34 @@ function TransitionPathRow({
 
 export default function CareerXRayOfferPage() {
   const navigate = useNavigate();
-  const { unlock, entitlements } = useEntitlements();
+  const { entitlements } = useEntitlements();
   const { xray, radar } = products;
   const preview = transitionRadarPreview;
+  const [loadingProduct, setLoadingProduct] = useState<"xray" | "radar" | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   if (entitlements.hasCareerXRay) {
     return <Navigate to="/xray" replace />;
   }
 
-  function purchaseXRay() {
-    unlock("xray");
-    navigate("/xray");
-  }
+  async function handlePurchase(product: "xray" | "radar") {
+    if (!isCheckoutConfigured()) {
+      setCheckoutError(
+        "Checkout is not configured. Set VITE_API_BASE_URL in web/.env.local and run the Future-Trace BFF."
+      );
+      return;
+    }
 
-  function purchaseRadar() {
-    unlock("radar");
-    navigate("/radar");
+    setLoadingProduct(product);
+    setCheckoutError(null);
+
+    try {
+      const url = await startCheckout(product);
+      window.location.assign(url);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
+      setLoadingProduct(null);
+    }
   }
 
   return (
@@ -195,14 +209,20 @@ export default function CareerXRayOfferPage() {
       <div className="relative space-y-3">
         <PrimaryButton
           fullWidth
-          onClick={purchaseXRay}
+          disabled={loadingProduct !== null}
+          onClick={() => void handlePurchase("xray")}
           className="flex items-center justify-center gap-2"
         >
-          Unlock Career X-Ray — {xray.price}
+          {loadingProduct === "xray" ? "Redirecting to checkout…" : `Unlock Career X-Ray — ${xray.price}`}
         </PrimaryButton>
         <p className="text-center text-xs text-muted">
-          One-time purchase · Full report · 5 transition roles · No subscription required
+          One-time purchase · Full report · 5 transition roles · Secure Stripe checkout
         </p>
+        {checkoutError ? (
+          <p className="text-center text-xs text-red-400" role="alert">
+            {checkoutError}
+          </p>
+        ) : null}
       </div>
 
       <div className="relative rounded-2xl border border-accent-purple/30 bg-navy-card p-4">
@@ -233,10 +253,17 @@ export default function CareerXRayOfferPage() {
           <li>· Monthly skill gap movement & market signals</li>
           <li>· Personalized career alerts each month</li>
         </ul>
-        <PrimaryButton fullWidth onClick={purchaseRadar} className="mt-4">
-          Start AI Career Radar
+        <PrimaryButton
+          fullWidth
+          disabled={loadingProduct !== null}
+          onClick={() => void handlePurchase("radar")}
+          className="mt-4"
+        >
+          {loadingProduct === "radar" ? "Redirecting to checkout…" : "Start AI Career Radar"}
         </PrimaryButton>
-        <p className="mt-2 text-center text-[10px] text-muted">Cancel anytime · X-Ray included at no extra cost</p>
+        <p className="mt-2 text-center text-[10px] text-muted">
+          Cancel anytime · X-Ray included at no extra cost · Secure Stripe checkout
+        </p>
       </div>
     </div>
   );

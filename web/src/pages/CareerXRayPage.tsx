@@ -2,12 +2,23 @@ import { useNavigate } from "react-router-dom";
 import { PaywallCard } from "../design-system";
 import { products } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
+import { useCheckoutReturn } from "../lib/useCheckoutReturn";
 import CareerXRayCompleteView from "./CareerXRayCompleteView";
 
 export default function CareerXRayPage() {
   const navigate = useNavigate();
-  const { entitlements } = useEntitlements();
+  const { entitlements, loading, refresh } = useEntitlements();
   const { xray } = products;
+
+  useCheckoutReturn(refresh);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
 
   if (!entitlements.hasCareerXRay) {
     return (

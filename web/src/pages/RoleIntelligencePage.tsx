@@ -1,7 +1,7 @@
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { getRoleIntelligenceReport, roleTitleToSlug } from "../data/mockData";
-import { useEntitlements } from "../lib/entitlements";
+import { RequireCareerXRay } from "../lib/RequireCareerXRay";
 import { cn } from "../lib/cn";
 import type { RoleSkillDifficulty } from "../types";
 
@@ -72,25 +72,31 @@ function SummaryCard({
 export default function RoleIntelligencePage() {
   const navigate = useNavigate();
   const { roleSlug } = useParams<{ roleSlug: string }>();
-  const { entitlements } = useEntitlements();
-
-  if (!entitlements.hasCareerXRay) {
-    return <Navigate to="/career-xray" replace />;
-  }
-
   const report = roleSlug ? getRoleIntelligenceReport(roleSlug) : undefined;
 
-  if (!report) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-muted">Role report not found.</p>
-        <Link to="/xray" className="mt-4 inline-block text-sm text-accent">
-          Back to Career X-Ray
-        </Link>
-      </div>
-    );
-  }
+  return (
+    <RequireCareerXRay>
+      {!report ? (
+        <div className="py-8 text-center">
+          <p className="text-muted">Role report not found.</p>
+          <Link to="/xray" className="mt-4 inline-block text-sm text-accent">
+            Back to Career X-Ray
+          </Link>
+        </div>
+      ) : (
+        <RoleIntelligenceContent navigate={navigate} report={report} />
+      )}
+    </RequireCareerXRay>
+  );
+}
 
+function RoleIntelligenceContent({
+  navigate,
+  report,
+}: {
+  navigate: ReturnType<typeof useNavigate>;
+  report: NonNullable<ReturnType<typeof getRoleIntelligenceReport>>;
+}) {
   return (
     <div className="space-y-5 pb-4">
       <div className="flex items-start gap-2">

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
 import { Card, PrimaryButton } from "../design-system";
 import { onboardingSlides } from "../data/mockData";
 import { cn } from "../lib/cn";
@@ -530,12 +531,13 @@ function renderOnboardingIllustration(variant: (typeof onboardingSlides)[number]
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const slide = onboardingSlides[step];
   const isLast = step === onboardingSlides.length - 1;
 
   function handleNext() {
     if (isLast) {
-      navigate("/login");
+      navigate(isAuthenticated ? "/home" : "/login", { replace: true });
     } else {
       setStep((s) => s + 1);
     }

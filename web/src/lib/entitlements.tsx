@@ -1,13 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useAuth } from "../auth/useAuth";
 import {
+  consumeFreeScan,
   DEFAULT_ENTITLEMENTS,
   fetchUserEntitlements,
   mergeEntitlements,
 } from "./entitlementsService";
 import type { Entitlements } from "../types";
 
-export function useEntitlements() {
+type EntitlementsContextValue = {
+  entitlements: Entitlements;
+  loading: boolean;
+  error: string | null;
+  useScan: () => Promise<void>;
+  markScanComplete: () => void;
+  refresh: () => Promise<void>;
+};
+
+const EntitlementsContext = createContext<EntitlementsContextValue | null>(null);
+
+export function EntitlementsProvider({ children }: { children: ReactNode }) {
   const { userId, isAuthenticated } = useAuth();
   const [entitlements, setEntitlements] = useState<Entitlements>(DEFAULT_ENTITLEMENTS);
   const [loading, setLoading] = useState(true);
@@ -46,28 +66,27 @@ export function useEntitlements() {
     void refresh();
   }, [isAuthenticated, refresh]);
 
-  /** Dev mock until Stripe checkout writes purchases (Week 3). */
-  const unlock = useCallback((product: "xray" | "radar") => {
-    setEntitlements((current) =>
-      mergeEntitlements(current, {
-        hasCareerXRay: product === "xray" || product === "radar" ? true : current.hasCareerXRay,
-        hasRadar: product === "radar" ? true : current.hasRadar,
-      })
-    );
-  }, []);
-
-  /** Optimistic until POST /api/v1/scans consumes quota (Week 2). */
-  const useScan = useCallback(() => {
-    setEntitlements((current) =>
-      mergeEntitlements(current, {
-        freeScansRemaining: Math.max(0, current.freeScansRemaining - 1),
-      })
-    );
+  const useScan = useCallback(async () => {
+    const remaining = await consumeFreeScan();
+    setEntitlements((current) => mergeEntitlements(current, { freeScansRemaining: remaining }));
   }, []);
 
   const markScanComplete = useCallback(() => {
     setEntitlements((current) => mergeEntitlements(current, { hasCompletedScan: true }));
   }, []);
 
-  return { entitlements, loading, error, unlock, useScan, markScanComplete, refresh };
+  const value = useMemo(
+    () => ({ entitlements, loading, error, useScan, markScanComplete, refresh }),
+    [entitlements, loading, error, useScan, markScanComplete, refresh]
+  );
+
+  return <EntitlementsContext.Provider value={value}>{children}</EntitlementsContext.Provider>;
+}
+
+export function useEntitlements(): EntitlementsContextValue {
+  const context = useContext(EntitlementsContext);
+  if (!context) {
+    throw new Error("useEntitlements must be used within EntitlementsProvider");
+  }
+  return context;
 }

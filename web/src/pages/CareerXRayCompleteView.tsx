@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PrimaryButtonLink } from "../design-system";
-import { xrayCompleteReport } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
+import { useCareerXRayData } from "../lib/useCareerXRayData";
 import { cn } from "../lib/cn";
 import type { XRayGapLevel, XRayImpactLevel } from "../types";
 
@@ -253,8 +253,20 @@ function OutlineActionButton({
 export default function CareerXRayCompleteView() {
   const navigate = useNavigate();
   const { entitlements } = useEntitlements();
-  const report = xrayCompleteReport;
+  const { report, loading, error } = useCareerXRayData();
   const radarTo = entitlements.hasRadar ? "/radar" : "/upgrade";
+
+  if (loading || !report) {
+    return (
+      <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-center text-sm text-red-400">{error}</p>;
+  }
 
   return (
     <div className="space-y-5 pb-4">

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { useEntitlements } from "../lib/entitlements";
+import { saveScanSession } from "../lib/scanSession";
 import { cn } from "../lib/cn";
 
 const workPreferences = ["Technical", "Business", "Hybrid"] as const;
@@ -124,7 +125,9 @@ function WorkPreferenceHelp() {
 
 export default function CareerScanPage() {
   const navigate = useNavigate();
-  const { useScan } = useEntitlements();
+  const { entitlements, loading, useScan } = useEntitlements();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [jobTitle, setJobTitle] = useState("");
   const [industry, setIndustry] = useState("");
@@ -134,10 +137,60 @@ export default function CareerScanPage() {
   const [careerGoal, setCareerGoal] = useState("");
   const [workPreference, setWorkPreference] = useState<WorkPreference>("Hybrid");
 
-  function handleSubmit(e: React.FormEvent) {
+  const noScansRemaining = !loading && entitlements.freeScansRemaining <= 0;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    useScan();
-    navigate("/scan-loading");
+    if (noScansRemaining || submitting) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await useScan();
+      saveScanSession({
+        jobTitle: jobTitle.trim(),
+        industry: industry.trim(),
+        yearsExperience: yearsExperience.trim(),
+        currentSkills: currentSkills.trim(),
+        toolsUsed: toolsUsed.trim(),
+        careerGoal: careerGoal.trim(),
+        workPreference,
+      });
+      navigate("/scan-loading");
+    } catch {
+      setSubmitError("No free scans remaining. Unlock Career X-Ray or AI Career Radar to continue.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
+
+  if (noScansRemaining) {
+    return (
+      <div className="space-y-5 pb-4 text-center">
+        <header className="pb-1">
+          <h1 className="text-xl font-bold tracking-tight text-white">Career Scan</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            You&apos;ve used all your free scans. Unlock Career X-Ray or subscribe to AI Career Radar for
+            more insights.
+          </p>
+        </header>
+        <PrimaryButton fullWidth onClick={() => navigate("/career-xray")}>
+          View upgrade options
+        </PrimaryButton>
+        <Link to="/home" className="block text-sm text-accent transition hover:text-accent-soft">
+          Back to Home
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -260,9 +313,20 @@ export default function CareerScanPage() {
         </div>
       </fieldset>
 
-      <PrimaryButton type="submit" fullWidth className="mt-2">
-        Generate My Career Scan
+      <PrimaryButton type="submit" fullWidth className="mt-2" disabled={submitting}>
+        {submitting ? "Starting scan…" : "Generate My Career Scan"}
       </PrimaryButton>
+      {entitlements.freeScansRemaining > 0 ? (
+        <p className="text-center text-xs text-muted">
+          {entitlements.freeScansRemaining} free scan
+          {entitlements.freeScansRemaining === 1 ? "" : "s"} remaining
+        </p>
+      ) : null}
+      {submitError ? (
+        <p className="text-center text-xs text-red-400" role="alert">
+          {submitError}
+        </p>
+      ) : null}
     </form>
   );
 }

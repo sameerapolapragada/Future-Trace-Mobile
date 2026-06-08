@@ -46,7 +46,9 @@ Supabase Auth (email/password). Session persists via Supabase client (localStora
 
 Auth modules: `src/lib/supabaseClient.ts`, `src/auth/AuthProvider.tsx`, `src/auth/useAuth.ts`, `src/auth/ProtectedRoute.tsx`.
 
-Mock product entitlements still use `sessionStorage` (separate from auth).
+BFF client: `src/lib/apiClient.ts` — calls Future-Trace (`VITE_API_BASE_URL`) with the Supabase JWT. Gemini and other LLM keys stay on the server only (`GEMINI_API_KEY` in Future-Trace).
+
+Entitlements and profile use direct Supabase reads today (`entitlementsService.ts`, `profileService.ts`). BFF routes (`/api/v1/scans`, `/api/v1/me`, etc.) will use `apiClient` when wired in Future-Trace.
 
 ## Run
 

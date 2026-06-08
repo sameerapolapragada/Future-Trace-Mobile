@@ -8,7 +8,7 @@ type UserEntitlementsRow = {
 };
 
 const DEFAULT: Entitlements = {
-  freeScansRemaining: 1,
+  freeScansRemaining: 3,
   hasCareerXRay: false,
   hasRadar: false,
   hasCompletedScan: false,
@@ -52,6 +52,21 @@ export async function fetchUserEntitlements(userId: string): Promise<Entitlement
 
 export function mergeEntitlements(base: Entitlements, patch: Partial<Entitlements>): Entitlements {
   return { ...base, ...patch };
+}
+
+/** Decrement free_scans_remaining in Postgres; throws if quota exhausted. */
+export async function consumeFreeScan(): Promise<number> {
+  const { data, error } = await supabase.rpc("consume_free_scan");
+
+  if (error) {
+    throw error;
+  }
+
+  if (typeof data !== "number") {
+    throw new Error("Unexpected consume_free_scan response");
+  }
+
+  return data;
 }
 
 export { DEFAULT as DEFAULT_ENTITLEMENTS };

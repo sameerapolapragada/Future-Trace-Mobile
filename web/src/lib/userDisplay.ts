@@ -20,3 +20,16 @@ export function getFirstName(user: User | null, profile?: { display_name?: strin
   const raw = getDisplayName(user, profile).split(/\s+/)[0] ?? "User";
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
+
+/** User-local date and time from Supabase Auth `last_sign_in_at`. */
+export function formatLastLogin(iso: string | undefined | null): string | null {
+  if (!iso) return null;
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}

@@ -2,7 +2,7 @@
 
 begin;
 
-insert into public.products (id, name, description, price_cents, price_interval, sort_order)
+insert into public.products (id, name, description, price_cents, price_interval, stripe_price_id, sort_order)
 values
   (
     'free-scan',
@@ -10,6 +10,7 @@ values
     'Free snapshot of AI-era career resilience, exposure, and transition roles.',
     0,
     'one_time',
+    null,
     0
   ),
   (
@@ -18,6 +19,7 @@ values
     'One-time deep career scan with transition roles and skill gap analysis.',
     199,
     'one_time',
+    'price_1TfxtpBxBGNjOmXM5gLLn0QZ',
     1
   ),
   (
@@ -26,6 +28,7 @@ values
     'Monthly career intelligence with market signals and skill gap movement.',
     999,
     'month',
+    'price_1TfxtqBxBGNjOmXMEfkT28sa',
     2
   )
 on conflict (id) do update set
@@ -33,6 +36,7 @@ on conflict (id) do update set
   description = excluded.description,
   price_cents = excluded.price_cents,
   price_interval = excluded.price_interval,
+  stripe_price_id = excluded.stripe_price_id,
   sort_order = excluded.sort_order;
 
 insert into public.geo_markets (slug, country_code, region_type, name)
@@ -64,23 +68,71 @@ values
   ('fintech', 'Financial Technology')
 on conflict (slug) do update set name = excluded.name;
 
-insert into public.industries (slug, name, domain_id, sort_order)
-select
-  v.slug,
-  v.name,
-  d.id,
-  v.sort_order
-from (
-  values
-    ('healthcare', 'Healthcare', 'healthcare-ops', 0),
-    ('technology', 'Technology', 'enterprise-saas', 1),
-    ('finance', 'Finance', 'fintech', 2)
-) as v(slug, name, domain_slug, sort_order)
-inner join public.domains d on d.slug = v.domain_slug
-on conflict (slug) do update set
-  name = excluded.name,
-  domain_id = excluded.domain_id,
-  sort_order = excluded.sort_order;
+-- Timeline schema (initial_schema) requires narrative columns + status; career-intel schema does not.
+do $seed$
+declare
+  has_status boolean := exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'industries'
+      and column_name = 'status'
+  );
+begin
+  if has_status then
+    insert into public.industries (
+      slug,
+      name,
+      domain_id,
+      sort_order,
+      early_ai_use,
+      current_ai_use,
+      agentic_ai_future,
+      main_opportunity,
+      status
+    )
+    select
+      v.slug,
+      v.name,
+      d.id,
+      v.sort_order,
+      'Career intelligence reference industry',
+      'Career intelligence reference industry',
+      'Career intelligence reference industry',
+      'Career transition and resilience analysis',
+      'published'::public.content_status
+    from (
+      values
+        ('healthcare', 'Healthcare', 'healthcare-ops', 0),
+        ('technology', 'Technology', 'enterprise-saas', 1),
+        ('finance', 'Finance', 'fintech', 2)
+    ) as v(slug, name, domain_slug, sort_order)
+    inner join public.domains d on d.slug = v.domain_slug
+    on conflict (slug) do update set
+      name = excluded.name,
+      domain_id = excluded.domain_id,
+      sort_order = excluded.sort_order;
+  else
+    insert into public.industries (slug, name, domain_id, sort_order)
+    select
+      v.slug,
+      v.name,
+      d.id,
+      v.sort_order
+    from (
+      values
+        ('healthcare', 'Healthcare', 'healthcare-ops', 0),
+        ('technology', 'Technology', 'enterprise-saas', 1),
+        ('finance', 'Finance', 'fintech', 2)
+    ) as v(slug, name, domain_slug, sort_order)
+    inner join public.domains d on d.slug = v.domain_slug
+    on conflict (slug) do update set
+      name = excluded.name,
+      domain_id = excluded.domain_id,
+      sort_order = excluded.sort_order;
+  end if;
+end;
+$seed$;
 
 insert into public.occupation_roles (slug, title, role_family)
 values

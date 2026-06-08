@@ -1,6 +1,7 @@
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { roleTitleToSlug, xrayInsights } from "../data/mockData";
-import { useEntitlements } from "../lib/entitlements";
+import { Link, useNavigate } from "react-router-dom";
+import { roleTitleToSlug } from "../data/mockData";
+import { RequireCareerXRay } from "../lib/RequireCareerXRay";
+import { useCareerXRayData } from "../lib/useCareerXRayData";
 import { cn } from "../lib/cn";
 import type { XRayTransitionRole } from "../types";
 
@@ -130,32 +131,38 @@ function TransitionRoleCard({
 
 export default function CareerXRayOpportunitiesPage() {
   const navigate = useNavigate();
-  const { entitlements } = useEntitlements();
-
-  if (!entitlements.hasCareerXRay) {
-    return <Navigate to="/career-xray" replace />;
-  }
+  const { insights, loading, error } = useCareerXRayData();
 
   return (
-    <div className="space-y-5 pb-2">
-      <div className="flex items-start gap-2">
-        <BackButton onClick={() => navigate("/xray")} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold tracking-tight text-white">Career Opportunities</h1>
-          <p className="mt-0.5 text-xs text-muted">Transition roles ranked by match score</p>
+    <RequireCareerXRay>
+      {loading || !insights ? (
+        <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
         </div>
-      </div>
+      ) : error ? (
+        <p className="text-center text-sm text-red-400">{error}</p>
+      ) : (
+        <div className="space-y-5 pb-2">
+          <div className="flex items-start gap-2">
+            <BackButton onClick={() => navigate("/xray")} />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-bold tracking-tight text-white">Career Opportunities</h1>
+              <p className="mt-0.5 text-xs text-muted">Transition roles ranked by match score</p>
+            </div>
+          </div>
 
-      <div className="space-y-3">
-        {xrayInsights.transitionRoles.map((role, index) => (
-          <TransitionRoleCard
-            key={role.title}
-            role={role}
-            rank={index + 1}
-            badgeClass={MATCH_BADGE_STYLES[index] ?? MATCH_BADGE_STYLES[0]}
-          />
-        ))}
-      </div>
-    </div>
+          <div className="space-y-3">
+            {insights.transitionRoles.map((role, index) => (
+              <TransitionRoleCard
+                key={role.title}
+                role={role}
+                rank={index + 1}
+                badgeClass={MATCH_BADGE_STYLES[index] ?? MATCH_BADGE_STYLES[0]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </RequireCareerXRay>
   );
 }

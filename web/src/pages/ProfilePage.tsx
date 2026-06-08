@@ -4,7 +4,7 @@ import { useAuth } from "../auth/useAuth";
 import { products } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
 import { useProfileData } from "../lib/useProfileData";
-import { getDisplayName } from "../lib/userDisplay";
+import { getDisplayName, formatLastLogin } from "../lib/userDisplay";
 
 function SettingsRow({
   label,
@@ -72,6 +72,7 @@ export default function ProfilePage() {
 
   const xrayStatus = entitlements.hasCareerXRay ? "Unlocked" : "Not purchased";
   const radarStatus = entitlements.hasRadar ? "Active" : "Not subscribed";
+  const lastLogin = formatLastLogin(user?.last_sign_in_at);
 
   async function handleLogout() {
     await signOut();
@@ -210,6 +211,7 @@ export default function ProfilePage() {
       <section>
         <SectionHeader title="Settings" />
         <Card className="divide-y divide-white/8 p-0" padding="none">
+          <SettingsRow label="Last login" value={lastLogin ?? "—"} />
           <SettingsRow label="Notifications" value="On" onClick={() => {}} />
           <SettingsRow label="Privacy settings" onClick={() => {}} />
           <SettingsRow label="Help and support" onClick={() => {}} />
