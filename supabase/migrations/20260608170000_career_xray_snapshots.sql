@@ -15,7 +15,7 @@ end $$;
 create table if not exists public.career_xray_snapshots (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  current_role text not null,
+  "current_role" text not null,
   target_role text not null,
   industry text,
   years_experience text,

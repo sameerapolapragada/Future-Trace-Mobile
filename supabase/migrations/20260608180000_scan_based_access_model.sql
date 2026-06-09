@@ -18,7 +18,7 @@ end $$;
 
 -- Denormalized scan fields (app maps scan_inputs + result for legacy rows)
 alter table public.career_scans
-  add column if not exists current_role text,
+  add column if not exists "current_role" text,
   add column if not exists target_role text,
   add column if not exists industry text,
   add column if not exists years_experience text,
