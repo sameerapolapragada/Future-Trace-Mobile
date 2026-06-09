@@ -1,37 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
-import { Card, LogoMark, PrimaryButtonLink } from "../design-system";
-import { homeDashboard } from "../data/mockData";
+import { Card, LogoMark, PrimaryButtonLink, SectionHeader } from "../design-system";
 import { useEntitlements } from "../lib/entitlements";
+import { getCareerXRayPath, getNewScanPath } from "../lib/entitlementsService";
+import type { SavedScanSummary } from "../lib/profileService";
+import { useProfileData } from "../lib/useProfileData";
 import { getFirstName } from "../lib/userDisplay";
 import { cn } from "../lib/cn";
-
-function SparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 2l1.4 4.6L18 8l-4.6 1.4L12 14l-1.4-4.6L6 8l4.6-1.4L12 2zm7 9l.9 2.8L22 14l-2.8.9L18 18l-.9-2.8L14 14l2.8-.9L18 11z" />
-    </svg>
-  );
-}
-
-function TrendUpIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function WarningIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" fill="#FACC15" fillOpacity="0.2" stroke="#FACC15" strokeWidth="1.5" />
-      <path d="M12 8v5" stroke="#FACC15" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="12" cy="16" r="0.75" fill="#FACC15" />
-    </svg>
-  );
-}
 
 function ScanCornersIcon() {
   return (
@@ -50,266 +26,116 @@ function RadarIcon() {
   );
 }
 
-function SectionLink({ to, label }: { to: string; label: string }) {
-  return (
-    <Link to={to} className="shrink-0 text-xs font-medium text-accent transition hover:text-accent-soft">
-      {label} &gt;
-    </Link>
-  );
-}
-
-function HelpHint({ label, text }: { label: string; text: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="mt-1">
-      <div className="flex items-center gap-1">
-        <p className="text-xs text-muted">{label}</p>
-        <button
-          type="button"
-          aria-label={`What is ${label}?`}
-          aria-expanded={open}
-          onClick={() => setOpen((prev) => !prev)}
-          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/15 text-[9px] font-bold text-muted transition hover:border-white/25 hover:text-white ft-focus-ring"
-        >
-          ?
-        </button>
-      </div>
-      {open ? (
-        <p className="mt-1.5 text-[10px] leading-relaxed text-muted">{text}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function StatCard({
-  icon,
-  topRight,
-  value,
-  label,
-  labelHelp,
-}: {
-  icon?: React.ReactNode;
-  topRight?: React.ReactNode;
-  value: React.ReactNode;
-  label: string;
-  labelHelp?: string;
-}) {
-  return (
-    <Card
-      padding="md"
-      className="border border-white/8 bg-navy-card shadow-none"
-    >
-      {(icon || topRight) && (
-        <div className={cn("mb-3 flex items-start justify-between", !icon && "justify-end")}>
-          {icon}
-          {topRight}
-        </div>
-      )}
-      <p className="text-2xl font-bold tabular-nums tracking-tight text-white">{value}</p>
-      {labelHelp ? <HelpHint label={label} text={labelHelp} /> : <p className="mt-1 text-xs text-muted">{label}</p>}
-    </Card>
-  );
-}
-
-function CareerPathRow({
-  title,
-  salary,
-  match,
-  growth,
-  barColor,
-  badgeBg,
-}: (typeof homeDashboard.careerPaths)[number]) {
-  return (
-    <div>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-white">{title}</p>
-          <p className="mt-0.5 text-xs text-muted">{salary}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold", badgeBg)}>
-            {match}% Match
-          </span>
-          <p className="mt-1 text-xs font-medium tabular-nums text-emerald-400">{growth}</p>
-        </div>
-      </div>
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/8">
-        <div className={cn("h-full rounded-full", barColor)} style={{ width: `${match}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function HomeWelcomeHeader({ firstName, subtitle }: { firstName: string; subtitle?: string }) {
+function HomeWelcomeHeader({ firstName, hasScans }: { firstName: string; hasScans: boolean }) {
   return (
     <header className="flex items-center gap-3">
       <LogoMark size={44} className="shrink-0" />
       <div className="min-w-0">
         <h1 className="text-2xl font-bold tracking-tight text-white">Welcome, {firstName}</h1>
-        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+        <p className="mt-1 text-sm text-muted">
+          {hasScans
+            ? "Your AI Career Intelligence Dashboard"
+            : "Start your first Career Scan to see your resilience profile"}
+        </p>
       </div>
     </header>
   );
 }
 
-function HomeActionButtons({ xrayTo, radarTo }: { xrayTo: string; radarTo: string }) {
-  return (
-    <div className="w-full space-y-3">
-      <PrimaryButtonLink to="/scan" fullWidth className="flex items-center justify-center gap-2">
-        <ScanCornersIcon />
-        Start New Scan
-      </PrimaryButtonLink>
-
-      <div className="grid grid-cols-2 gap-3">
-        <PrimaryButtonLink to={xrayTo} fullWidth className="flex items-center justify-center gap-2">
-          <SparkleIcon />
-          Career X-Ray
-        </PrimaryButtonLink>
-        <PrimaryButtonLink to={radarTo} fullWidth className="flex items-center justify-center gap-2">
-          <RadarIcon />
-          View Radar
-        </PrimaryButtonLink>
-      </div>
-    </div>
-  );
+function formatExposureLabel(level: string | null): string {
+  if (!level) return "—";
+  const normalized = level.toLowerCase();
+  if (normalized === "low") return "Low";
+  if (normalized === "high") return "High";
+  return "Medium";
 }
 
-function HomeEmptyState({
-  firstName,
-  xrayTo,
-  radarTo,
-}: {
-  firstName: string;
-  xrayTo: string;
-  radarTo: string;
-}) {
+function PastScansSection({ scans }: { scans: SavedScanSummary[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (scans.length === 0) return null;
+
   return (
-    <div className="ft-display-page flex min-h-full flex-1 flex-col pb-4">
-      <HomeWelcomeHeader firstName={firstName} />
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <HomeActionButtons xrayTo={xrayTo} radarTo={radarTo} />
-      </div>
-    </div>
-  );
-}
-
-function HomeDashboard({
-  firstName,
-  xrayTo,
-  radarTo,
-}: {
-  firstName: string;
-  xrayTo: string;
-  radarTo: string;
-}) {
-  return (
-    <>
-      <HomeWelcomeHeader
-        firstName={firstName}
-        subtitle="Your AI Career Intelligence Dashboard"
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard
-          topRight={
-            <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-400">
-              <TrendUpIcon />
-              {homeDashboard.resilienceTrend}
-            </span>
-          }
-          value={
-            <>
-              {homeDashboard.resilienceScore}
-              <span className="text-base font-normal text-muted">/100</span>
-            </>
-          }
-          label="Career Resilience Index"
-          labelHelp="Your overall ability to adapt as AI reshapes your field — based on skills, experience, demand, and learning agility. Higher scores mean more career options and lower risk."
+    <section className="w-full">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <SectionHeader
+          className="mb-0"
+          title="Past Scans"
+          subtitle={`${scans.length} free ${scans.length === 1 ? "scan" : "scans"}`}
         />
-        <StatCard
-          icon={<span className="flex h-8 w-8 items-center justify-center"><WarningIcon /></span>}
-          topRight={
-            <button
-              type="button"
-              aria-label="More options"
-              className="text-muted transition hover:text-white"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-                <circle cx="19" cy="12" r="1.5" />
-              </svg>
-            </button>
-          }
-          value={homeDashboard.aiExposureLabel}
-          label="AI Exposure Level"
-          labelHelp="How much of your current role could be automated or AI-assisted. Helps you spot where to upskill, pivot, or double down on human-led work."
-        />
+        <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Collapse past scans" : "Expand past scans"}
+          className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-muted transition hover:bg-white/[0.04] hover:text-white ft-focus-ring"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className={cn("transition", expanded && "rotate-180")}
+            aria-hidden
+          >
+            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
 
-      <Card padding="md" className="border border-white/8 bg-navy-card shadow-none">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">Recommended Career Paths</h2>
-          <SectionLink to={xrayTo} label="View All" />
-        </div>
-        <div className="space-y-5">
-          {homeDashboard.careerPaths.map((path) => (
-            <CareerPathRow key={path.title} {...path} />
-          ))}
-        </div>
-      </Card>
-
-      <Card padding="md" className="border border-white/8 bg-navy-card shadow-none">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white">AI Career Radar</h2>
-          <SectionLink to={radarTo} label="View Radar" />
-        </div>
-        <div className="space-y-3.5">
-          {homeDashboard.radarItems.map((item) => (
-            <div key={item.label} className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className={cn("h-2 w-2 shrink-0 rounded-full", item.dotColor)} />
-                <span className="truncate text-sm text-white">{item.label}</span>
-              </div>
-              <span className="shrink-0 text-sm font-medium tabular-nums text-emerald-400">
-                {item.growth}
-              </span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-xs text-muted">
-          {homeDashboard.newSignalsCount} new signals detected this week
-        </p>
-      </Card>
-
-      <div className="pt-1">
-        <HomeActionButtons xrayTo={xrayTo} radarTo={radarTo} />
-      </div>
-
-      <button
-        type="button"
-        aria-label="Help"
-        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-navy-card text-muted transition hover:text-white ft-focus-ring"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M9.5 9a2.5 2.5 0 0 1 4.2 1.8c0 1.8-2.2 2-2.2 3.7" strokeLinecap="round" />
-          <circle cx="12" cy="17" r="0.75" fill="currentColor" stroke="none" />
-        </svg>
-      </button>
-    </>
+      {expanded ? (
+        <Card padding="md" className="border border-white/8 bg-navy-card shadow-none">
+          <div className="space-y-2">
+            {scans.map((scan) => (
+              <Link
+                key={scan.id}
+                to={`/results/${scan.id}`}
+                className="block rounded-xl border border-white/6 bg-white/[0.02] px-3 py-3 transition hover:bg-white/[0.04] active:scale-[0.99] ft-focus-ring"
+              >
+                <p className="text-xs text-muted">Target Role</p>
+                <p className="text-sm font-semibold text-white">{scan.targetRole}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted">Resilience Index</p>
+                    <p className="text-sm font-bold tabular-nums text-white">
+                      {scan.resilienceScore != null ? (
+                        <>
+                          {scan.resilienceScore}
+                          <span className="text-xs font-normal text-muted">/100</span>
+                        </>
+                      ) : (
+                        "Pending"
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted">AI Exposure</p>
+                    <p className="text-sm font-bold text-white">
+                      {formatExposureLabel(scan.aiExposureLevel)}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+    </section>
   );
 }
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { entitlements, loading } = useEntitlements();
+  const { entitlements, loading: entitlementsLoading } = useEntitlements();
+  const { scans, loading: scansLoading } = useProfileData();
   const firstName = getFirstName(user);
-  const xrayTo = entitlements.hasCareerXRay ? "/xray" : "/career-xray";
+  const scanTo = getNewScanPath(entitlements);
+  const xrayTo = getCareerXRayPath(entitlements);
   const radarTo = entitlements.hasRadar ? "/radar" : "/upgrade";
 
-  if (loading) {
+  if (entitlementsLoading || scansLoading) {
     return (
       <div className="flex min-h-[40svh] flex-1 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
@@ -317,13 +143,32 @@ export default function HomePage() {
     );
   }
 
-  if (!entitlements.hasCompletedScan) {
-    return <HomeEmptyState firstName={firstName} xrayTo={xrayTo} radarTo={radarTo} />;
-  }
-
   return (
-    <div className="ft-display-page relative space-y-5 pb-4">
-      <HomeDashboard firstName={firstName} xrayTo={xrayTo} radarTo={radarTo} />
+    <div className="ft-display-page flex min-h-full flex-1 flex-col pb-4">
+      <HomeWelcomeHeader firstName={firstName} hasScans={scans.length > 0} />
+
+      <div className="flex flex-1 flex-col items-center justify-center pt-6">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="w-full space-y-3">
+            <PrimaryButtonLink to={scanTo} fullWidth className="flex items-center justify-center gap-2">
+              <ScanCornersIcon />
+              Start New Scan
+            </PrimaryButtonLink>
+
+            <div className="grid grid-cols-2 gap-3">
+              <PrimaryButtonLink to={xrayTo} fullWidth>
+                Career X-Ray
+              </PrimaryButtonLink>
+              <PrimaryButtonLink to={radarTo} fullWidth className="flex items-center justify-center gap-2">
+                <RadarIcon />
+                View Radar
+              </PrimaryButtonLink>
+            </div>
+          </div>
+
+          <PastScansSection scans={scans} />
+        </div>
+      </div>
     </div>
   );
 }

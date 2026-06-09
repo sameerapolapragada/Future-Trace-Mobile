@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { products } from "../data/mockData";
-import { isCheckoutConfigured, startCheckout } from "../lib/checkoutService";
+import { isCheckoutConfigured, startRadarCheckout } from "../lib/checkoutService";
 import { cn } from "../lib/cn";
 
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -49,6 +49,8 @@ function CheckIcon() {
 
 export default function UpgradePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const scansExhausted = searchParams.get("reason") === "weekly-scan" || searchParams.get("scans") === "exhausted";
   const { radar } = products;
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export default function UpgradePage() {
     setCheckoutError(null);
 
     try {
-      const url = await startCheckout("radar");
+      const url = await startRadarCheckout();
       window.location.assign(url);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
@@ -84,6 +86,13 @@ export default function UpgradePage() {
           AI Career Radar
         </h1>
       </div>
+
+      {scansExhausted ? (
+        <p className="relative text-center text-xs leading-relaxed text-muted">
+          Free users can run 1 scan per week. Upgrade to AI Career Radar for unlimited scans and
+          Career X-Rays.
+        </p>
+      ) : null}
 
       <header className="relative text-center">
         <h2 className="text-2xl font-bold tracking-tight text-white">Stay ahead of the AI job market</h2>
@@ -156,7 +165,7 @@ export default function UpgradePage() {
         Prefer a one-time snapshot only?{" "}
         <button
           type="button"
-          onClick={() => navigate("/career-xray")}
+          onClick={() => navigate("/xray/new")}
           className="font-medium text-accent transition hover:text-accent-soft ft-focus-ring"
         >
           Get Career X-Ray for {products.xray.price}

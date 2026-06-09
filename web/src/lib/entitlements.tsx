@@ -8,20 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "../auth/useAuth";
-import {
-  consumeFreeScan,
-  DEFAULT_ENTITLEMENTS,
-  fetchUserEntitlements,
-  mergeEntitlements,
-} from "./entitlementsService";
+import { DEFAULT_ENTITLEMENTS, fetchUserEntitlements } from "./entitlementsService";
 import type { Entitlements } from "../types";
 
 type EntitlementsContextValue = {
   entitlements: Entitlements;
   loading: boolean;
   error: string | null;
-  useScan: () => Promise<void>;
-  markScanComplete: () => void;
   refresh: () => Promise<void>;
 };
 
@@ -62,22 +55,12 @@ export function EntitlementsProvider({ children }: { children: ReactNode }) {
       setError(null);
       return;
     }
-
     void refresh();
   }, [isAuthenticated, refresh]);
 
-  const useScan = useCallback(async () => {
-    const remaining = await consumeFreeScan();
-    setEntitlements((current) => mergeEntitlements(current, { freeScansRemaining: remaining }));
-  }, []);
-
-  const markScanComplete = useCallback(() => {
-    setEntitlements((current) => mergeEntitlements(current, { hasCompletedScan: true }));
-  }, []);
-
   const value = useMemo(
-    () => ({ entitlements, loading, error, useScan, markScanComplete, refresh }),
-    [entitlements, loading, error, useScan, markScanComplete, refresh]
+    () => ({ entitlements, loading, error, refresh }),
+    [entitlements, loading, error, refresh]
   );
 
   return <EntitlementsContext.Provider value={value}>{children}</EntitlementsContext.Provider>;

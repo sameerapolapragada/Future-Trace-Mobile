@@ -1,5 +1,13 @@
-import { xrayCompleteReport, xrayInsights, roleTitleToSlug } from "../data/mockData";
+import {
+  careerOpportunities,
+  xrayCompleteReport,
+  xrayInsights,
+  roleTitleToSlug,
+} from "../data/mockData";
 import type {
+  CareerOpportunitiesReport,
+  CareerOpportunityRole,
+  TransitionDifficulty,
   XRayCompleteReport,
   XRayGapLevel,
   XRayImpactLevel,
@@ -43,7 +51,13 @@ function mapImpactLevel(level: ImpactLevelDb): XRayImpactLevel {
   return level === "high_impact" ? "High Impact" : "Medium Impact";
 }
 
-function mapDifficulty(level: DifficultyDb): XRayTransitionRole["difficulty"] {
+function mapDifficulty(level: DifficultyDb): TransitionDifficulty {
+  if (level === "low") return "Low";
+  if (level === "high") return "High";
+  return "Medium";
+}
+
+function mapTransitionRoleDifficulty(level: DifficultyDb): XRayTransitionRole["difficulty"] {
   if (level === "low") return "Low";
   if (level === "high") return "High";
   return "Moderate";
@@ -62,16 +76,45 @@ function personalizeWhyItFits(base: string, jobTitle: string, industry: string):
   return base.replace(/Your Salesforce expertise/i, `Your ${jobTitle} experience${industryPhrase}`);
 }
 
+function transitionRoleToOpportunity(role: XRayTransitionRole): CareerOpportunityRole {
+  return {
+    title: role.title,
+    matchScore: role.matchScore,
+    difficulty: role.difficulty === "Moderate" ? "Medium" : role.difficulty,
+    transitionTime: role.transitionTime,
+    salaryRange: role.salary,
+    whyFits: role.whyItFits,
+    missingSkills: role.missingSkills,
+  };
+}
+
+function buildOpportunitiesFromRoles(roles: XRayTransitionRole[]): CareerOpportunitiesReport {
+  return { recommendedRoles: roles.map(transitionRoleToOpportunity) };
+}
+
+function inferTargetRole(careerGoal: string): string {
+  const trimmed = careerGoal.trim();
+  if (!trimmed) return xrayCompleteReport.targetRole;
+  const roleMatch = trimmed.match(
+    /(?:into|to|as|become|transition.*?to)\s+(?:an?\s+)?(.+)/i
+  );
+  if (roleMatch?.[1]) {
+    return roleMatch[1].replace(/\.$/, "").trim();
+  }
+  return trimmed.length > 60 ? xrayCompleteReport.targetRole : trimmed;
+}
+
 function buildFromScanSession(session: NonNullable<ReturnType<typeof loadScanSession>>): {
   report: XRayCompleteReport;
   insights: XRayInsight;
+  opportunities: CareerOpportunitiesReport;
 } {
   const skills = parseSkillList(session.currentSkills);
   const tools = parseSkillList(session.toolsUsed);
   const strengths = [...new Set([...skills.slice(0, 3), ...tools.slice(0, 1)])].filter(Boolean);
   const baseReport = xrayCompleteReport;
   const baseInsights = xrayInsights;
-  const topRole = baseInsights.transitionRoles[0];
+  const targetRole = inferTargetRole(session.careerGoal);
 
   const transitionRoles = baseInsights.transitionRoles.map((role) => ({
     ...role,
@@ -81,25 +124,21 @@ function buildFromScanSession(session: NonNullable<ReturnType<typeof loadScanSes
   const report: XRayCompleteReport = {
     ...baseReport,
     currentRole: session.jobTitle,
-    topCareerOpportunity: topRole?.title ?? baseReport.topCareerOpportunity,
-    topRoleSlug: roleTitleToSlug(topRole?.title ?? baseReport.topCareerOpportunity),
-    strongestOpportunity: {
-      role: topRole?.title ?? baseReport.strongestOpportunity.role,
-      matchScore: topRole?.matchScore ?? baseReport.strongestOpportunity.matchScore,
-      whyLines: [
-        personalizeWhyItFits(
-          topRole?.whyItFits ?? baseReport.strongestOpportunity.whyLines[0],
-          session.jobTitle,
-          session.industry
-        ),
-        `Based on your background as ${session.jobTitle}${session.industry ? ` in ${session.industry}` : ""}, with a focus on ${session.careerGoal || "career growth"}.`,
-      ],
-    },
+    targetRole,
+    transferableStrengths: strengths.length
+      ? strengths.map((name) => ({
+          name,
+          whyItMatters: `Directly supports your transition from ${session.jobTitle} toward ${targetRole}.`,
+        }))
+      : baseReport.transferableStrengths,
     recommendedAction: {
-      action: session.careerGoal
-        ? `Build toward: ${session.careerGoal}`
-        : baseReport.recommendedAction.action,
-      expectedImpact: baseReport.recommendedAction.expectedImpact,
+      ...baseReport.recommendedAction,
+      primaryAction: session.careerGoal
+        ? `Build toward: ${targetRole}`
+        : baseReport.recommendedAction.primaryAction,
+      why: session.careerGoal
+        ? `Your goal — "${session.careerGoal}" — requires closing the technical gaps identified below.`
+        : baseReport.recommendedAction.why,
     },
   };
 
@@ -112,12 +151,17 @@ function buildFromScanSession(session: NonNullable<ReturnType<typeof loadScanSes
     transitionRoles,
   };
 
-  return { report, insights };
+  return {
+    report,
+    insights,
+    opportunities: buildOpportunitiesFromRoles(transitionRoles),
+  };
 }
 
 async function fetchFromSupabase(userId: string): Promise<{
   report: XRayCompleteReport;
   insights: XRayInsight;
+  opportunities: CareerOpportunitiesReport;
 } | null> {
   const { data: xrayRow, error: xrayError } = await supabase
     .from("xray_reports")
@@ -130,7 +174,7 @@ async function fetchFromSupabase(userId: string): Promise<{
       career_scans (
         resilience_score,
         summary,
-        scan_inputs (job_title_raw, industry_raw)
+        scan_inputs (job_title_raw, industry_raw, career_goal_text)
       ),
       xray_skill_gaps (skill_label, gap_level, impact_level, benefit_text, sort_order),
       xray_transition_matches (
@@ -171,7 +215,7 @@ async function fetchFromSupabase(userId: string): Promise<{
       (row): XRayTransitionRole => ({
         title: getRoleTitle(row),
         matchScore: row.match_score,
-        difficulty: mapDifficulty(row.difficulty),
+        difficulty: mapTransitionRoleDifficulty(row.difficulty),
         transitionTime: row.transition_time_label,
         missingSkills: [],
         whyItFits: row.why_it_fits,
@@ -180,56 +224,78 @@ async function fetchFromSupabase(userId: string): Promise<{
       })
     );
 
-  if (transitions.length === 0) return null;
+  const gapRows =
+    skillGaps.length > 0
+      ? skillGaps.map((gap) => ({
+          skill: gap.skill_label,
+          gap: mapGapLevel(gap.gap_level),
+          impact: mapImpactLevel(gap.impact_level),
+          whyItMatters: gap.benefit_text,
+        }))
+      : xrayCompleteReport.skillGaps;
 
-  const topRole = transitions[0];
-  const biggestGap = skillGaps[0];
-  const gapAnalysis = skillGaps.map((gap) => ({
-    skill: gap.skill_label,
-    gap: mapGapLevel(gap.gap_level),
-    impact: mapImpactLevel(gap.impact_level),
-    benefit: gap.benefit_text,
-  }));
+  const readiness = xrayRow.future_readiness_score ?? scan?.resilience_score ?? 78;
+  const currentRole = inputs?.job_title_raw ?? xrayCompleteReport.currentRole;
+  const targetRole = inputs?.career_goal_text
+    ? inferTargetRole(inputs.career_goal_text)
+    : xrayCompleteReport.targetRole;
+  const topTransition = transitions[0];
 
   const report: XRayCompleteReport = {
-    currentRole: inputs?.job_title_raw ?? xrayCompleteReport.currentRole,
-    futureReadinessScore: xrayRow.future_readiness_score ?? scan?.resilience_score ?? 78,
-    marketOutlook: xrayRow.market_outlook ?? "Stable Growth",
-    topCareerOpportunity: topRole.title,
-    topRoleSlug: roleTitleToSlug(topRole.title),
-    strongestOpportunity: {
-      role: topRole.title,
-      matchScore: topRole.matchScore,
-      whyLines: [topRole.whyItFits, `Ranked #1 among your personalized transition paths.`],
-    },
-    biggestSkillGap: biggestGap
-      ? {
-          skill: biggestGap.skill_label,
-          gapLabel: mapGapLevel(biggestGap.gap_level),
-          impactLabel: mapImpactLevel(biggestGap.impact_level),
-        }
-      : xrayCompleteReport.biggestSkillGap,
+    ...xrayCompleteReport,
+    currentRole,
+    targetRole,
+    futureReadinessScore: readiness,
+    transitionFit: readiness >= 80 ? "Strong" : readiness >= 60 ? "Moderate" : "Weak",
+    transitionDifficulty: topTransition
+      ? mapDifficulty(
+          topTransition.difficulty === "Low"
+            ? "low"
+            : topTransition.difficulty === "High"
+              ? "high"
+              : "moderate"
+        )
+      : xrayCompleteReport.transitionDifficulty,
+    estimatedTransitionTime:
+      topTransition?.transitionTime ?? xrayCompleteReport.estimatedTransitionTime,
+    skillGaps: gapRows,
     recommendedAction: {
-      action: xrayRow.recommended_action ?? xrayCompleteReport.recommendedAction.action,
-      expectedImpact: xrayCompleteReport.recommendedAction.expectedImpact,
+      ...xrayCompleteReport.recommendedAction,
+      primaryAction: xrayRow.recommended_action ?? xrayCompleteReport.recommendedAction.primaryAction,
     },
-    skillGapAnalysis: gapAnalysis.length > 0 ? gapAnalysis : xrayCompleteReport.skillGapAnalysis,
-    skillGapFooterNote: xrayCompleteReport.skillGapFooterNote,
+    transitionSnapshot: {
+      ...xrayCompleteReport.transitionSnapshot,
+      readiness,
+      transitionTime:
+        topTransition?.transitionTime ?? xrayCompleteReport.transitionSnapshot.transitionTime,
+      difficulty: topTransition
+        ? mapDifficulty(
+            topTransition.difficulty === "Low"
+              ? "low"
+              : topTransition.difficulty === "High"
+                ? "high"
+                : "moderate"
+          )
+        : xrayCompleteReport.transitionSnapshot.difficulty,
+    },
   };
 
   const insights: XRayInsight = {
     ...xrayInsights,
     roleSummary: scan?.summary ?? xrayInsights.roleSummary,
     resilienceScore: scan?.resilience_score ?? xrayInsights.resilienceScore,
-    transitionRoles: transitions,
+    transitionRoles: transitions.length > 0 ? transitions : xrayInsights.transitionRoles,
   };
 
-  return { report, insights };
+  const opportunities = buildOpportunitiesFromRoles(insights.transitionRoles);
+
+  return { report, insights, opportunities };
 }
 
 export async function loadCareerXRayData(userId: string | null): Promise<{
   report: XRayCompleteReport;
   insights: XRayInsight;
+  opportunities: CareerOpportunitiesReport;
   source: "database" | "session" | "mock";
 }> {
   if (userId) {
@@ -244,5 +310,12 @@ export async function loadCareerXRayData(userId: string | null): Promise<{
     return { ...buildFromScanSession(session), source: "session" };
   }
 
-  return { report: xrayCompleteReport, insights: xrayInsights, source: "mock" };
+  return {
+    report: xrayCompleteReport,
+    insights: xrayInsights,
+    opportunities: careerOpportunities,
+    source: "mock",
+  };
 }
+
+export { roleTitleToSlug };

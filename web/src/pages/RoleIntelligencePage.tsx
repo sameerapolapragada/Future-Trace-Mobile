@@ -1,7 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PrimaryButton } from "../design-system";
 import { getRoleIntelligenceReport, roleTitleToSlug } from "../data/mockData";
-import { RequireCareerXRay } from "../lib/RequireCareerXRay";
 import { cn } from "../lib/cn";
 import type { RoleSkillDifficulty } from "../types";
 
@@ -74,19 +73,15 @@ export default function RoleIntelligencePage() {
   const { roleSlug } = useParams<{ roleSlug: string }>();
   const report = roleSlug ? getRoleIntelligenceReport(roleSlug) : undefined;
 
-  return (
-    <RequireCareerXRay>
-      {!report ? (
-        <div className="py-8 text-center">
-          <p className="text-muted">Role report not found.</p>
-          <Link to="/xray" className="mt-4 inline-block text-sm text-accent">
-            Back to Career X-Ray
-          </Link>
-        </div>
-      ) : (
-        <RoleIntelligenceContent navigate={navigate} report={report} />
-      )}
-    </RequireCareerXRay>
+  return !report ? (
+    <div className="py-8 text-center">
+      <p className="text-muted">Role report not found.</p>
+      <Link to="/xray" className="mt-4 inline-block text-sm text-accent">
+        Back to Career X-Ray
+      </Link>
+    </div>
+  ) : (
+    <RoleIntelligenceContent navigate={navigate} report={report} />
   );
 }
 

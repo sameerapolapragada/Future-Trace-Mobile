@@ -1,4 +1,5 @@
 import type {
+  CareerOpportunitiesReport,
   CareerScan,
   HomeDashboard,
   Product,
@@ -154,11 +155,11 @@ export const careerScans: CareerScan[] = [
       "Product Strategy",
     ],
     transitionRoles: [
-      "Salesforce Architect",
-      "AI Operations Analyst",
-      "RevOps Manager",
-      "Product Operations Manager",
-      "AI Governance Analyst",
+      "Model Trust Auditor",
+      "AI Risk Manager",
+      "AI Compliance Lead",
+      "Prompt Operations Analyst",
+      "AI Implementation Partner",
     ],
   },
 ];
@@ -178,81 +179,59 @@ export const xrayInsights: XRayInsight = {
   ],
   transitionRoles: [
     {
-      title: "Salesforce Architect",
-      matchScore: 90,
-      difficulty: "Moderate",
-      transitionTime: "6–12 months",
-      missingSkills: [
-        "Solution Design",
-        "Integration Architecture",
-        "Platform Certifications",
-        "Enterprise Security",
-        "Data Modeling",
-      ],
-      whyItFits:
-        "Your Salesforce expertise and system architecture knowledge make this a natural progression with strong market demand.",
-      trend: "rising",
-      salary: "$130k – $165k",
-    },
-    {
       title: "AI Operations Analyst",
       matchScore: 92,
       difficulty: "Moderate",
-      transitionTime: "6–12 months",
-      missingSkills: [
-        "AI Workflow Design",
-        "Prompt Evaluation",
-        "Model Monitoring",
-        "LLM Integration",
-        "AI Tool Orchestration",
-        "Performance Metrics",
-      ],
+      transitionTime: "3–6 Months",
+      missingSkills: ["AI Tools", "Prompt Engineering", "Workflow Automation"],
       whyItFits:
-        "Your automation experience and technical skills align perfectly with the growing AI operations field.",
+        "Your Salesforce workflow optimization skills translate directly to AI operations. You already bridge technical systems with business processes.",
       trend: "rising",
-      salary: "$95k – $130k",
+      salary: "$100K – $130K",
     },
     {
-      title: "RevOps Manager",
+      title: "Model Trust Auditor",
+      matchScore: 88,
+      difficulty: "Moderate",
+      transitionTime: "3–6 Months",
+      missingSkills: ["Model Validation", "Bias Detection", "Audit Frameworks"],
+      whyItFits:
+        "Your attention to process quality and compliance-minded work maps directly to verifying AI model trustworthiness.",
+      trend: "rising",
+      salary: "$105K – $140K",
+    },
+    {
+      title: "Salesforce Architect",
       matchScore: 85,
       difficulty: "Low",
-      transitionTime: "4–6 months",
-      missingSkills: ["Revenue Analytics", "Forecasting", "Cross-Functional Leadership"],
+      transitionTime: "2–4 Months",
+      missingSkills: ["Solution Architecture", "Integration Design"],
       whyItFits:
-        "Your stakeholder management and process optimization skills translate directly to revenue operations leadership.",
-      trend: "rising",
-      salary: "$110k – $145k",
-    },
-    {
-      title: "Product Operations Manager",
-      matchScore: 82,
-      difficulty: "Moderate",
-      transitionTime: "6–12 months",
-      missingSkills: ["Product Strategy", "Product Planning", "User Research", "Roadmap Planning"],
-      whyItFits:
-        "Your cross-functional experience and strategic thinking position you well for product operations roles.",
+        "Your deep Salesforce expertise positions you to architect AI-enabled CRM solutions without a full career pivot.",
       trend: "stable",
-      salary: "$105k – $140k",
+      salary: "$115K – $150K",
     },
     {
       title: "AI Governance Analyst",
-      matchScore: 75,
-      difficulty: "High",
-      transitionTime: "12–18 months",
-      missingSkills: [
-        "AI Policy Frameworks",
-        "Compliance Auditing",
-        "Risk Assessment",
-        "Regulatory Mapping",
-        "Ethics Review",
-        "Documentation Standards",
-        "Stakeholder Training",
-        "Incident Response",
-      ],
+      matchScore: 82,
+      difficulty: "Moderate",
+      transitionTime: "3–6 Months",
+      missingSkills: ["AI Policy", "Compliance Auditing"],
       whyItFits:
-        "Your industry knowledge and attention to detail are valuable for emerging AI governance and compliance roles.",
+        "Your industry knowledge and detail orientation align with emerging AI governance roles as regulations accelerate.",
       trend: "rising",
-      salary: "$100k – $135k",
+      salary: "$95K – $125K",
+    },
+    {
+      title: "Product Operations Manager",
+      matchScore: 78,
+      difficulty: "Low",
+      transitionTime: "2–4 Months",
+      missingSkills: ["Product Analytics", "Roadmap Planning"],
+      whyItFits:
+        "Your stakeholder management and process optimization experience fit product ops roles that bridge business and AI product teams.",
+      trend: "stable",
+      salary: "$110K – $140K",
     },
   ],
 };
@@ -280,65 +259,113 @@ export function getStrongestTransitionMatch(): XRayTransitionRole {
   })[0];
 }
 
-export function getCareerXRaySnapshot() {
-  const latestScan = careerScans[0];
-  const match = getStrongestTransitionMatch();
+export const xrayCompleteReport: XRayCompleteReport = {
+  xrayId: "XR-87521",
+  currentRole: "Salesforce Business Analyst",
+  targetRole: "AI/ML Engineer",
+  futureReadinessScore: 78,
+  transitionFit: "Strong",
+  transitionDifficulty: "High",
+  estimatedTransitionTime: "6–12 months",
+  currentSalaryRange: "$95K – $115K",
+  targetSalaryRange: "$125K – $160K",
+  salaryUpside: "+$30K – $45K",
+  transferableStrengths: [
+    {
+      name: "Business process analysis",
+      whyItMatters: "Helps translate business problems into AI use cases.",
+    },
+    {
+      name: "Salesforce ecosystem knowledge",
+      whyItMatters: "Useful for building AI workflows inside CRM environments.",
+    },
+    {
+      name: "Stakeholder communication",
+      whyItMatters: "Important for working across product, data, and engineering teams.",
+    },
+  ],
+  skillGaps: [
+    {
+      skill: "AI/ML Fundamentals",
+      gap: "Large Gap",
+      impact: "High Impact",
+      whyItMatters:
+        "Required to understand model behavior, training concepts, and AI system limitations.",
+    },
+    {
+      skill: "Python Programming",
+      gap: "Large Gap",
+      impact: "High Impact",
+      whyItMatters:
+        "Core language for building, testing, and deploying machine learning models in production.",
+    },
+    {
+      skill: "Model Evaluation",
+      gap: "Moderate Gap",
+      impact: "High Impact",
+      whyItMatters:
+        "Critical for measuring model performance and ensuring reliable AI outputs.",
+    },
+    {
+      skill: "Data Engineering",
+      gap: "Moderate Gap",
+      impact: "Medium Impact",
+      whyItMatters:
+        "Important for preparing and processing data pipelines that feed ML models.",
+    },
+    {
+      skill: "Deep Learning",
+      gap: "Small Gap",
+      impact: "Medium Impact",
+      whyItMatters: "Helpful for advanced roles requiring neural network expertise.",
+    },
+  ],
+  recommendedAction: {
+    primaryAction: "Build AI/ML foundation before applying to AI/ML Engineer roles.",
+    why: "Your business analysis experience is useful, but the target role requires stronger technical ML skills.",
+    next30Days: [
+      "Learn ML fundamentals",
+      "Complete one Python ML mini-project",
+      "Study model evaluation concepts",
+      "Build one AI workflow connected to your current domain",
+    ],
+    expectedImpact: "+12 Future Readiness Points",
+  },
+  transitionSnapshot: {
+    transitionTime: "6–12 months",
+    difficulty: "High",
+    readiness: 78,
+    salaryUpside: "+$30k – $45k",
+    marketDemand: "High",
+  },
+};
 
+function transitionRoleToOpportunity(role: XRayTransitionRole) {
   return {
-    currentRole: latestScan.role,
-    targetRole: match.title,
-    matchScore: match.matchScore,
+    title: role.title,
+    matchScore: role.matchScore,
+    difficulty: (role.difficulty === "Moderate" ? "Medium" : role.difficulty) as
+      | "Low"
+      | "Medium"
+      | "High",
+    transitionTime: role.transitionTime,
+    salaryRange: role.salary,
+    whyFits: role.whyItFits,
+    missingSkills: role.missingSkills,
   };
 }
 
-const strongestTransitionMatch = getStrongestTransitionMatch();
-
-export const xrayCompleteReport: XRayCompleteReport = {
-  currentRole: userProfile.title,
-  futureReadinessScore: careerScans[0].resilienceScore,
-  marketOutlook: "Stable Growth",
-  topCareerOpportunity: strongestTransitionMatch.title,
-  topRoleSlug: roleTitleToSlug(strongestTransitionMatch.title),
-  strongestOpportunity: {
-    role: strongestTransitionMatch.title,
-    matchScore: strongestTransitionMatch.matchScore,
-    whyLines: [
-      strongestTransitionMatch.whyItFits,
-      `Highest match among your scan roles with ${strongestTransitionMatch.trend} demand and a ${strongestTransitionMatch.transitionTime} transition window.`,
-    ],
-  },
-  biggestSkillGap: {
-    skill: "AI Governance",
-    gapLabel: "Moderate Gap",
-    impactLabel: "High Impact",
-  },
-  recommendedAction: {
-    action: "Learn AI Governance",
-    expectedImpact: "+12 Match Score",
-  },
-  skillGapAnalysis: [
-    {
-      skill: "AI Governance",
-      gap: "Moderate Gap",
-      impact: "High Impact",
-      benefit: "+12 Match Score",
-    },
-    {
-      skill: "Prompt Engineering",
-      gap: "Large Gap",
-      impact: "High Impact",
-      benefit: "+10 Match Score",
-    },
-    {
-      skill: "Workflow Automation",
-      gap: "Small Gap",
-      impact: "Medium Impact",
-      benefit: "+7 Match Score",
-    },
-  ],
-  skillGapFooterNote:
-    "Closing these gaps increases your match score for AI Operations roles by up to +29 points",
+export const careerOpportunities: CareerOpportunitiesReport = {
+  recommendedRoles: xrayInsights.transitionRoles.map(transitionRoleToOpportunity),
 };
+
+export function getCareerXRaySnapshot() {
+  return {
+    currentRole: xrayCompleteReport.currentRole,
+    targetRole: xrayCompleteReport.targetRole,
+    matchScore: xrayCompleteReport.futureReadinessScore,
+  };
+}
 
 export const radarDashboard: RadarDashboard = {
   readinessScore: 78,

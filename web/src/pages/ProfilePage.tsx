@@ -3,6 +3,8 @@ import { Badge, Card, GhostButton, SectionHeader } from "../design-system";
 import { useAuth } from "../auth/useAuth";
 import { products } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
+import { getCareerXRayPath, getNewScanPath } from "../lib/entitlementsService";
+import { useScanHistory } from "../lib/useScanHistory";
 import { useProfileData } from "../lib/useProfileData";
 import { getDisplayName, formatLastLogin } from "../lib/userDisplay";
 
@@ -40,15 +42,13 @@ function SettingsRow({
   return <div className="flex items-center justify-between px-4 py-3.5">{inner}</div>;
 }
 
-function getSubscriptionLabel(hasXRay: boolean, hasRadar: boolean) {
-  if (hasXRay && hasRadar) return "Full access";
+function getSubscriptionLabel(hasRadar: boolean) {
   if (hasRadar) return "AI Career Radar";
-  if (hasXRay) return "Career X-Ray Pass";
   return "Free";
 }
 
-function getSubscriptionTone(hasXRay: boolean, hasRadar: boolean) {
-  if (hasXRay || hasRadar) return "success" as const;
+function getSubscriptionTone(hasRadar: boolean) {
+  if (hasRadar) return "success" as const;
   return "default" as const;
 }
 
@@ -61,16 +61,22 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { entitlements, loading: entitlementsLoading } = useEntitlements();
+  const { items: scanHistory, loading: historyLoading } = useScanHistory();
   const { profile, scans, loading: profileLoading, error } = useProfileData();
 
-  const loading = entitlementsLoading || profileLoading;
+  const loading = entitlementsLoading || profileLoading || historyLoading;
+  const generatedXrays = scanHistory.filter((s) => s.xray?.status === "generated");
+  const xrayStatusLabel =
+    generatedXrays.length > 0
+      ? `${generatedXrays.length} X-Ray${generatedXrays.length === 1 ? "" : "s"}`
+      : "Per scan purchase";
   const latestScan = scans[0];
   const displayName = getDisplayName(user, profile);
   const email = user?.email ?? profile?.email ?? "";
-  const careerTitle = profile?.job_role ?? latestScan?.title ?? "Complete a scan to add your role";
+  const careerTitle = profile?.job_role ?? latestScan?.currentRole ?? "Complete a scan to add your role";
   const avatarInitial = displayName.charAt(0).toUpperCase();
 
-  const xrayStatus = entitlements.hasCareerXRay ? "Unlocked" : "Not purchased";
+  const xrayStatusLabelDisplay = xrayStatusLabel;
   const radarStatus = entitlements.hasRadar ? "Active" : "Not subscribed";
   const lastLogin = formatLastLogin(user?.last_sign_in_at);
 
@@ -122,9 +128,6 @@ export default function ProfilePage() {
             <p className="mt-2 text-2xl font-bold text-white">
               {formatExposureLevel(latestScan.aiExposureLevel)}
             </p>
-            {latestScan.aiExposure != null ? (
-              <p className="mt-0.5 text-xs tabular-nums text-muted">{latestScan.aiExposure}%</p>
-            ) : null}
           </Card>
         </div>
       ) : null}
@@ -134,16 +137,16 @@ export default function ProfilePage() {
         <Card className="divide-y divide-white/8 p-0" padding="none">
           <div className="flex items-center justify-between px-4 py-3.5">
             <span className="text-sm text-muted">Subscription status</span>
-            <Badge tone={getSubscriptionTone(entitlements.hasCareerXRay, entitlements.hasRadar)}>
-              {getSubscriptionLabel(entitlements.hasCareerXRay, entitlements.hasRadar)}
+            <Badge tone={getSubscriptionTone(entitlements.hasRadar)}>
+              {getSubscriptionLabel(entitlements.hasRadar)}
             </Badge>
           </div>
           <Link
-            to={entitlements.hasCareerXRay ? "/xray" : "/career-xray"}
+            to={getCareerXRayPath(entitlements)}
             className="flex items-center justify-between px-4 py-3.5 transition hover:bg-white/[0.03]"
           >
             <span className="text-sm text-white">Career X-Ray access</span>
-            <Badge tone={entitlements.hasCareerXRay ? "success" : "default"}>{xrayStatus}</Badge>
+            <Badge tone={generatedXrays.length > 0 ? "success" : "default"}>{xrayStatusLabelDisplay}</Badge>
           </Link>
           <Link
             to={entitlements.hasRadar ? "/radar" : "/upgrade"}
@@ -156,17 +159,14 @@ export default function ProfilePage() {
       </section>
 
       <section>
-        <SectionHeader
-          title="Saved scans"
-          subtitle={`${scans.length} ${scans.length === 1 ? "report" : "reports"}`}
-        />
-        {scans.length === 0 ? (
+        <SectionHeader title="Scan History" subtitle="Free scans and X-Ray status" />
+        {scanHistory.length === 0 ? (
           <Card padding="md">
             <p className="text-center text-sm text-muted">
               No saved scans yet. Run your first Career Scan to build your profile.
             </p>
             <Link
-              to="/scan"
+              to={getNewScanPath(entitlements)}
               className="mt-3 block text-center text-xs font-medium text-accent transition hover:text-accent-soft"
             >
               Start Career Scan →
@@ -174,33 +174,27 @@ export default function ProfilePage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {scans.map((scan) => (
-              <Link key={scan.id} to="/canvas" state={{ scanId: scan.id }}>
+            {scanHistory.map((scan) => (
+              <Link key={scan.id} to={`/results/${scan.id}`}>
                 <Card className="flex items-center justify-between py-3 transition active:scale-[0.99]">
                   <div>
-                    <p className="text-sm font-medium text-white">{scan.title}</p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      {scan.date} · {scan.role}
+                    <p className="text-sm font-medium text-white">
+                      {scan.currentRole} → {scan.targetRole}
                     </p>
+                    <p className="mt-0.5 text-xs text-muted">Free Scan Available</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold tabular-nums text-white">
-                      {scan.resilienceScore != null ? `${scan.resilienceScore}/100` : "Pending"}
-                    </p>
-                    <p className="text-xs capitalize text-muted">
-                      {scan.aiExposureLevel
-                        ? `${formatExposureLevel(scan.aiExposureLevel)} exposure`
-                        : scan.status}
-                    </p>
+                    <p className="text-xs font-medium text-accent">{scan.xrayStatusLabel}</p>
+                    <p className="mt-0.5 text-[10px] text-muted">X-Ray Status</p>
                   </div>
                 </Card>
               </Link>
             ))}
           </div>
         )}
-        {entitlements.freeScansRemaining > 0 && scans.length > 0 ? (
+        {scanHistory.length > 0 ? (
           <Link
-            to="/scan"
+            to={getNewScanPath(entitlements)}
             className="mt-3 block text-center text-xs font-medium text-accent transition hover:text-accent-soft"
           >
             Run a new scan
@@ -218,7 +212,7 @@ export default function ProfilePage() {
         </Card>
       </section>
 
-      {!entitlements.hasCareerXRay || !entitlements.hasRadar ? (
+      {!entitlements.hasRadar ? (
         <Card variant="elevated" padding="md">
           <p className="text-sm font-medium text-white">Upgrade your intelligence</p>
           <p className="mt-1 text-xs leading-relaxed text-muted">

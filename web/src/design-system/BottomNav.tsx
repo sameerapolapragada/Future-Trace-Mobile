@@ -1,21 +1,25 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useEntitlements } from "../lib/entitlements";
+import { getNewScanPath } from "../lib/entitlementsService";
 import { cn } from "./utils";
 
 const tabs = [
-  { to: "/home", label: "Home", icon: HomeIcon, isActive: (path: string) => path === "/home" },
+  { id: "home", to: "/home", label: "Home", icon: HomeIcon, isActive: (path: string) => path === "/home" },
   {
-    to: "/scan",
+    id: "scan",
     label: "Scan",
     icon: ScanIcon,
-    isActive: (path: string) => path === "/scan" || path === "/results" || path === "/canvas",
+    isActive: (path: string) => path === "/scan" || path.startsWith("/results/"),
   },
   {
+    id: "radar",
     to: "/radar",
     label: "Radar",
     icon: RadarIcon,
     isActive: (path: string) => path === "/radar",
   },
   {
+    id: "profile",
     to: "/profile",
     label: "Profile",
     icon: ProfileIcon,
@@ -25,6 +29,8 @@ const tabs = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { entitlements } = useEntitlements();
+  const scanTo = getNewScanPath(entitlements);
 
   return (
     <nav
@@ -32,12 +38,13 @@ export function BottomNav() {
       aria-label="Main navigation"
     >
       <div className="flex items-stretch justify-around px-1 pt-2">
-        {tabs.map(({ to, label, icon: Icon, isActive }) => {
+        {tabs.map(({ id, to, label, icon: Icon, isActive }) => {
           const active = isActive(pathname);
+          const href = id === "scan" ? scanTo : to!;
           return (
             <NavLink
-              key={to}
-              to={to}
+              key={id}
+              to={href}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium transition",
                 active ? "text-accent" : "text-muted hover:text-white/80"

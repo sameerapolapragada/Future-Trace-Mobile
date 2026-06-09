@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import {
-  fetchSavedScans,
+  fetchPastScans,
   fetchUserProfile,
   type SavedScanSummary,
   type UserProfileRecord,
@@ -29,7 +29,7 @@ export function useProfileData() {
     try {
       const [profileRow, scanRows] = await Promise.all([
         fetchUserProfile(userId),
-        fetchSavedScans(userId),
+        fetchPastScans(userId),
       ]);
       setProfile(profileRow);
       setScans(scanRows);

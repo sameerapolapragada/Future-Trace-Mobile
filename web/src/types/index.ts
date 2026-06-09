@@ -189,36 +189,137 @@ export type HomeDashboard = {
 
 export type XRayGapLevel = "Small Gap" | "Moderate Gap" | "Large Gap";
 export type XRayImpactLevel = "Medium Impact" | "High Impact";
+export type TransitionFit = "Strong" | "Moderate" | "Weak";
+export type TransitionDifficulty = "Low" | "Medium" | "High";
 
 export type XRayCompleteSkillGap = {
   skill: string;
   gap: XRayGapLevel;
   impact: XRayImpactLevel;
-  benefit: string;
+  whyItMatters: string;
+};
+
+export type XRayTransferableStrength = {
+  name: string;
+  whyItMatters: string;
+};
+
+export type XRayRecommendedAction = {
+  primaryAction: string;
+  why: string;
+  next30Days: string[];
+  expectedImpact: string;
+};
+
+export type XRayTransitionSnapshot = {
+  transitionTime: string;
+  difficulty: TransitionDifficulty;
+  readiness: number;
+  salaryUpside: string;
+  marketDemand: string;
 };
 
 export type XRayCompleteReport = {
+  xrayId?: string;
   currentRole: string;
+  targetRole: string;
   futureReadinessScore: number;
-  marketOutlook: string;
-  topCareerOpportunity: string;
-  topRoleSlug: string;
-  strongestOpportunity: { role: string; matchScore: number; whyLines: [string, string] };
-  biggestSkillGap: {
-    skill: string;
-    gapLabel: XRayGapLevel;
-    impactLabel: XRayImpactLevel;
-  };
-  recommendedAction: { action: string; expectedImpact: string };
-  skillGapAnalysis: XRayCompleteSkillGap[];
-  skillGapFooterNote: string;
+  transitionFit: TransitionFit;
+  transitionDifficulty: TransitionDifficulty;
+  estimatedTransitionTime: string;
+  currentSalaryRange: string;
+  targetSalaryRange: string;
+  salaryUpside: string;
+  transferableStrengths: XRayTransferableStrength[];
+  skillGaps: XRayCompleteSkillGap[];
+  recommendedAction: XRayRecommendedAction;
+  transitionSnapshot: XRayTransitionSnapshot;
+};
+
+export type CareerOpportunityRole = {
+  title: string;
+  matchScore: number;
+  difficulty: TransitionDifficulty;
+  transitionTime: string;
+  salaryRange: string;
+  whyFits: string;
+  missingSkills: string[];
+};
+
+export type CareerOpportunitiesReport = {
+  recommendedRoles: CareerOpportunityRole[];
+};
+
+export type ScanFormInput = {
+  currentRole: string;
+  targetRole: string;
+  industry: string;
+  yearsExperience: string;
+  skills: string;
+  tools: string;
+  careerGoal: string;
+  workPreference: "Technical" | "Business" | "Hybrid";
+};
+
+export type FreeScanResult = {
+  currentRole: string;
+  targetRole: string;
+  resilienceScore: number;
+  aiExposureLevel: AIExposureLevel;
+  aiExposureLabel: string;
+  strengths: string[];
+  vulnerabilities: string[];
+  opportunityZones: string[];
+  summary: string;
+};
+
+export type CareerScanRecord = {
+  id: string;
+  userId: string;
+  currentRole: string;
+  targetRole: string;
+  industry: string | null;
+  yearsExperience: string | null;
+  skills: string | null;
+  tools: string | null;
+  careerGoal: string | null;
+  workPreference: string | null;
+  freeResult: FreeScanResult | null;
+  status: string;
+  createdAt: string;
+};
+
+export type CareerXrayAccessType = "one_time_purchase" | "radar_subscription";
+export type CareerXrayStatus = "pending_payment" | "paid" | "generated" | "failed";
+
+export type CareerXRaySnapshotResult = {
+  report: XRayCompleteReport;
+  opportunities: CareerOpportunitiesReport;
+};
+
+export type CareerXrayRecord = {
+  id: string;
+  scanId: string;
+  userId: string;
+  accessType: CareerXrayAccessType;
+  status: CareerXrayStatus;
+  stripeCheckoutSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  result: CareerXRaySnapshotResult | null;
+  generatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ScanHistoryItem = CareerScanRecord & {
+  xray: CareerXrayRecord | null;
+  xrayStatusLabel: string;
 };
 
 export type Entitlements = {
-  freeScansRemaining: number;
-  hasCareerXRay: boolean;
   hasRadar: boolean;
   hasCompletedScan: boolean;
+  canRunScan: boolean;
 };
 
 export type TransitionRadarPath = {

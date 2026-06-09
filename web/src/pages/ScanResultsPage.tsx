@@ -1,236 +1,167 @@
-import { useLocation } from "react-router-dom";
-import { PrimaryButtonLink, SecondaryButtonLink } from "../design-system";
-import { careerScans, getScanById } from "../data/mockData";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Badge, PrimaryButton, SecondaryButtonLink } from "../design-system";
+import { formatRoleName } from "../components/XRayReportSections";
+import { isCheckoutConfigured, startXrayCheckout } from "../lib/checkoutService";
+import { createPendingXrayPurchase, generateCareerXray } from "../lib/xrayService";
+import { useAuth } from "../auth/useAuth";
+import { useCareerScan, useScanAccess } from "../lib/useScanHistory";
+import { useCheckoutReturn } from "../lib/useCheckoutReturn";
+import { useEntitlements } from "../lib/entitlements";
 import { cn } from "../lib/cn";
-
-type ResultsLocationState = {
-  scanId?: string;
-};
-
-const STATUS = "Future-ready with moderate AI exposure";
-
-const UNLOCK_TAGS = ["Task-by-task breakdown", "90-day action plan", "Salary forecasts"] as const;
-
-function SparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 2l1.4 4.6L18 8l-4.6 1.4L12 14l-1.4-4.6L6 8l4.6-1.4L12 2z" />
-    </svg>
-  );
-}
-
-function TrendUpIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function WarningIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 9v4M12 17h.01" strokeLinecap="round" />
-      <path d="M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
-    </svg>
-  );
-}
-
-function TargetIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="4" y="5" width="16" height="16" rx="2" />
-      <path d="M8 3v4M16 3v4M4 11h16" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function InsightBar({
-  label,
-  tone,
-  trailingIcon,
-}: {
-  label: string;
-  tone: "strength" | "vulnerability" | "opportunity";
-  trailingIcon: React.ReactNode;
-}) {
-  const styles = {
-    strength: {
-      bar: "bg-emerald-500/10 border-emerald-500/20",
-      dot: "bg-emerald-400",
-      icon: "text-emerald-400",
-    },
-    vulnerability: {
-      bar: "bg-amber-500/10 border-amber-500/25",
-      dot: "bg-amber-400",
-      icon: "text-amber-400",
-    },
-    opportunity: {
-      bar: "bg-accent/10 border-accent/25",
-      dot: "bg-accent",
-      icon: "text-accent",
-    },
-  }[tone];
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 rounded-xl border px-3.5 py-3",
-        styles.bar
-      )}
-    >
-      <span className={cn("h-2 w-2 shrink-0 rounded-full", styles.dot)} />
-      <span className="min-w-0 flex-1 text-sm text-white">{label}</span>
-      <span className={cn("shrink-0", styles.icon)}>{trailingIcon}</span>
-    </div>
-  );
-}
 
 function InsightSection({
   title,
-  icon,
-  iconClass,
   items,
   tone,
-  trailingIcon,
 }: {
   title: string;
-  icon: React.ReactNode;
-  iconClass: string;
   items: string[];
   tone: "strength" | "vulnerability" | "opportunity";
-  trailingIcon: React.ReactNode;
 }) {
+  const border = {
+    strength: "border-success/20",
+    vulnerability: "border-danger/20",
+    opportunity: "border-accent/20",
+  };
+  const heading = {
+    strength: "text-success",
+    vulnerability: "text-danger",
+    opportunity: "text-accent",
+  };
+
   return (
-    <section>
-      <div className="mb-3 flex items-center gap-2">
-        <span className={cn("flex h-7 w-7 items-center justify-center rounded-full bg-white/5", iconClass)}>
-          {icon}
-        </span>
-        <h2 className="text-sm font-semibold text-white">{title}</h2>
-      </div>
-      <div className="space-y-2">
+    <section className={cn("rounded-2xl border bg-navy-card/90 p-4", border[tone])}>
+      <h2 className={cn("mb-3 text-[10px] font-bold uppercase tracking-widest", heading[tone])}>
+        {title}
+      </h2>
+      <ul className="space-y-2">
         {items.map((item) => (
-          <InsightBar key={item} label={item} tone={tone} trailingIcon={trailingIcon} />
+          <li key={item} className="text-sm text-white/90">
+            • {item}
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
 
 export default function ScanResultsPage() {
-  const location = useLocation();
-  const state = location.state as ResultsLocationState | null;
-  const scan = getScanById(state?.scanId ?? "scan-1") ?? careerScans[0];
+  const { scanId } = useParams<{ scanId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { refresh: refreshEntitlements } = useEntitlements();
+  const { scan, loading, error, refresh } = useCareerScan(scanId);
+  const { showBuyXray, xray, isRadar } = useScanAccess(scanId);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  if (!scan) {
+  useCheckoutReturn(async () => {
+    await refreshEntitlements();
+    await refresh();
+  });
+
+  const result = scan?.freeResult;
+
+  async function handleUnlockXray() {
+    if (!user?.id || !scanId) return;
+    if (!isCheckoutConfigured()) {
+      setActionError("Checkout is not configured.");
+      return;
+    }
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const pending = await createPendingXrayPurchase(user.id, scanId);
+      const url = await startXrayCheckout(scanId, pending.id);
+      window.location.assign(url);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Checkout failed");
+      setActionLoading(false);
+    }
+  }
+
+  async function handleGenerateXray() {
+    if (!user?.id || !scanId) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      await generateCareerXray(user.id, scanId);
+      navigate(`/xray/${scanId}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Generation failed");
+      setActionLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40svh] flex-1 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+      </div>
+    );
+  }
+
+  if (error || !scan || !result) {
     return (
       <div className="py-8 text-center">
-        <p className="text-muted">No scan results yet.</p>
-        <PrimaryButtonLink to="/scan" fullWidth className="mt-4">
-          Run free scan
-        </PrimaryButtonLink>
+        <p className="text-muted">{error ?? "Scan not found."}</p>
+        <Link to="/scan" className="mt-4 inline-block text-sm text-accent">
+          Run a new scan
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 pb-2">
-      <h1 className="text-center text-lg font-semibold tracking-tight text-white">Career Assessment</h1>
+    <div className="space-y-5 pb-4">
+      <h1 className="text-center text-lg font-semibold text-white">Free Scan Result</h1>
 
-      <div className="rounded-2xl border border-white/8 bg-gradient-to-br from-accent-purple/25 via-[#1a1f35] to-accent/15 px-5 py-6 text-center">
-        <div className="mb-4 flex items-center justify-center gap-2 text-sm text-accent-soft">
-          <SparkleIcon />
-          <span>Career Resilience Index</span>
-        </div>
-        <p className="text-5xl font-bold tabular-nums tracking-tight text-white">
-          {scan.resilienceScore}
+      <div className="rounded-2xl border border-white/10 bg-navy-card p-4 text-center">
+        <p className="text-sm font-bold text-white">
+          {formatRoleName(result.currentRole)} → {formatRoleName(result.targetRole)}
+        </p>
+        <p className="mt-4 text-5xl font-bold tabular-nums text-white">
+          {result.resilienceScore}
           <span className="text-2xl font-normal text-muted">/100</span>
         </p>
-        <p className="mt-3 text-sm font-medium text-emerald-400">{STATUS}</p>
-      </div>
-
-      <InsightSection
-        title="Strengths"
-        icon={<TrendUpIcon />}
-        iconClass="text-emerald-400"
-        items={scan.strengths}
-        tone="strength"
-        trailingIcon={<SparkleIcon />}
-      />
-
-      <InsightSection
-        title="Vulnerabilities"
-        icon={<WarningIcon />}
-        iconClass="text-amber-400"
-        items={scan.vulnerabilities}
-        tone="vulnerability"
-        trailingIcon={<WarningIcon />}
-      />
-
-      <InsightSection
-        title="Opportunity Zones"
-        icon={<TargetIcon />}
-        iconClass="text-accent"
-        items={scan.opportunityZones}
-        tone="opportunity"
-        trailingIcon={<TargetIcon />}
-      />
-
-      <div className="rounded-2xl border border-accent-purple/25 bg-navy-card p-4">
-        <div className="flex gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-purple/20 text-accent-purple">
-            <LockIcon />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-white">Unlock deeper insights</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted">
-              Get your full Career X-Ray with detailed task-level AI exposure analysis, salary
-              projections, and personalized transition roadmap.
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {UNLOCK_TAGS.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] text-muted"
-            >
-              {tag}
-            </span>
-          ))}
+        <p className="mt-2 text-xs text-muted">Career Resilience Score</p>
+        <div className="mt-3">
+          <Badge tone="default">AI Exposure: {result.aiExposureLabel}</Badge>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 pt-1">
-        <PrimaryButtonLink to="/career-xray" fullWidth className="flex items-center justify-center gap-2">
-          <SparkleIcon />
-          Unlock Career X-Ray
-        </PrimaryButtonLink>
-        <SecondaryButtonLink to="/upgrade" fullWidth className="flex items-center justify-center gap-2 text-sm">
-          <CalendarIcon />
-          Track My Career Monthly
-        </SecondaryButtonLink>
+      <InsightSection title="Strengths" items={result.strengths} tone="strength" />
+      <InsightSection title="Vulnerabilities" items={result.vulnerabilities} tone="vulnerability" />
+      <InsightSection title="Opportunity Zones" items={result.opportunityZones} tone="opportunity" />
+
+      <div className="space-y-3 pt-2">
+        {xray?.status === "generated" ? (
+          <PrimaryButton fullWidth onClick={() => navigate(`/xray/${scanId}`)}>
+            View Career X-Ray
+          </PrimaryButton>
+        ) : isRadar ? (
+          <PrimaryButton fullWidth disabled={actionLoading} onClick={() => void handleGenerateXray()}>
+            {actionLoading ? "Generating…" : "Generate Career X-Ray"}
+          </PrimaryButton>
+        ) : showBuyXray ? (
+          <PrimaryButton fullWidth disabled={actionLoading} onClick={() => void handleUnlockXray()}>
+            {actionLoading ? "Starting checkout…" : "Unlock Career X-Ray — $1.99"}
+          </PrimaryButton>
+        ) : null}
+
+        {!isRadar ? (
+          <SecondaryButtonLink to="/upgrade" fullWidth>
+            Upgrade to AI Career Radar — $9.99/month
+          </SecondaryButtonLink>
+        ) : null}
       </div>
+
+      {actionError ? (
+        <p className="text-center text-xs text-red-400" role="alert">
+          {actionError}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { inferTargetRole, formatRoleLabel } from "./targetRole";
 import { supabase } from "./supabaseClient";
 
 export type UserProfileRecord = {
@@ -9,11 +10,10 @@ export type UserProfileRecord = {
 
 export type SavedScanSummary = {
   id: string;
-  title: string;
-  role: string;
+  currentRole: string;
+  targetRole: string;
   date: string;
   resilienceScore: number | null;
-  aiExposure: number | null;
   aiExposureLevel: string | null;
   status: string;
 };
@@ -21,6 +21,7 @@ export type SavedScanSummary = {
 type ScanInputsJoin = {
   job_title_raw: string;
   industry_raw: string;
+  career_goal_text: string;
 };
 
 type CareerScanRow = {
@@ -48,13 +49,16 @@ function formatScanDate(iso: string): string {
 
 function mapScanRow(row: CareerScanRow): SavedScanSummary {
   const inputs = getScanInputs(row);
+  const targetRole = formatRoleLabel(
+    inferTargetRole(inputs?.career_goal_text ?? "", "Not specified")
+  );
+
   return {
     id: row.id,
-    title: inputs?.job_title_raw ?? "Career Scan",
-    role: inputs?.industry_raw ?? "—",
+    currentRole: formatRoleLabel(inputs?.job_title_raw ?? "Career Scan"),
+    targetRole,
     date: formatScanDate(row.created_at),
     resilienceScore: row.resilience_score,
-    aiExposure: row.ai_exposure_score,
     aiExposureLevel: row.ai_exposure_level,
     status: row.status,
   };
@@ -75,11 +79,17 @@ export async function fetchSavedScans(userId: string): Promise<SavedScanSummary[
   const { data, error } = await supabase
     .from("career_scans")
     .select(
-      "id, status, resilience_score, ai_exposure_score, ai_exposure_level, created_at, scan_inputs (job_title_raw, industry_raw)"
+      "id, status, resilience_score, ai_exposure_score, ai_exposure_level, created_at, scan_inputs (job_title_raw, industry_raw, career_goal_text)"
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map(mapScanRow);
+}
+
+/** DB scans for home past-scans section. */
+export async function fetchPastScans(userId: string | null): Promise<SavedScanSummary[]> {
+  if (!userId) return [];
+  return fetchSavedScans(userId);
 }
