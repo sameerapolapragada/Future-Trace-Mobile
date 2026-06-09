@@ -1,8 +1,24 @@
 import { supabase } from "./supabaseClient";
-import { fetchUserEntitlements } from "./entitlementsService";
+import { FREE_SCANS_PER_WEEK } from "./subscriptionLimits";
+import {
+  canGenerateCareerXray,
+  canRunCareerScan,
+  getMonthlyUsage,
+  incrementCareerScanUsage,
+  isTransitionSubscriber,
+  type MonthlyUsage,
+} from "./subscriptionUsageService";
 import type { CareerXrayRecord } from "../types";
 
+export { FREE_SCANS_PER_WEEK };
+
 const FREE_SCAN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+export type WeeklyScanStatus = {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+};
 
 function currentWeekWindow(): { start: Date; end: Date } {
   const end = new Date();
@@ -10,26 +26,9 @@ function currentWeekWindow(): { start: Date; end: Date } {
   return { start, end };
 }
 
-/** Active AI Career Radar subscriber with valid period. */
+/** @deprecated Use isTransitionSubscriber — kept for existing imports. */
 export async function isRadarSubscriber(userId: string): Promise<boolean> {
-  const entitlements = await fetchUserEntitlements(userId);
-  if (!entitlements.hasRadar) return false;
-
-  const { data: sub, error: subError } = await supabase
-    .from("subscriptions")
-    .select("status, current_period_end")
-    .eq("user_id", userId)
-    .eq("product_key", "ai_career_radar_monthly")
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!subError && sub?.current_period_end) {
-    return new Date(sub.current_period_end) > new Date();
-  }
-
-  return entitlements.hasRadar;
+  return isTransitionSubscriber(userId);
 }
 
 async function getFreeScanUsageCount(userId: string): Promise<number> {
@@ -58,15 +57,33 @@ async function getFreeScanUsageCount(userId: string): Promise<number> {
   return count ?? 0;
 }
 
-/** Radar: unlimited. Free: 1 scan per 7-day window. */
-export async function canRunScan(userId: string): Promise<boolean> {
-  if (await isRadarSubscriber(userId)) return true;
+/** Subscriber: monthly limit. Free: 1 scan per 7-day window. */
+export async function getWeeklyScanStatus(userId: string): Promise<WeeklyScanStatus> {
+  const monthly = await getMonthlyUsage(userId);
+  if (monthly) {
+    const remaining = Math.max(0, monthly.careerScansLimit - monthly.careerScansUsed);
+    return {
+      limit: monthly.careerScansLimit,
+      used: monthly.careerScansUsed,
+      remaining,
+    };
+  }
+
   const used = await getFreeScanUsageCount(userId);
-  return used < 1;
+  const remaining = Math.max(0, FREE_SCANS_PER_WEEK - used);
+  return { limit: FREE_SCANS_PER_WEEK, used, remaining };
+}
+
+export async function canRunScan(userId: string): Promise<boolean> {
+  return canRunCareerScan(userId);
 }
 
 export async function recordFreeScanUsage(userId: string): Promise<void> {
-  if (await isRadarSubscriber(userId)) return;
+  const isSub = await isTransitionSubscriber(userId);
+  if (isSub) {
+    await incrementCareerScanUsage(userId);
+    return;
+  }
 
   const { start, end } = currentWeekWindow();
   const windowStart = start.toISOString();
@@ -127,22 +144,22 @@ export function mapXrayRow(row: Record<string, unknown>): CareerXrayRecord {
   };
 }
 
-/** Radar subscriber OR paid/generated X-Ray for this scan. */
+/** Subscriber with quota, one-time purchase, or already generated X-Ray for this scan. */
 export async function canAccessXray(userId: string, scanId: string): Promise<boolean> {
-  if (await isRadarSubscriber(userId)) return true;
-
   const xray = await fetchXrayForScan(userId, scanId);
-  if (!xray) return false;
-  return xray.status === "paid" || xray.status === "generated";
+  if (xray?.status === "generated") return true;
+  if (xray?.status === "paid") return true;
+
+  return canGenerateCareerXray(userId, scanId);
 }
 
-/** Show $1.99 unlock when not Radar and no generated X-Ray yet. */
+/** Show $1.99 unlock when no included quota and no paid X-Ray for this scan. */
 export async function shouldShowBuyXray(userId: string, scanId: string): Promise<boolean> {
-  if (await isRadarSubscriber(userId)) return false;
-
   const xray = await fetchXrayForScan(userId, scanId);
-  if (!xray) return true;
-  return xray.status !== "generated";
+  if (xray?.status === "generated" || xray?.status === "paid") return false;
+
+  const allowed = await canGenerateCareerXray(userId, scanId);
+  return !allowed;
 }
 
 export async function fetchXrayByScanId(
@@ -165,10 +182,10 @@ export async function fetchUserXrays(userId: string): Promise<CareerXrayRecord[]
 
 export function xrayStatusLabel(
   xray: CareerXrayRecord | null,
-  isRadar: boolean
-): "Not Purchased" | "Purchased" | "Generated" | "Included in Radar" | "Pending Payment" | "Failed" {
-  if (isRadar && xray?.status === "generated") return "Included in Radar";
-  if (isRadar && !xray) return "Included in Radar";
+  isSubscriber: boolean
+): "Not Purchased" | "Purchased" | "Generated" | "Included in Plan" | "Pending Payment" | "Failed" {
+  if (isSubscriber && xray?.status === "generated") return "Included in Plan";
+  if (isSubscriber && !xray) return "Included in Plan";
   if (!xray) return "Not Purchased";
   if (xray.status === "pending_payment") return "Pending Payment";
   if (xray.status === "paid") return "Purchased";
@@ -176,3 +193,5 @@ export function xrayStatusLabel(
   if (xray.status === "failed") return "Failed";
   return "Not Purchased";
 }
+
+export type { MonthlyUsage };

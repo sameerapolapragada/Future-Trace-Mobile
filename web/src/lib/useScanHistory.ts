@@ -106,19 +106,26 @@ export function useScanAccess(scanId: string | undefined) {
   const [showBuyXray, setShowBuyXray] = useState(true);
   const [xray, setXray] = useState<CareerXrayRecord | null>(null);
 
-  useEffect(() => {
-    if (!user?.id || !scanId) return;
-    void (async () => {
-      const [buy, row] = await Promise.all([
-        shouldShowBuyXray(user.id, scanId),
-        fetchXrayByScanId(user.id, scanId),
-      ]);
-      setShowBuyXray(buy);
-      setXray(row);
-    })();
-  }, [user?.id, scanId, entitlements.hasRadar]);
+  const refresh = useCallback(async () => {
+    if (!user?.id || !scanId) {
+      setShowBuyXray(true);
+      setXray(null);
+      return;
+    }
 
-  return { showBuyXray, xray, isRadar: entitlements.hasRadar };
+    const [buy, row] = await Promise.all([
+      shouldShowBuyXray(user.id, scanId),
+      fetchXrayByScanId(user.id, scanId),
+    ]);
+    setShowBuyXray(buy);
+    setXray(row);
+  }, [user?.id, scanId]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh, entitlements.hasRadar]);
+
+  return { showBuyXray, xray, isRadar: entitlements.hasRadar, refresh };
 }
 
 export { formatScanDate, type ScanFormInput };

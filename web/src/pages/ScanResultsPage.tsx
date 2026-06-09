@@ -9,6 +9,7 @@ import { useCareerScan, useScanAccess } from "../lib/useScanHistory";
 import { useCheckoutReturn } from "../lib/useCheckoutReturn";
 import { useEntitlements } from "../lib/entitlements";
 import { cn } from "../lib/cn";
+import type { RoleScanProfile } from "../types";
 
 function InsightSection({
   title,
@@ -46,19 +47,61 @@ function InsightSection({
   );
 }
 
+function RoleScanResults({
+  roleLabel,
+  roleName,
+  profile,
+  tone,
+}: {
+  roleLabel: string;
+  roleName: string;
+  profile: RoleScanProfile;
+  tone: "current" | "target";
+}) {
+  const accent = tone === "current" ? "text-accent" : "text-success";
+  const border = tone === "current" ? "border-accent/25" : "border-success/25";
+
+  return (
+    <section className="space-y-4">
+      <div className={cn("rounded-2xl border bg-navy-card p-4", border)}>
+        <p className={cn("text-[10px] font-bold uppercase tracking-widest", accent)}>{roleLabel}</p>
+        <p className="mt-1 text-sm font-bold text-white">{formatRoleName(roleName)}</p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
+            <p className="text-3xl font-bold tabular-nums text-white">
+              {profile.resilienceScore}
+              <span className="text-sm font-normal text-muted">/100</span>
+            </p>
+            <p className="mt-1 text-[10px] text-muted">Resilience Index</p>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
+            <Badge tone="default">AI Exposure: {profile.aiExposureLabel}</Badge>
+            <p className="mt-2 text-[10px] text-muted">Automation risk level</p>
+          </div>
+        </div>
+      </div>
+
+      <InsightSection title="Strengths" items={profile.strengths} tone="strength" />
+      <InsightSection title="Vulnerabilities" items={profile.vulnerabilities} tone="vulnerability" />
+      <InsightSection title="Opportunity Zones" items={profile.opportunityZones} tone="opportunity" />
+    </section>
+  );
+}
+
 export default function ScanResultsPage() {
   const { scanId } = useParams<{ scanId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { refresh: refreshEntitlements } = useEntitlements();
   const { scan, loading, error, refresh } = useCareerScan(scanId);
-  const { showBuyXray, xray, isRadar } = useScanAccess(scanId);
+  const { showBuyXray, xray, isRadar, refresh: refreshScanAccess } = useScanAccess(scanId);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useCheckoutReturn(async () => {
     await refreshEntitlements();
-    await refresh();
+    await Promise.all([refresh(), refreshScanAccess()]);
   });
 
   const result = scan?.freeResult;
@@ -86,8 +129,8 @@ export default function ScanResultsPage() {
     setActionLoading(true);
     setActionError(null);
     try {
-      await generateCareerXray(user.id, scanId);
-      navigate(`/xray/${scanId}`);
+      const xray = await generateCareerXray(user.id, scanId);
+      navigate(`/xray-complete/${xray.id}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Generation failed");
       setActionLoading(false);
@@ -114,33 +157,34 @@ export default function ScanResultsPage() {
   }
 
   return (
-    <div className="space-y-5 pb-4">
-      <h1 className="text-center text-lg font-semibold text-white">Free Scan Result</h1>
-
-      <div className="rounded-2xl border border-white/10 bg-navy-card p-4 text-center">
-        <p className="text-sm font-bold text-white">
+    <div className="space-y-6 pb-4">
+      <header className="text-center">
+        <h1 className="text-lg font-semibold text-white">Free Scan Result</h1>
+        <p className="mt-2 text-xs text-muted">
           {formatRoleName(result.currentRole)} → {formatRoleName(result.targetRole)}
         </p>
-        <p className="mt-4 text-5xl font-bold tabular-nums text-white">
-          {result.resilienceScore}
-          <span className="text-2xl font-normal text-muted">/100</span>
-        </p>
-        <p className="mt-2 text-xs text-muted">Career Resilience Score</p>
-        <div className="mt-3">
-          <Badge tone="default">AI Exposure: {result.aiExposureLabel}</Badge>
-        </div>
-      </div>
+      </header>
 
-      <InsightSection title="Strengths" items={result.strengths} tone="strength" />
-      <InsightSection title="Vulnerabilities" items={result.vulnerabilities} tone="vulnerability" />
-      <InsightSection title="Opportunity Zones" items={result.opportunityZones} tone="opportunity" />
+      <RoleScanResults
+        roleLabel="Current Role"
+        roleName={result.currentRole}
+        profile={result.currentRoleProfile}
+        tone="current"
+      />
+
+      <RoleScanResults
+        roleLabel="Target Role"
+        roleName={result.targetRole}
+        profile={result.targetRoleProfile}
+        tone="target"
+      />
 
       <div className="space-y-3 pt-2">
         {xray?.status === "generated" ? (
           <PrimaryButton fullWidth onClick={() => navigate(`/xray/${scanId}`)}>
             View Career X-Ray
           </PrimaryButton>
-        ) : isRadar ? (
+        ) : xray?.status === "paid" || isRadar ? (
           <PrimaryButton fullWidth disabled={actionLoading} onClick={() => void handleGenerateXray()}>
             {actionLoading ? "Generating…" : "Generate Career X-Ray"}
           </PrimaryButton>
@@ -151,8 +195,12 @@ export default function ScanResultsPage() {
         ) : null}
 
         {!isRadar ? (
-          <SecondaryButtonLink to="/upgrade" fullWidth>
-            Upgrade to AI Career Radar — $9.99/month
+          <SecondaryButtonLink to="/upgrade?product=transition" fullWidth>
+            Start AI Career Transition — $9.99/month
+          </SecondaryButtonLink>
+        ) : showBuyXray && isRadar ? (
+          <SecondaryButtonLink to="/upgrade?product=transition&reason=monthly-xrays" fullWidth>
+            Buy Extra X-Ray — $1.99
           </SecondaryButtonLink>
         ) : null}
       </div>

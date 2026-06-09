@@ -1,6 +1,10 @@
 import { apiJson, isApiConfigured } from "./apiClient";
+import {
+  EXTRA_XRAY_PRODUCT_KEY,
+  TRANSITION_PRODUCT_KEY,
+} from "./subscriptionUsageService";
 
-export type CheckoutProduct = "radar" | "career_xray_one_time";
+export type CheckoutProduct = "transition" | "career_xray_extra" | "career_xray_one_time";
 
 type CheckoutResponse = {
   url: string;
@@ -20,9 +24,14 @@ export async function startCheckout(
   product: CheckoutProduct,
   options?: { scanId?: string; xrayId?: string }
 ): Promise<string> {
+  const productKey =
+    product === "transition"
+      ? TRANSITION_PRODUCT_KEY
+      : EXTRA_XRAY_PRODUCT_KEY;
+
   const body: Record<string, string> = {
     product,
-    productKey: product,
+    productKey,
     returnOrigin: window.location.origin,
   };
 
@@ -39,20 +48,16 @@ export async function startCheckout(
 }
 
 export async function startXrayCheckout(scanId: string, xrayId: string): Promise<string> {
-  return startCheckout("career_xray_one_time", { scanId, xrayId });
+  return startCheckout("career_xray_extra", { scanId, xrayId });
 }
 
+/** @deprecated Use startTransitionCheckout */
 export async function startRadarCheckout(): Promise<string> {
-  const { url } = await apiJson<CheckoutResponse>("/api/v1/checkout", {
-    method: "POST",
-    body: {
-      product: "radar",
-      productKey: "ai_career_radar_monthly",
-      returnOrigin: window.location.origin,
-    },
-  });
-  if (!url) throw new Error("Checkout URL missing from server response");
-  return url;
+  return startTransitionCheckout();
+}
+
+export async function startTransitionCheckout(): Promise<string> {
+  return startCheckout("transition");
 }
 
 export async function confirmCheckout(sessionId: string): Promise<CheckoutConfirmResponse> {

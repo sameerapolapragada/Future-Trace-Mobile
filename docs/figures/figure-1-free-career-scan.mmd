@@ -1,0 +1,12 @@
+flowchart TD
+  A[Home / X-Ray History] --> B{Can run scan?}
+  B -->|Yes| C["/scan — Career Scan Form"]
+  B -->|No — weekly limit| D["/upgrade?reason=weekly-scan"]
+  C --> E[Submit form]
+  E --> F["/scan-loading (~4s)"]
+  F --> G["/results/:scanId — Free Scan Result"]
+  G --> H{User action}
+  H --> I["Unlock Career X-Ray — $1.99"]
+  H --> J["Generate X-Ray (Radar)"]
+  H --> K["Upgrade to Radar $9.99/mo"]
+  H --> L[View past scans on Home]

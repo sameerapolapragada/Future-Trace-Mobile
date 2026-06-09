@@ -1,5 +1,7 @@
 import { supabase } from "./supabaseClient";
-import { canRunScan } from "./accessService";
+import { getWeeklyScanStatus } from "./accessService";
+import { FREE_SCANS_PER_WEEK, UPGRADE_WEEKLY_SCAN_PATH } from "./subscriptionLimits";
+import { getMonthlyUsage } from "./subscriptionUsageService";
 import type { Entitlements } from "../types";
 
 type UserEntitlementsRow = {
@@ -11,12 +13,17 @@ const DEFAULT: Entitlements = {
   hasRadar: false,
   hasCompletedScan: false,
   canRunScan: true,
+  scansRemainingThisWeek: FREE_SCANS_PER_WEEK,
+  subscriptionExpiresAt: null,
+  monthlyUsage: null,
 };
 
 function mapRow(
   row: UserEntitlementsRow,
   hasCompletedScan: boolean,
-  scanAllowed: boolean
+  scanAllowed: boolean,
+  scansRemainingThisWeek: number | null,
+  monthlyUsage: Entitlements["monthlyUsage"]
 ): Entitlements {
   const hasRadar =
     row.has_radar &&
@@ -25,16 +32,29 @@ function mapRow(
   return {
     hasRadar,
     hasCompletedScan,
-    canRunScan: hasRadar || scanAllowed,
+    canRunScan: hasRadar ? scanAllowed : scanAllowed,
+    scansRemainingThisWeek,
+    subscriptionExpiresAt: row.subscription_expires_at,
+    monthlyUsage: hasRadar ? monthlyUsage : null,
   };
 }
 
 export async function fetchUserEntitlements(userId: string): Promise<Entitlements> {
   let scanAllowed = true;
+  let scansRemainingThisWeek: number | null = FREE_SCANS_PER_WEEK;
+  let monthlyUsage: Entitlements["monthlyUsage"] = null;
+
   try {
-    scanAllowed = await canRunScan(userId);
+    const [scanStatus, usage] = await Promise.all([
+      getWeeklyScanStatus(userId),
+      getMonthlyUsage(userId),
+    ]);
+    monthlyUsage = usage;
+    scansRemainingThisWeek = scanStatus.remaining;
+    scanAllowed = scanStatus.remaining === null ? true : scanStatus.remaining > 0;
   } catch {
     scanAllowed = true;
+    scansRemainingThisWeek = FREE_SCANS_PER_WEEK;
   }
 
   const [entitlementsResult, scansResult] = await Promise.all([
@@ -52,26 +72,33 @@ export async function fetchUserEntitlements(userId: string): Promise<Entitlement
   const hasCompletedScan = (scansResult.data?.length ?? 0) > 0;
 
   if (!entitlementsResult.data) {
-    return { ...DEFAULT, hasCompletedScan, canRunScan: scanAllowed };
+    return { ...DEFAULT, hasCompletedScan, canRunScan: scanAllowed, scansRemainingThisWeek };
   }
 
-  return mapRow(entitlementsResult.data, hasCompletedScan, scanAllowed);
+  return mapRow(
+    entitlementsResult.data,
+    hasCompletedScan,
+    scanAllowed,
+    scansRemainingThisWeek,
+    monthlyUsage
+  );
 }
 
 export function mergeEntitlements(base: Entitlements, patch: Partial<Entitlements>): Entitlements {
   return { ...base, ...patch };
 }
 
-export const UPGRADE_SCANS_EXHAUSTED_PATH = "/upgrade?reason=weekly-scan";
+export const UPGRADE_SCANS_EXHAUSTED_PATH = UPGRADE_WEEKLY_SCAN_PATH;
 
 /** Career X-Ray hub — scan-based history. */
 export function getCareerXRayPath(_entitlements: Entitlements): string {
   return "/xray-history";
 }
 
-/** Scan entry: form if allowed, otherwise Radar upgrade. */
+/** Scan entry: form if allowed, otherwise upgrade. */
 export function getNewScanPath(entitlements: Entitlements): string {
   if (entitlements.canRunScan) return "/scan";
+  if (entitlements.hasRadar) return "/upgrade?product=transition&reason=monthly-scans";
   return UPGRADE_SCANS_EXHAUSTED_PATH;
 }
 

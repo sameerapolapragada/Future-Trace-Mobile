@@ -289,7 +289,7 @@ export function XRayReportSections({
           fullWidth
           className="flex items-center justify-center gap-2"
         >
-          Explore Transition Paths
+          Explore Transition Roles
         </PrimaryButtonLink>
       ) : null}
     </div>

@@ -90,10 +90,16 @@ export async function apiJson<T>(path: string, options: ApiRequestOptions = {}):
   const payload = text ? parseJson(text) : null;
 
   if (!response.ok) {
-    const message =
+    let message =
       payload && typeof payload === "object" && payload !== null && "error" in payload
         ? String((payload as { error: unknown }).error)
         : response.statusText || "Request failed";
+
+    if (response.status === 502) {
+      message =
+        "Checkout server unavailable (502). Restart `npm run dev` in web/ with STRIPE_SECRET_KEY in .env.local, or start the Future-Trace BFF on port 3000.";
+    }
+
     throw new ApiClientError(message, response.status, payload);
   }
 

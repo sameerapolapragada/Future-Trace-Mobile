@@ -15,7 +15,16 @@ import TransitionPathsPage from "./pages/TransitionPathsPage";
 import RoleIntelligencePage from "./pages/RoleIntelligencePage";
 import UpgradePage from "./pages/UpgradePage";
 import RadarPage from "./pages/RadarPage";
+import TransitionDashboardPage from "./pages/TransitionDashboardPage";
+import WeeklyMilestonePage from "./pages/WeeklyMilestonePage";
+import TransitionPlanPage from "./pages/TransitionPlanPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import ProfilePage from "./pages/ProfilePage";
+import PostXrayPromptPage from "./pages/PostXrayPromptPage";
+import CompareGoalsPage from "./pages/CompareGoalsPage";
+import PlanUpdateDetailPage from "./pages/PlanUpdateDetailPage";
+import { RequireTransitionSubscriber } from "./lib/RequireTransitionSubscriber";
 
 const withNav = { showNav: true as const };
 
@@ -44,9 +53,27 @@ export const router = createBrowserRouter([
               { path: "results/:scanId", element: <ScanResultsPage />, handle: withNav },
               { path: "xray/:scanId", element: <XRayDetailPage />, handle: withNav },
               { path: "xray-history", element: <XRayHistoryPage />, handle: withNav },
+              { path: "xray-complete/:xrayId", element: <PostXrayPromptPage />, handle: withNav },
+              { path: "compare-goals/:newXrayId", element: <CompareGoalsPage />, handle: withNav },
               { path: "transition-paths/:scanId", element: <TransitionPathsPage />, handle: withNav },
               { path: "upgrade", element: <UpgradePage /> },
-              { path: "radar", element: <RadarPage />, handle: withNav },
+              { path: "checkout/success", element: <CheckoutSuccessPage />, handle: { centered: true } },
+              {
+                element: <RequireTransitionSubscriber />,
+                children: [
+                  { path: "transition", element: <TransitionDashboardPage />, handle: withNav },
+                  { path: "transition/week/:milestoneId", element: <WeeklyMilestonePage />, handle: withNav },
+                  { path: "transition/plan/:goalId", element: <TransitionPlanPage />, handle: withNav },
+                  {
+                    path: "transition/plan-updates/:recommendationId",
+                    element: <PlanUpdateDetailPage />,
+                    handle: withNav,
+                  },
+                  { path: "notifications", element: <NotificationsPage />, handle: withNav },
+                ],
+              },
+              { path: "radar", element: <Navigate to="/transition" replace /> },
+              { path: "radar-legacy", element: <RadarPage />, handle: withNav },
               { path: "profile", element: <ProfilePage />, handle: withNav },
               { path: "home", element: <HomePage />, handle: withNav },
               { path: "xray/role/:roleSlug", element: <RoleIntelligencePage /> },

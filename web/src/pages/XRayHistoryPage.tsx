@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge, PrimaryButton, PrimaryButtonLink, SectionHeader } from "../design-system";
 import { formatRoleName } from "../components/XRayReportSections";
 import { XRayReportSections } from "../components/XRayReportSections";
@@ -13,8 +13,9 @@ import { formatScanDate } from "../lib/scanService";
 import { cn } from "../lib/cn";
 import type { ScanHistoryItem } from "../types";
 
-function ScanHistoryCard({ item, isRadar, onRefresh }: { item: ScanHistoryItem; isRadar: boolean; onRefresh: () => void }) {
+function ScanHistoryCard({ item, isRadar }: { item: ScanHistoryItem; isRadar: boolean; onRefresh: () => void }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -37,8 +38,8 @@ function ScanHistoryCard({ item, isRadar, onRefresh }: { item: ScanHistoryItem; 
     if (!user?.id) return;
     setLoading(true);
     try {
-      await generateCareerXray(user.id, item.id);
-      onRefresh();
+      const generated = await generateCareerXray(user.id, item.id);
+      navigate(`/xray-complete/${generated.id}`);
     } finally {
       setLoading(false);
     }

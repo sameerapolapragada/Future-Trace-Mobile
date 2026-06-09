@@ -18,8 +18,8 @@ export default function XRayDetailPage() {
     if (!user?.id || !scanId) return;
     setActionLoading(true);
     try {
-      await generateCareerXray(user.id, scanId);
-      window.location.reload();
+      const generated = await generateCareerXray(user.id, scanId);
+      navigate(`/xray-complete/${generated.id}`);
     } finally {
       setActionLoading(false);
     }

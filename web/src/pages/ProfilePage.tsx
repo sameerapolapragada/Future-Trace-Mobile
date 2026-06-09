@@ -43,18 +43,13 @@ function SettingsRow({
 }
 
 function getSubscriptionLabel(hasRadar: boolean) {
-  if (hasRadar) return "AI Career Radar";
+  if (hasRadar) return "AI Career Transition";
   return "Free";
 }
 
 function getSubscriptionTone(hasRadar: boolean) {
   if (hasRadar) return "success" as const;
   return "default" as const;
-}
-
-function formatExposureLevel(level: string | null): string {
-  if (!level) return "—";
-  return level.charAt(0).toUpperCase() + level.slice(1);
 }
 
 export default function ProfilePage() {
@@ -112,26 +107,6 @@ export default function ProfilePage() {
         </p>
       ) : null}
 
-      {latestScan ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Card padding="md">
-            <p className="text-xs text-muted">Career Resilience Index</p>
-            <p className="mt-2 text-2xl font-bold tabular-nums text-white">
-              {latestScan.resilienceScore ?? "—"}
-              {latestScan.resilienceScore != null ? (
-                <span className="text-sm font-normal text-muted">/100</span>
-              ) : null}
-            </p>
-          </Card>
-          <Card padding="md">
-            <p className="text-xs text-muted">AI Exposure</p>
-            <p className="mt-2 text-2xl font-bold text-white">
-              {formatExposureLevel(latestScan.aiExposureLevel)}
-            </p>
-          </Card>
-        </div>
-      ) : null}
-
       <section>
         <SectionHeader title="Subscription" subtitle="Your plan and product access" />
         <Card className="divide-y divide-white/8 p-0" padding="none">
@@ -149,10 +124,10 @@ export default function ProfilePage() {
             <Badge tone={generatedXrays.length > 0 ? "success" : "default"}>{xrayStatusLabelDisplay}</Badge>
           </Link>
           <Link
-            to={entitlements.hasRadar ? "/radar" : "/upgrade"}
+            to={entitlements.hasRadar ? "/transition" : "/upgrade?product=transition"}
             className="flex items-center justify-between px-4 py-3.5 transition hover:bg-white/[0.03]"
           >
-            <span className="text-sm text-white">AI Career Radar</span>
+            <span className="text-sm text-white">AI Career Transition</span>
             <Badge tone={entitlements.hasRadar ? "success" : "default"}>{radarStatus}</Badge>
           </Link>
         </Card>

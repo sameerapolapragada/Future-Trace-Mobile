@@ -2,8 +2,16 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { confirmCheckout } from "./checkoutService";
 
+type CheckoutReturnOptions = {
+  /** After a successful Radar / Transition checkout, navigate here. */
+  radarRedirectTo?: string;
+};
+
 /** After Stripe redirect, confirm the session, refresh entitlements, and strip checkout query params. */
-export function useCheckoutReturn(refresh: () => Promise<void>) {
+export function useCheckoutReturn(
+  refresh: () => Promise<void>,
+  options: CheckoutReturnOptions = {}
+) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -15,16 +23,27 @@ export function useCheckoutReturn(refresh: () => Promise<void>) {
     let cancelled = false;
 
     async function handleReturn() {
+      let radarUnlocked = false;
+
       if (sessionId) {
         try {
-          await confirmCheckout(sessionId);
+          const result = await confirmCheckout(sessionId);
+          radarUnlocked = result.hasRadar === true;
         } catch {
-          // Webhook may still unlock later; refresh below picks it up on retry.
+          // Webhook or retry may still unlock later.
         }
       }
 
-      if (!cancelled) {
-        await refresh();
+      if (cancelled) return;
+
+      await refresh();
+
+      if (cancelled) return;
+
+      if (radarUnlocked && options.radarRedirectTo) {
+        navigate(options.radarRedirectTo, { replace: true });
+      } else {
+        navigate(location.pathname, { replace: true });
       }
     }
 
@@ -36,11 +55,9 @@ export function useCheckoutReturn(refresh: () => Promise<void>) {
       }, delay)
     );
 
-    navigate(location.pathname, { replace: true });
-
     return () => {
       cancelled = true;
       retryTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [location.pathname, navigate, refresh]);
+  }, [location.pathname, navigate, options.radarRedirectTo, refresh]);
 }

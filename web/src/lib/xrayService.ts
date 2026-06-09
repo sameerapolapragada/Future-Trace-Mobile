@@ -1,6 +1,12 @@
 import { careerOpportunities, xrayCompleteReport } from "../data/mockData";
 import { apiJson, isApiConfigured } from "./apiClient";
-import { isRadarSubscriber, mapXrayRow } from "./accessService";
+import { mapXrayRow } from "./accessService";
+import { denormalizedMetricsFromResult } from "./goalComparisonService";
+import {
+  canGenerateCareerXray,
+  incrementCareerXrayUsage,
+  isTransitionSubscriber,
+} from "./subscriptionUsageService";
 import { fetchCareerScan } from "./scanService";
 import { supabase } from "./supabaseClient";
 import type {
@@ -85,7 +91,7 @@ export async function generateCareerXray(
   const scan = await fetchCareerScan(userId, scanId);
   if (!scan) throw new Error("Scan not found");
 
-  const radar = await isRadarSubscriber(userId);
+  const isSubscriber = await isTransitionSubscriber(userId);
   const xrayRow = await supabase
     .from("career_xrays")
     .select("*")
@@ -95,14 +101,20 @@ export async function generateCareerXray(
 
   let xray: CareerXrayRecord;
   if (!xrayRow.data) {
-    if (!radar) throw new Error("Career X-Ray not purchased for this scan");
-    xray = await ensureRadarXray(userId, scanId);
+    const allowed = await canGenerateCareerXray(userId, scanId);
+    if (!allowed) throw new Error("Career X-Ray limit reached or payment required");
+    if (isSubscriber) {
+      xray = await ensureRadarXray(userId, scanId);
+    } else {
+      throw new Error("Career X-Ray not purchased for this scan");
+    }
   } else {
     xray = mapXrayRow(xrayRow.data as Record<string, unknown>);
   }
   if (xray.status === "generated" && xray.result) return xray;
 
-  if (!radar && xray.status !== "paid" && xray.status !== "generated") {
+  const canGenerate = await canGenerateCareerXray(userId, scanId);
+  if (!canGenerate && xray.status !== "paid") {
     throw new Error("Payment required before generating Career X-Ray");
   }
 
@@ -118,7 +130,9 @@ export async function generateCareerXray(
         .eq("id", xray.id)
         .single();
       if (refreshed.data?.status === "generated") {
-        return mapXrayRow(refreshed.data);
+        const generated = mapXrayRow(refreshed.data);
+        await maybeIncrementXrayUsage(userId, isSubscriber, generated);
+        return generated;
       }
     } catch {
       // Dev fallback below
@@ -128,12 +142,19 @@ export async function generateCareerXray(
   const result = buildMockXrayResult(scan);
   const now = new Date().toISOString();
 
+  const denorm = denormalizedMetricsFromResult(result);
+
   const { data, error } = await supabase
     .from("career_xrays")
     .update({
       status: "generated",
       xray_result_json: result,
       generated_at: now,
+      readiness_score: denorm.readinessScore,
+      transition_difficulty: denorm.transitionDifficulty,
+      estimated_transition_time: denorm.estimatedTransitionTime,
+      salary_upside: denorm.salaryUpside,
+      market_demand: denorm.marketDemand,
     })
     .eq("id", xray.id)
     .eq("user_id", userId)
@@ -141,7 +162,19 @@ export async function generateCareerXray(
     .single();
 
   if (error) throw error;
-  return mapXrayRow(data);
+  const generated = mapXrayRow(data);
+  await maybeIncrementXrayUsage(userId, isSubscriber, generated);
+  return generated;
+}
+
+async function maybeIncrementXrayUsage(
+  userId: string,
+  isSubscriber: boolean,
+  xray: CareerXrayRecord
+): Promise<void> {
+  if (isSubscriber && xray.accessType !== "one_time_purchase") {
+    await incrementCareerXrayUsage(userId);
+  }
 }
 
 export function getXraySummaryMetrics(result: CareerXRaySnapshotResult | null): {

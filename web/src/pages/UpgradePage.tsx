@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { PrimaryButton } from "../design-system";
+import { PrimaryButton, SecondaryButton } from "../design-system";
 import { products } from "../data/mockData";
-import { isCheckoutConfigured, startRadarCheckout } from "../lib/checkoutService";
+import { isCheckoutConfigured, startTransitionCheckout } from "../lib/checkoutService";
+import { formatCycleResetDate } from "../lib/subscriptionUsageService";
+import { TRANSITION_PLAN_FEATURES } from "../lib/subscriptionLimits";
+import { useEntitlements } from "../lib/entitlements";
 import { cn } from "../lib/cn";
 
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -21,24 +24,6 @@ function BackButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function RadarIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 12 18 8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SparkleIcon({ className }: { className?: string }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M12 2l1.4 4.6L18 8l-4.6 1.4L12 14l-1.4-4.6L6 8l4.6-1.4L12 2z" />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -47,15 +32,32 @@ function CheckIcon() {
   );
 }
 
+type LimitReason = "weekly-scan" | "monthly-scans" | "monthly-xrays" | "goal-switches" | null;
+
+function resolveLimitReason(searchParams: URLSearchParams, isTransition: boolean): LimitReason {
+  const reason = searchParams.get("reason");
+  if (reason === "weekly-scan" || searchParams.get("scans") === "exhausted") return "weekly-scan";
+  if (reason === "monthly-scans") return "monthly-scans";
+  if (reason === "monthly-xrays") return "monthly-xrays";
+  if (reason === "goal-switches") return "goal-switches";
+  return isTransition ? null : null;
+}
+
 export default function UpgradePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const scansExhausted = searchParams.get("reason") === "weekly-scan" || searchParams.get("scans") === "exhausted";
-  const { radar } = products;
+  const { entitlements } = useEntitlements();
+  const isTransition =
+    searchParams.get("product") === "transition" || searchParams.get("product") === "radar";
+  const limitReason = resolveLimitReason(searchParams, isTransition);
+  const resetDate = entitlements.monthlyUsage?.cycleResetDate
+    ? formatCycleResetDate(entitlements.monthlyUsage.cycleResetDate)
+    : null;
+
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  async function handlePurchaseRadar() {
+  async function handleStartTransition() {
     if (!isCheckoutConfigured()) {
       setCheckoutError(
         "Checkout is not configured. Set VITE_API_BASE_URL in web/.env.local and run the Future-Trace BFF."
@@ -67,12 +69,55 @@ export default function UpgradePage() {
     setCheckoutError(null);
 
     try {
-      const url = await startRadarCheckout();
+      const url = await startTransitionCheckout();
       window.location.assign(url);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
       setLoading(false);
     }
+  }
+
+  if (limitReason === "monthly-scans") {
+    return (
+      <LimitLayout title="Career Scan limit" onBack={() => navigate(-1)}>
+        <p className="text-sm leading-relaxed text-muted">
+          You&apos;ve used all 10 career scans for this month.
+          {resetDate ? ` Your limit resets on ${resetDate}.` : null}
+        </p>
+        <SecondaryButton fullWidth onClick={() => navigate("/transition")}>
+          Wait until reset
+        </SecondaryButton>
+      </LimitLayout>
+    );
+  }
+
+  if (limitReason === "monthly-xrays") {
+    return (
+      <LimitLayout title="Career X-Ray limit" onBack={() => navigate(-1)}>
+        <p className="text-sm leading-relaxed text-muted">
+          You&apos;ve used all 10 included Career X-Rays this month.
+        </p>
+        <p className="text-sm text-white">Extra Career X-Ray: {products.xray.price}</p>
+        <PrimaryButton fullWidth onClick={() => navigate("/xray-history")}>
+          Buy Extra X-Ray — {products.xray.price}
+        </PrimaryButton>
+      </LimitLayout>
+    );
+  }
+
+  if (limitReason === "goal-switches") {
+    return (
+      <LimitLayout title="Goal switch limit" onBack={() => navigate(-1)}>
+        <p className="text-sm leading-relaxed text-muted">
+          You&apos;ve used all 3 goal switches this month. To avoid losing progress, you can continue
+          your current goal or wait until your next billing cycle.
+          {resetDate ? ` Resets on ${resetDate}.` : null}
+        </p>
+        <PrimaryButton fullWidth onClick={() => navigate("/transition")}>
+          Continue Current Goal
+        </PrimaryButton>
+      </LimitLayout>
+    );
   }
 
   return (
@@ -83,66 +128,42 @@ export default function UpgradePage() {
       <div className="relative flex items-center">
         <BackButton onClick={() => navigate(-1)} />
         <h1 className="pointer-events-none absolute inset-x-0 text-center text-base font-semibold text-white">
-          AI Career Radar
+          AI Career Transition
         </h1>
       </div>
 
-      {scansExhausted ? (
-        <p className="relative text-center text-xs leading-relaxed text-muted">
-          Free users can run 1 scan per week. Upgrade to AI Career Radar for unlimited scans and
-          Career X-Rays.
+      {limitReason === "weekly-scan" ? (
+        <p className="relative text-center text-sm leading-relaxed text-muted">
+          Free users can run 1 scan per week. Upgrade to AI Career Transition for 10 career scans per
+          month and a guided transition plan.
         </p>
-      ) : null}
-
-      <header className="relative text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-white">Stay ahead of the AI job market</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          Subscribe for your Career X-Ray snapshot plus ongoing live intelligence — no separate X-Ray
-          purchase needed.
+      ) : (
+        <p className="relative text-center text-sm leading-relaxed text-muted">
+          Get weekly milestones, monthly scan and X-Ray allowances, and smart reminders to keep your
+          transition moving.
         </p>
-      </header>
+      )}
 
       <div className="relative rounded-2xl border border-accent-purple/40 bg-navy-card p-5 shadow-lg shadow-accent-purple/10">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-purple/60 to-transparent" />
 
-        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-accent-purple/30 bg-accent-purple/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent-purple">
-          <SparkleIcon className="h-3 w-3" />
-          Includes Career X-Ray
-        </span>
-
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-purple to-accent-gold text-white">
-            <RadarIcon />
-          </span>
-          <div>
-            <h2 className="text-base font-bold text-white">{radar.name}</h2>
-            <p className="text-xs text-muted">{radar.description}</p>
-          </div>
-        </div>
-
-        <p className="mt-3 rounded-lg border border-white/6 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-muted">
-          Best for staying updated as the AI job market changes.
-        </p>
+        <h2 className="text-base font-bold text-white">AI Career Transition</h2>
+        <p className="mt-1 text-xs text-muted">Move from your current role to your target role</p>
 
         <div className="mt-4">
           <p className="text-3xl font-bold tabular-nums text-white">
-            {radar.price}
+            $9.99
             <span className="text-base font-normal text-muted"> /month</span>
           </p>
-          <p className="mt-1 text-xs text-muted">Cancel anytime · X-Ray included at no extra cost</p>
+          <p className="mt-1 text-xs text-muted">Cancel anytime</p>
         </div>
 
         <div className="my-5 h-px bg-white/6" />
 
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted">Includes</p>
         <ul className="space-y-2.5">
-          {radar.features.map((feature, index) => (
-            <li
-              key={feature}
-              className={cn(
-                "flex items-start gap-2.5 text-sm",
-                index === 0 ? "font-medium text-white" : "text-muted"
-              )}
-            >
+          {TRANSITION_PLAN_FEATURES.map((feature) => (
+            <li key={feature} className="flex items-start gap-2.5 text-sm text-white">
               <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-accent-purple/20 text-accent-purple">
                 <CheckIcon />
               </span>
@@ -151,13 +172,15 @@ export default function UpgradePage() {
           ))}
         </ul>
 
+        <p className="mt-4 text-xs text-muted">Extra Career X-Ray: {products.xray.price} each</p>
+
         <PrimaryButton
           fullWidth
           disabled={loading}
-          onClick={() => void handlePurchaseRadar()}
-          className="mt-5 flex items-center justify-center gap-2"
+          onClick={() => void handleStartTransition()}
+          className={cn("mt-5 flex items-center justify-center gap-2")}
         >
-          {loading ? "Redirecting to checkout…" : "Start AI Career Radar"}
+          {loading ? "Redirecting to checkout…" : "Start AI Career Transition"}
         </PrimaryButton>
       </div>
 
@@ -177,10 +200,28 @@ export default function UpgradePage() {
           {checkoutError}
         </p>
       ) : null}
+    </div>
+  );
+}
 
-      <p className="relative text-center text-[11px] leading-relaxed text-muted">
-        Secure Stripe checkout. Purchases unlock X-Ray and Radar in your account after payment.
-      </p>
+function LimitLayout({
+  title,
+  onBack,
+  children,
+}: {
+  title: string;
+  onBack: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-5 pb-4">
+      <div className="flex items-center">
+        <BackButton onClick={onBack} />
+        <h1 className="pointer-events-none absolute inset-x-0 text-center text-base font-semibold text-white">
+          {title}
+        </h1>
+      </div>
+      <div className="rounded-2xl border border-white/8 bg-navy-card p-5 space-y-4">{children}</div>
     </div>
   );
 }

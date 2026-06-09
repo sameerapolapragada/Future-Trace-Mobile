@@ -1,8 +1,14 @@
-import { careerScans } from "../data/mockData";
+import { careerScans, currentRoleScanProfile, targetRoleScanProfile } from "../data/mockData";
 import { supabase } from "./supabaseClient";
 import { inferTargetRole } from "./targetRole";
 import { recordFreeScanUsage } from "./accessService";
-import type { CareerScanRecord, FreeScanResult, ScanFormInput } from "../types";
+import type {
+  AIExposureLevel,
+  CareerScanRecord,
+  FreeScanResult,
+  RoleScanProfile,
+  ScanFormInput,
+} from "../types";
 import type { PostgrestError } from "@supabase/supabase-js";
 
 type StoredScanResult = FreeScanResult & {
@@ -76,6 +82,64 @@ function computeInputHash(input: ScanFormInput, uniqueSuffix: string): string {
   return `scan-${Math.abs(hash).toString(36)}`;
 }
 
+type LegacyFreeScanResult = {
+  currentRole: string;
+  targetRole: string;
+  resilienceScore: number;
+  aiExposureLevel: AIExposureLevel;
+  aiExposureLabel: string;
+  strengths: string[];
+  vulnerabilities: string[];
+  opportunityZones: string[];
+  summary: string;
+};
+
+function toRoleProfile(profile: {
+  resilienceScore: number;
+  aiExposureLevel: AIExposureLevel;
+  aiExposureLabel: string;
+  strengths: readonly string[];
+  vulnerabilities: readonly string[];
+  opportunityZones: readonly string[];
+}): RoleScanProfile {
+  return {
+    resilienceScore: profile.resilienceScore,
+    aiExposureLevel: profile.aiExposureLevel,
+    aiExposureLabel: profile.aiExposureLabel,
+    strengths: [...profile.strengths],
+    vulnerabilities: [...profile.vulnerabilities],
+    opportunityZones: [...profile.opportunityZones],
+  };
+}
+
+function normalizeFreeResult(stored: StoredScanResult | LegacyFreeScanResult): FreeScanResult {
+  if ("currentRoleProfile" in stored && stored.currentRoleProfile && stored.targetRoleProfile) {
+    return {
+      currentRole: stored.currentRole,
+      targetRole: stored.targetRole,
+      currentRoleProfile: stored.currentRoleProfile,
+      targetRoleProfile: stored.targetRoleProfile,
+      summary: stored.summary,
+    };
+  }
+
+  const legacy = stored as LegacyFreeScanResult;
+  return {
+    currentRole: legacy.currentRole,
+    targetRole: legacy.targetRole,
+    currentRoleProfile: {
+      resilienceScore: legacy.resilienceScore,
+      aiExposureLevel: legacy.aiExposureLevel,
+      aiExposureLabel: legacy.aiExposureLabel,
+      strengths: legacy.strengths,
+      vulnerabilities: legacy.vulnerabilities,
+      opportunityZones: legacy.opportunityZones,
+    },
+    targetRoleProfile: toRoleProfile(targetRoleScanProfile),
+    summary: legacy.summary,
+  };
+}
+
 function buildMockFreeResult(input: ScanFormInput): StoredScanResult {
   const mock = careerScans[0];
   const targetRole = input.targetRole || inferTargetRole(input.careerGoal, input.currentRole);
@@ -89,13 +153,8 @@ function buildMockFreeResult(input: ScanFormInput): StoredScanResult {
     tools: input.tools.trim() || null,
     careerGoal: input.careerGoal.trim() || null,
     workPreference: input.workPreference,
-    resilienceScore: mock.resilienceScore,
-    aiExposureLevel: mock.aiExposureLevel,
-    aiExposureLabel:
-      mock.aiExposureLevel === "low" ? "Low" : mock.aiExposureLevel === "high" ? "High" : "Medium",
-    strengths: mock.strengths,
-    vulnerabilities: mock.vulnerabilities,
-    opportunityZones: mock.opportunityZones,
+    currentRoleProfile: toRoleProfile(currentRoleScanProfile),
+    targetRoleProfile: toRoleProfile(targetRoleScanProfile),
     summary: mock.summary,
   };
 }
@@ -118,19 +177,7 @@ function mapScanRow(row: ScanRow): CareerScanRecord {
         })
       : null);
 
-  const freeResult: FreeScanResult | null = stored
-    ? {
-        currentRole: stored.currentRole,
-        targetRole: stored.targetRole,
-        resilienceScore: stored.resilienceScore,
-        aiExposureLevel: stored.aiExposureLevel,
-        aiExposureLabel: stored.aiExposureLabel,
-        strengths: stored.strengths,
-        vulnerabilities: stored.vulnerabilities,
-        opportunityZones: stored.opportunityZones,
-        summary: stored.summary,
-      }
-    : null;
+  const freeResult: FreeScanResult | null = stored ? normalizeFreeResult(stored) : null;
 
   return {
     id: row.id,
@@ -166,8 +213,8 @@ export async function createCareerScan(
       status: "complete",
       input_hash: inputHash,
       result: freeResult,
-      resilience_score: freeResult.resilienceScore,
-      ai_exposure_level: freeResult.aiExposureLevel,
+      resilience_score: freeResult.currentRoleProfile.resilienceScore,
+      ai_exposure_level: freeResult.currentRoleProfile.aiExposureLevel,
       summary: freeResult.summary,
     })
     .select("*")
@@ -193,13 +240,13 @@ export async function createCareerScan(
   }
 
   await Promise.all([
-    ...freeResult.strengths.map((label, i) =>
+    ...freeResult.currentRoleProfile.strengths.map((label, i) =>
       supabase.from("scan_strengths").insert({ scan_id: scan.id, label, sort_order: i })
     ),
-    ...freeResult.vulnerabilities.map((label, i) =>
+    ...freeResult.currentRoleProfile.vulnerabilities.map((label, i) =>
       supabase.from("scan_vulnerabilities").insert({ scan_id: scan.id, label, sort_order: i })
     ),
-    ...freeResult.opportunityZones.map((label, i) =>
+    ...freeResult.currentRoleProfile.opportunityZones.map((label, i) =>
       supabase.from("scan_opportunity_zones").insert({ scan_id: scan.id, label, sort_order: i })
     ),
   ]);

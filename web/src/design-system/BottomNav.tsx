@@ -1,22 +1,27 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEntitlements } from "../lib/entitlements";
-import { getNewScanPath } from "../lib/entitlementsService";
 import { cn } from "./utils";
 
 const tabs = [
   { id: "home", to: "/home", label: "Home", icon: HomeIcon, isActive: (path: string) => path === "/home" },
   {
-    id: "scan",
-    label: "Scan",
-    icon: ScanIcon,
-    isActive: (path: string) => path === "/scan" || path.startsWith("/results/"),
+    id: "xray",
+    to: "/xray-history",
+    label: "Career X-Ray",
+    icon: CareerXRayIcon,
+    isActive: (path: string) =>
+      path === "/xray-history" ||
+      path.startsWith("/xray/") ||
+      path.startsWith("/transition-paths/"),
   },
   {
-    id: "radar",
-    to: "/radar",
-    label: "Radar",
-    icon: RadarIcon,
-    isActive: (path: string) => path === "/radar",
+    id: "transition",
+    to: "/transition",
+    label: "Transition",
+    icon: TransitionIcon,
+    isActive: (path: string) =>
+      path === "/transition" ||
+      path.startsWith("/transition/") ||
+      path === "/notifications",
   },
   {
     id: "profile",
@@ -29,8 +34,6 @@ const tabs = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
-  const { entitlements } = useEntitlements();
-  const scanTo = getNewScanPath(entitlements);
 
   return (
     <nav
@@ -40,11 +43,10 @@ export function BottomNav() {
       <div className="flex items-stretch justify-around px-1 pt-2">
         {tabs.map(({ id, to, label, icon: Icon, isActive }) => {
           const active = isActive(pathname);
-          const href = id === "scan" ? scanTo : to!;
           return (
             <NavLink
               key={id}
-              to={href}
+              to={to!}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-[10px] font-medium transition",
                 active ? "text-accent" : "text-muted hover:text-white/80"
@@ -78,23 +80,21 @@ function HomeIcon({ active }: { active: boolean }) {
   );
 }
 
-function ScanIcon({ active }: { active: boolean }) {
+function CareerXRayIcon({ active }: { active: boolean }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" strokeLinecap="round" strokeLinejoin="round" />
-      {active && <circle cx="12" cy="12" r="2" fill="currentColor" opacity="0.35" />}
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M9 8h6M9 12h6M9 16h4" strokeLinecap="round" />
+      {active && <circle cx="17" cy="7" r="2" fill="currentColor" opacity="0.45" />}
     </svg>
   );
 }
 
-function RadarIcon({ active }: { active: boolean }) {
+function TransitionIcon({ active }: { active: boolean }) {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 12 18 8" strokeLinecap="round" />
-      {active && (
-        <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeLinecap="round" opacity="0.45" />
-      )}
+      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+      {active && <circle cx="12" cy="12" r="9" opacity="0.2" fill="currentColor" />}
     </svg>
   );
 }

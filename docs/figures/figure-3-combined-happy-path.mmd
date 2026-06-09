@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph auth [Auth]
+    L[Login] --> H[Home]
+  end
+
+  subgraph f1 [Feature 1 — Free Scan]
+    H --> S["/scan"]
+    S --> SL["/scan-loading"]
+    SL --> R["/results/:scanId"]
+  end
+
+  subgraph pay [Payment]
+    R --> ST[Stripe $1.99]
+    ST --> R2[Back to results]
+    R2 --> GEN[Generate X-Ray]
+  end
+
+  subgraph f2 [Feature 2 — X-Ray & Roles]
+    GEN --> XR["/xray/:scanId"]
+    XR --> TR["/transition-paths/:scanId"]
+    TR --> RI[Role Intelligence]
+    TR --> CP["Transition Paths — Coming Soon"]
+  end
+
+  subgraph nav [Bottom Nav]
+    NH[Home]
+    NX[Career X-Ray History]
+    NR[Radar]
+    NP[Profile]
+  end

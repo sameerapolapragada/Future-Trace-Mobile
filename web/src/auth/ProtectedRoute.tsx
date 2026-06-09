@@ -1,4 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEntitlements } from "../lib/entitlements";
+import { useCheckoutReturn } from "../lib/useCheckoutReturn";
 import { useAuth } from "./useAuth";
 
 function AuthLoadingScreen() {
@@ -11,7 +13,11 @@ function AuthLoadingScreen() {
 
 export function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
+  const { refresh } = useEntitlements();
   const location = useLocation();
+
+  // Legacy Stripe success URLs (e.g. /home?checkout=success) still confirm + unlock.
+  useCheckoutReturn(refresh, { radarRedirectTo: "/transition" });
 
   if (loading) {
     return <AuthLoadingScreen />;

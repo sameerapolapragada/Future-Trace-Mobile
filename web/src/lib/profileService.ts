@@ -14,6 +14,7 @@ export type SavedScanSummary = {
   targetRole: string;
   date: string;
   resilienceScore: number | null;
+  aiExposureScore: number | null;
   aiExposureLevel: string | null;
   status: string;
 };
@@ -33,6 +34,14 @@ type CareerScanRow = {
   created_at: string;
   scan_inputs: ScanInputsJoin | ScanInputsJoin[] | null;
 };
+
+function exposureScoreFromLevel(level: string | null): number | null {
+  if (!level) return null;
+  const normalized = level.toLowerCase();
+  if (normalized === "low") return 35;
+  if (normalized === "high") return 82;
+  return 62;
+}
 
 function getScanInputs(row: CareerScanRow): ScanInputsJoin | null {
   if (!row.scan_inputs) return null;
@@ -59,6 +68,7 @@ function mapScanRow(row: CareerScanRow): SavedScanSummary {
     targetRole,
     date: formatScanDate(row.created_at),
     resilienceScore: row.resilience_score,
+    aiExposureScore: row.ai_exposure_score ?? exposureScoreFromLevel(row.ai_exposure_level),
     aiExposureLevel: row.ai_exposure_level,
     status: row.status,
   };

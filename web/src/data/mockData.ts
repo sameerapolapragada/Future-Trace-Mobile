@@ -164,6 +164,24 @@ export const careerScans: CareerScan[] = [
   },
 ];
 
+export const currentRoleScanProfile = {
+  resilienceScore: careerScans[0].resilienceScore,
+  aiExposureLevel: careerScans[0].aiExposureLevel,
+  aiExposureLabel: "Medium",
+  strengths: careerScans[0].strengths,
+  vulnerabilities: careerScans[0].vulnerabilities,
+  opportunityZones: careerScans[0].opportunityZones,
+} as const;
+
+export const targetRoleScanProfile = {
+  resilienceScore: 65,
+  aiExposureLevel: "high" as const,
+  aiExposureLabel: "High",
+  strengths: ["High market demand", "AI-native skill growth", "Cross-functional impact"],
+  vulnerabilities: ["Steep learning curve", "Technical depth required", "Rapidly shifting tooling"],
+  opportunityZones: ["Prompt Engineering", "ML Ops", "AI Product Strategy"],
+} as const;
+
 export const xrayInsights: XRayInsight = {
   roleSummary: careerScans[0].summary,
   aiExposureLevel: careerScans[0].aiExposureLevel,

@@ -1,0 +1,11 @@
+flowchart TD
+  A["Free Scan Result / X-Ray History"] --> B{Payment / access}
+  B -->|Not paid| C["Stripe Checkout — $1.99"]
+  B -->|Paid or Radar| D[Generate Career X-Ray]
+  C --> D
+  D --> E["/xray/:scanId — Full X-Ray Report"]
+  E --> F[Explore Transition Roles]
+  F --> G["/transition-paths/:scanId"]
+  G --> H["/xray/role/:slug — Role Intelligence"]
+  G --> I["Career Transition Paths (Coming Soon)"]
+  H --> G

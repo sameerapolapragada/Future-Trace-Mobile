@@ -261,15 +261,20 @@ export type ScanFormInput = {
   workPreference: "Technical" | "Business" | "Hybrid";
 };
 
-export type FreeScanResult = {
-  currentRole: string;
-  targetRole: string;
+export type RoleScanProfile = {
   resilienceScore: number;
   aiExposureLevel: AIExposureLevel;
   aiExposureLabel: string;
   strengths: string[];
   vulnerabilities: string[];
   opportunityZones: string[];
+};
+
+export type FreeScanResult = {
+  currentRole: string;
+  targetRole: string;
+  currentRoleProfile: RoleScanProfile;
+  targetRoleProfile: RoleScanProfile;
   summary: string;
 };
 
@@ -316,10 +321,24 @@ export type ScanHistoryItem = CareerScanRecord & {
   xrayStatusLabel: string;
 };
 
+export type MonthlyUsageSnapshot = {
+  careerScansUsed: number;
+  careerScansLimit: number;
+  careerXraysUsed: number;
+  careerXraysLimit: number;
+  goalSwitchesUsed: number;
+  goalSwitchesLimit: number;
+  cycleResetDate: string;
+};
+
 export type Entitlements = {
   hasRadar: boolean;
   hasCompletedScan: boolean;
   canRunScan: boolean;
+  /** Remaining scans: monthly quota for subscribers, weekly for free users. */
+  scansRemainingThisWeek: number | null;
+  subscriptionExpiresAt: string | null;
+  monthlyUsage: MonthlyUsageSnapshot | null;
 };
 
 export type TransitionRadarPath = {
