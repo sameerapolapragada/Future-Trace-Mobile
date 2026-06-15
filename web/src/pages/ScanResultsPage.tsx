@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AiDisclaimer } from "../components/AiDisclaimer";
 import { Badge, PrimaryButton, SecondaryButtonLink } from "../design-system";
 import { formatRoleName } from "../components/XRayReportSections";
 import { isCheckoutConfigured, startXrayCheckout } from "../lib/checkoutService";
@@ -210,6 +211,8 @@ export default function ScanResultsPage() {
           {actionError}
         </p>
       ) : null}
+
+      <AiDisclaimer className="pt-2 text-center" />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { LogoMark, PrimaryButtonLink, ScoreCircle } from "../design-system";
-import type { ExplorationXray } from "../lib/transition/transitionService";
+import { formatRoleName } from "../components/XRayReportSections";
+import { LogoMark, PrimaryButtonLink } from "../design-system";
+import { getCurrentMilestone, type ExplorationXray } from "../lib/transition/transitionService";
+import { weeklyReadinessMax, weeklyReadinessMin } from "../lib/transition/milestoneUi";
 import type { CareerGoal, WeeklyMilestone, WeeklyMilestoneWithTasks } from "../types/transition";
 import { cn } from "../lib/cn";
 
@@ -10,6 +12,7 @@ type ActiveGoalHomeViewProps = {
   goal: CareerGoal;
   milestones: WeeklyMilestone[];
   currentMilestone: WeeklyMilestoneWithTasks | null;
+  planProgress: number;
   scanTo: string;
   isPro: boolean;
   latestScanId?: string;
@@ -21,14 +24,16 @@ export function ActiveGoalHomeView({
   goal,
   milestones,
   currentMilestone,
+  planProgress,
   scanTo,
   isPro,
   latestScanId,
   explorationXrays = [],
 }: ActiveGoalHomeViewProps) {
-  const timeEstimate = estimateTimeToGoal(goal, milestones, currentMilestone);
-  const weeklyImpactLow = 5;
-  const weeklyImpactHigh = 8;
+  const activeWeek = currentMilestone ?? getCurrentMilestone(milestones);
+  const timeEstimate = estimateTimeToGoal(goal, milestones);
+  const weeklyImpactLow = activeWeek ? weeklyReadinessMin(activeWeek.weekNumber) : 5;
+  const weeklyImpactHigh = activeWeek ? weeklyReadinessMax(activeWeek.weekNumber) : 8;
   const completedTasks =
     currentMilestone?.tasks.filter((t) => t.status === "completed").length ?? 0;
   const totalTasks = currentMilestone?.tasks.length ?? 0;
@@ -54,9 +59,10 @@ export function ActiveGoalHomeView({
 
       <ActiveGoalHeroCard
         goal={goal}
+        planProgress={planProgress}
         timeEstimate={timeEstimate}
-        currentWeek={currentMilestone?.weekNumber}
-        dueDate={currentMilestone?.dueDate}
+        currentWeek={activeWeek?.weekNumber}
+        dueDate={activeWeek?.dueDate}
         weeklyImpactLow={weeklyImpactLow}
         weeklyImpactHigh={weeklyImpactHigh}
       />
@@ -94,8 +100,8 @@ function RecentExplorationsSection({ items }: { items: ExplorationXray[] }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-accent-purple">Analyze</p>
-                <p className="mt-1 text-sm font-bold text-white">{item.targetRole}</p>
-                <p className="mt-0.5 text-xs text-muted">From {item.currentRole}</p>
+                <p className="mt-1 text-sm font-bold text-white">{formatRoleName(item.targetRole)}</p>
+                <p className="mt-0.5 text-xs text-muted">From {formatRoleName(item.currentRole)}</p>
               </div>
               <span className="shrink-0 rounded-lg bg-accent-purple/15 px-2 py-1 text-xs font-semibold tabular-nums text-accent-purple">
                 {item.readinessScore}/100
@@ -124,6 +130,7 @@ function RecentExplorationsSection({ items }: { items: ExplorationXray[] }) {
 
 function ActiveGoalHeroCard({
   goal,
+  planProgress,
   timeEstimate,
   currentWeek,
   dueDate,
@@ -131,6 +138,7 @@ function ActiveGoalHeroCard({
   weeklyImpactHigh,
 }: {
   goal: CareerGoal;
+  planProgress: number;
   timeEstimate: { low: number; high: number };
   currentWeek?: number;
   dueDate?: string;
@@ -145,35 +153,49 @@ function ActiveGoalHeroCard({
 
       <div className="mt-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold leading-snug text-white">{goal.targetRole}</h2>
-          <p className="mt-1 text-sm text-muted">From {goal.currentRole}</p>
+          <h2 className="text-xl font-bold leading-snug text-white">{formatRoleName(goal.targetRole)}</h2>
+          <p className="mt-1 text-sm text-muted">From {formatRoleName(goal.currentRole)}</p>
         </div>
-        <ScoreCircle
-          score={goal.readinessScore}
-          size={72}
-          suffix="/100"
-          label="Readiness"
-          className="shrink-0"
-        />
+        <div className="shrink-0 text-right">
+          <p className="text-2xl font-bold tabular-nums leading-none text-white">
+            {goal.readinessScore}
+            <span className="text-sm font-medium text-muted">/100</span>
+          </p>
+          <p className="mt-1 text-[9px] font-medium uppercase tracking-widest text-muted">Readiness</p>
+        </div>
       </div>
 
       <div className="mt-4">
         <div className="mb-1 flex justify-between text-[10px]">
-          <span className="text-muted">Progress to goal</span>
-          <span className="font-semibold tabular-nums text-white">{goal.readinessScore}%</span>
+          <span className="text-muted">Plan progress</span>
+          <span className="font-semibold tabular-nums text-white">{planProgress}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/8">
           <div
             className="h-full rounded-full bg-gradient-to-r from-accent-purple to-accent-gold"
-            style={{ width: `${goal.readinessScore}%` }}
+            style={{ width: `${planProgress}%` }}
           />
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricPill icon={<ClockIcon />} label="Est. time" value={`${timeEstimate.low} – ${timeEstimate.high} mo`} />
-        <MetricPill icon={<TrendIcon />} label="Next milestone" value={currentWeek ? `Week ${currentWeek}` : "—"} />
-        <MetricPill icon={<CalendarIcon />} label="Due date" value={dueDate ? formatShortDate(dueDate) : "—"} />
+        <MetricPill
+          icon={<TrendIcon />}
+          label="Next milestone"
+          value={currentWeek ? `Week ${currentWeek}` : `Week 1 of ${goal.planLengthWeeks}`}
+        />
+        <MetricPill
+          icon={<CalendarIcon />}
+          label="Due date"
+          value={
+            dueDate
+              ? formatShortDate(dueDate)
+              : goal.targetCompletionDate
+                ? formatShortDate(goal.targetCompletionDate.slice(0, 10))
+                : "—"
+          }
+        />
         <MetricPill
           icon={<ZapIcon />}
           label="Weekly impact"
@@ -367,16 +389,12 @@ function ThisWeekSection({
   );
 }
 
-function estimateTimeToGoal(
-  goal: CareerGoal,
-  milestones: WeeklyMilestone[],
-  current: WeeklyMilestoneWithTasks | null
-): { low: number; high: number } {
+function estimateTimeToGoal(goal: CareerGoal, milestones: WeeklyMilestone[]): { low: number; high: number } {
   const completed = milestones.filter((m) => m.status === "completed").length;
-  const remainingWeeks = Math.max(1, goal.planLengthWeeks - completed);
+  const totalWeeks = milestones.length > 0 ? milestones.length : goal.planLengthWeeks;
+  const remainingWeeks = Math.max(1, totalWeeks - completed);
   const low = Math.max(1, Math.round(remainingWeeks / 5));
   const high = Math.max(low + 1, Math.round(remainingWeeks / 3));
-  if (!current) return { low: 0, high: 0 };
   return { low, high };
 }
 

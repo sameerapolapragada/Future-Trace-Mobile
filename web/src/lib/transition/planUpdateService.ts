@@ -55,31 +55,30 @@ export async function checkPlanUpdatesForGoal(goalId: string): Promise<number> {
 export async function fetchPendingPlanUpdates(userId: string, goalId: string): Promise<PlanUpdateRecommendation[]> {
   const { data, error } = await supabase
     .from("plan_update_recommendations")
-    .select(
-      `
-      *,
-      signal:career_market_signals (skill_name, signal_summary),
-      target:weekly_milestones!target_milestone_id (
-        week_number,
-        unlock_month_number,
-        locked_preview_title,
-        is_unlocked
-      )
-    `
-    )
+    .select("*")
     .eq("user_id", userId)
     .eq("goal_id", goalId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingPlanUpdatesTable(error)) return [];
+    throw error;
+  }
 
-  return (data ?? []).map((row) => {
-    const r = row as Record<string, unknown>;
-    const signal = Array.isArray(r.signal) ? r.signal[0] : r.signal;
-    const target = Array.isArray(r.target) ? r.target[0] : r.target;
-    return mapRecommendation(r, signal as Record<string, unknown> | null, target as Record<string, unknown> | null);
-  });
+  const rows = data ?? [];
+  const enriched = await Promise.all(
+    rows.map(async (row) => {
+      const r = row as Record<string, unknown>;
+      const [signal, target] = await Promise.all([
+        fetchSignalSummary(r.signal_id as string | null),
+        fetchTargetMilestonePreview(r.target_milestone_id as string | null),
+      ]);
+      return mapRecommendation(r, signal, target);
+    })
+  );
+
+  return enriched;
 }
 
 export async function fetchPlanUpdateDetail(
@@ -88,29 +87,56 @@ export async function fetchPlanUpdateDetail(
 ): Promise<PlanUpdateRecommendation | null> {
   const { data, error } = await supabase
     .from("plan_update_recommendations")
-    .select(
-      `
-      *,
-      signal:career_market_signals (skill_name, signal_summary, signal_type, relevance_score),
-      target:weekly_milestones!target_milestone_id (
-        week_number,
-        unlock_month_number,
-        locked_preview_title,
-        is_unlocked
-      )
-    `
-    )
+    .select("*")
     .eq("id", recommendationId)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingPlanUpdatesTable(error)) return null;
+    throw error;
+  }
   if (!data) return null;
 
   const r = data as Record<string, unknown>;
-  const signal = Array.isArray(r.signal) ? r.signal[0] : r.signal;
-  const target = Array.isArray(r.target) ? r.target[0] : r.target;
-  return mapRecommendation(r, signal as Record<string, unknown> | null, target as Record<string, unknown> | null);
+  const [signal, target] = await Promise.all([
+    fetchSignalSummary(r.signal_id as string | null),
+    fetchTargetMilestonePreview(r.target_milestone_id as string | null),
+  ]);
+  return mapRecommendation(r, signal, target);
+}
+
+function isMissingPlanUpdatesTable(error: { code?: string; message?: string }): boolean {
+  const message = error.message ?? "";
+  return (
+    error.code === "42P01" ||
+    message.includes("plan_update_recommendations") ||
+    message.includes("career_market_signals")
+  );
+}
+
+async function fetchSignalSummary(signalId: string | null): Promise<Record<string, unknown> | null> {
+  if (!signalId) return null;
+  const { data, error } = await supabase
+    .from("career_market_signals")
+    .select("skill_name, signal_summary")
+    .eq("id", signalId)
+    .maybeSingle();
+  if (error) return null;
+  return (data as Record<string, unknown> | null) ?? null;
+}
+
+async function fetchTargetMilestonePreview(
+  milestoneId: string | null
+): Promise<Record<string, unknown> | null> {
+  if (!milestoneId) return null;
+  const { data, error } = await supabase
+    .from("weekly_milestones")
+    .select("week_number, unlock_month_number, locked_preview_title, is_unlocked")
+    .eq("id", milestoneId)
+    .maybeSingle();
+  if (error) return null;
+  return (data as Record<string, unknown> | null) ?? null;
 }
 
 export async function applyPlanUpdate(recommendationId: string): Promise<void> {

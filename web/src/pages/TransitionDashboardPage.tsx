@@ -1,17 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
-import { PrimaryButtonLink, ScoreCircle } from "../design-system";
-import { useEntitlements } from "../lib/entitlements";
-import { formatCycleResetDate } from "../lib/subscriptionUsageService";
+import { ReadinessScoreCard } from "../components/ReadinessScoreCard";
+import { formatRoleName } from "../components/XRayReportSections";
+import { PrimaryButtonLink } from "../design-system";
 import { useToast } from "../lib/ToastContext";
 import { formatExpectedImpact, formatRecommendedUpdate } from "../lib/transition/planUpdateUi";
 import { usePlanUpdates, useTransitionDashboard } from "../lib/useTransitionData";
-import type { MonthlyUsageSnapshot } from "../types";
 import type { CareerGoal, PlanUpdateRecommendation, WeeklyMilestone } from "../types/transition";
 import { cn } from "../lib/cn";
 
 export default function TransitionDashboardPage() {
-  const { entitlements } = useEntitlements();
-  const { goal, milestones, currentMilestone, progress, loading, error } = useTransitionDashboard();
+  const { goal, milestones, currentMilestone, loading, error, refresh } = useTransitionDashboard();
   const planUpdates = usePlanUpdates(goal?.id);
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -28,7 +26,7 @@ export default function TransitionDashboardPage() {
   async function handleDismissPlanUpdate(recommendationId: string) {
     try {
       await planUpdates.dismiss(recommendationId);
-      showToast("Plan update dismissed. Your current plan is unchanged.");
+      showToast("AI transition plan update dismissed. Your current plan is unchanged.");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not dismiss update");
     }
@@ -44,8 +42,18 @@ export default function TransitionDashboardPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-        {error}
+      <div className="space-y-4 pb-4">
+        <DashboardHeader />
+        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4">
+          <p className="text-sm text-danger">{error}</p>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="mt-3 text-sm font-medium text-accent transition hover:text-accent-soft ft-focus-ring"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
@@ -77,11 +85,7 @@ export default function TransitionDashboardPage() {
 
       <ActiveGoalCard goal={goal} />
 
-      <ReadinessCard score={goal.readinessScore} planProgress={progress} />
-
-      {entitlements.monthlyUsage ? (
-        <MonthlyUsageCard usage={entitlements.monthlyUsage} />
-      ) : null}
+      <ReadinessScoreCard score={goal.readinessScore} />
 
       <PlanUpdatesSection
         pending={planUpdates.pending}
@@ -178,7 +182,7 @@ function RolePill({ role, variant }: { role: string; variant: "current" | "targe
       >
         {variant === "current" ? <BriefcaseIcon /> : <BrainIcon />}
       </div>
-      <p className="text-xs font-semibold leading-snug text-white">{role}</p>
+      <p className="text-xs font-semibold leading-snug text-white">{formatRoleName(role)}</p>
     </div>
   );
 }
@@ -207,7 +211,7 @@ function PlanUpdatesSection({
   return (
     <section className="rounded-2xl border border-white/8 bg-navy-card p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Plan Updates</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted">AI Transition Plan Updates</p>
         <button
           type="button"
           onClick={onCheck}
@@ -219,10 +223,10 @@ function PlanUpdatesSection({
       </div>
 
       {loading ? (
-        <p className="text-xs text-muted">Loading plan updates…</p>
+        <p className="text-xs text-muted">Loading AI transition plan updates…</p>
       ) : top ? (
         <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-accent/8 to-accent-purple/5 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Plan Update Available</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-accent">AI Transition Plan Update Available</p>
 
           <p className="mt-3 text-xs text-muted">New market signal detected:</p>
           <p className="text-sm font-semibold text-white">{top.signalSkillName ?? "Emerging skill"}</p>
@@ -272,60 +276,6 @@ function PlanUpdatesSection({
 
       {error ? <p className="mt-2 text-xs text-danger">{error}</p> : null}
     </section>
-  );
-}
-
-function ReadinessCard({ score, planProgress }: { score: number; planProgress: number }) {
-  const label = readinessLabel(score);
-  const trend = Math.max(1, Math.round(planProgress / 8));
-
-  const sparkPoints = [
-    Math.max(0, score - 18),
-    Math.max(0, score - 9),
-    score,
-    Math.min(100, score + 8),
-  ];
-
-  return (
-    <section className="rounded-2xl border border-white/8 bg-navy-card p-4">
-      <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted">Readiness score</p>
-
-      <div className="flex items-center gap-4">
-        <ScoreCircle score={score} size={88} suffix="/100" className="shrink-0" />
-
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">{label}</p>
-          <p className="mt-0.5 text-xs text-success">+{trend} points from your plan progress</p>
-          <Sparkline points={sparkPoints} className="mt-3" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Sparkline({ points, className }: { points: number[]; className?: string }) {
-  const width = 140;
-  const height = 36;
-  const padding = 4;
-  const min = Math.min(...points) - 4;
-  const max = Math.max(...points) + 4;
-  const range = max - min || 1;
-
-  const coords = points.map((value, index) => {
-    const x = padding + (index / (points.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((value - min) / range) * (height - padding * 2);
-    return { x, y, value };
-  });
-
-  const path = coords.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-
-  return (
-    <svg width={width} height={height} className={cn("text-accent", className)} aria-hidden>
-      <path d={path} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
-      {coords.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="currentColor" opacity={i === coords.length - 2 ? 1 : 0.5} />
-      ))}
-    </svg>
   );
 }
 
@@ -405,37 +355,6 @@ function TimeToGoalCard({ low, high }: { low: number; high: number }) {
   );
 }
 
-function MonthlyUsageCard({ usage }: { usage: MonthlyUsageSnapshot }) {
-  return (
-    <section className="rounded-2xl border border-white/8 bg-navy-card p-4">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Monthly Usage</p>
-      <ul className="mt-3 space-y-2 text-sm">
-        <li className="flex justify-between gap-3">
-          <span className="text-muted">Career Scans</span>
-          <span className="font-medium tabular-nums text-white">
-            {usage.careerScansUsed} / {usage.careerScansLimit} used
-          </span>
-        </li>
-        <li className="flex justify-between gap-3">
-          <span className="text-muted">Career X-Rays</span>
-          <span className="font-medium tabular-nums text-white">
-            {usage.careerXraysUsed} / {usage.careerXraysLimit} used
-          </span>
-        </li>
-        <li className="flex justify-between gap-3">
-          <span className="text-muted">Goal Switches</span>
-          <span className="font-medium tabular-nums text-white">
-            {usage.goalSwitchesUsed} / {usage.goalSwitchesLimit} used
-          </span>
-        </li>
-      </ul>
-      <p className="mt-3 text-[10px] text-muted">
-        Billing cycle resets: {formatCycleResetDate(usage.cycleResetDate)}
-      </p>
-    </section>
-  );
-}
-
 function BenefitsFooter() {
   const benefits = [
     { icon: <ScanIcon />, title: "10 Scans / Month", desc: "Track your progress monthly", tone: "text-success" },
@@ -469,13 +388,6 @@ function BenefitsFooter() {
       </div>
     </section>
   );
-}
-
-function readinessLabel(score: number): string {
-  if (score >= 80) return "Excellent progress! 🎉";
-  if (score >= 65) return "Good progress! 🎉";
-  if (score >= 45) return "Building momentum";
-  return "Getting started";
 }
 
 function getNextMilestone(

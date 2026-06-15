@@ -135,7 +135,6 @@ export function useSidebarNav() {
       badge: unreadCount > 0 ? { text: String(unreadCount), tone: "count" } : undefined,
     },
     { id: "profile", label: "Profile", to: "/profile" },
-    { id: "settings", label: "Settings", to: "/profile" },
   ];
 
   return {

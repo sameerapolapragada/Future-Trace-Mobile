@@ -31,6 +31,19 @@ import type {
   WeeklyMilestoneWithTasks,
 } from "../../types/transition";
 
+function parseVisibleMilestonesRpc(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) return data as Record<string, unknown>[];
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data) as unknown;
+      return Array.isArray(parsed) ? (parsed as Record<string, unknown>[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function parseStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String);
   return [];
@@ -166,8 +179,17 @@ export async function fetchVisibleMilestonesForGoal(
 
   if (error) throw error;
 
-  const rows = (data ?? []) as Record<string, unknown>[];
-  return rows.map((row) => mapMilestoneFromJson(row));
+  return parseVisibleMilestonesRpc(data).map((row) => mapMilestoneFromJson(row));
+}
+
+/** Generate milestones when a goal exists but weeks were never persisted. */
+export async function ensureMilestonesForGoal(
+  userId: string,
+  goal: CareerGoal
+): Promise<WeeklyMilestone[]> {
+  const existing = await fetchVisibleMilestonesForGoal(userId, goal.id);
+  if (existing.length > 0) return existing;
+  return generateAndPersistWeeklyMilestones(userId, goal, goal.sourceScanId ?? undefined);
 }
 
 /** @deprecated Use fetchVisibleMilestonesForGoal */
@@ -491,8 +513,17 @@ export function overallProgress(milestones: WeeklyMilestone[]): number {
 }
 
 export async function refreshTransitionState(userId: string): Promise<void> {
-  await processDueNotifications(userId);
-  await checkMissedMilestones(userId);
+  try {
+    await processDueNotifications(userId);
+  } catch {
+    // Non-blocking: notification delivery should not prevent plan load.
+  }
+
+  try {
+    await checkMissedMilestones(userId);
+  } catch {
+    // Non-blocking: missed-milestone sweep should not prevent plan load.
+  }
 }
 
 export async function switchActiveGoal(userId: string, newGoalId: string): Promise<CareerGoal> {
@@ -672,6 +703,26 @@ export type ExplorationXray = {
   generatedAt: string | null;
 };
 
+function normalizeRole(role: string): string {
+  return role.trim().toLowerCase();
+}
+
+function isSameCareerPath(
+  a: { currentRole: string; targetRole: string },
+  b: { currentRole: string; targetRole: string }
+): boolean {
+  return (
+    normalizeRole(a.currentRole) === normalizeRole(b.currentRole) &&
+    normalizeRole(a.targetRole) === normalizeRole(b.targetRole)
+  );
+}
+
+function isActiveGoalExploration(activeGoal: CareerGoal, xray: ExplorationXray): boolean {
+  if (activeGoal.sourceXrayId && xray.xrayId === activeGoal.sourceXrayId) return true;
+  if (activeGoal.sourceScanId && xray.scanId === activeGoal.sourceScanId) return true;
+  return isSameCareerPath(activeGoal, xray);
+}
+
 export async function fetchExplorationXrays(
   userId: string,
   activeGoal: CareerGoal | null
@@ -685,20 +736,14 @@ export async function fetchExplorationXrays(
 
   if (error) throw error;
 
-  const activeXrayId = activeGoal?.sourceXrayId;
-
-  const filtered = (xrays ?? []).filter((row) => {
-    if (activeXrayId && row.id === activeXrayId) return false;
-    return true;
-  });
-
   const results: ExplorationXray[] = [];
 
-  for (const row of filtered) {
+  for (const row of xrays ?? []) {
     const scan = await fetchCareerScan(userId, row.scan_id as string);
     if (!scan) continue;
+
     const result = row.xray_result_json as CareerXRaySnapshotResult | null;
-    results.push({
+    const entry: ExplorationXray = {
       xrayId: row.id as string,
       scanId: row.scan_id as string,
       targetRole: result?.report?.targetRole ?? scan.targetRole,
@@ -708,7 +753,11 @@ export async function fetchExplorationXrays(
         result?.report?.futureReadinessScore ??
         0,
       generatedAt: (row.generated_at as string | null) ?? null,
-    });
+    };
+
+    if (activeGoal && isActiveGoalExploration(activeGoal, entry)) continue;
+
+    results.push(entry);
   }
 
   return results;

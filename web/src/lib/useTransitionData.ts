@@ -7,7 +7,7 @@ import {
 } from "./transition/notificationService";
 import { MilestoneLockedError } from "./transition/milestoneAccess";
 import {
-  ensureActiveGoalFromLatestScan,
+  ensureMilestonesForGoal,
   fetchActiveGoal,
   fetchGoal,
   fetchMilestoneWithTasks,
@@ -16,6 +16,7 @@ import {
   overallProgress,
   refreshTransitionState,
 } from "./transition/transitionService";
+import { formatTransitionLoadError } from "./transition/transitionLoadErrors";
 import {
   applyPlanUpdate,
   checkPlanUpdatesForGoal,
@@ -44,18 +45,17 @@ export function useTransitionDashboard() {
 
     try {
       await refreshTransitionState(userId);
-      let active = await ensureActiveGoalFromLatestScan(userId);
-      if (!active) active = await fetchActiveGoal(userId);
+      const active = await fetchActiveGoal(userId);
       setGoal(active);
 
       if (active) {
-        const weeks = await fetchMilestonesForGoal(userId, active.id);
+        const weeks = await ensureMilestonesForGoal(userId, active);
         setMilestones(weeks);
       } else {
         setMilestones([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load transition plan");
+      setError(formatTransitionLoadError(err));
       setGoal(null);
       setMilestones([]);
     } finally {
@@ -140,7 +140,7 @@ export function useTransitionPlan(goalId: string | undefined) {
         setMilestones(await fetchMilestonesForGoal(userId, goalId));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load plan");
+      setError(formatTransitionLoadError(err));
     } finally {
       setLoading(false);
     }
@@ -207,7 +207,7 @@ export function usePlanUpdates(goalId: string | null | undefined) {
     try {
       setPending(await fetchPendingPlanUpdates(userId, goalId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load plan updates");
+      setError(err instanceof Error ? err.message : "Failed to load AI transition plan updates");
       setPending([]);
     } finally {
       setLoading(false);

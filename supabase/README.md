@@ -51,14 +51,22 @@ These migrations are idempotent where possible (`IF NOT EXISTS`, `ON CONFLICT`).
 
 ## Verify after apply
 
+```bash
+supabase db query --linked -f supabase/scripts/verify_production.sql
+```
+
+Or quick SQL:
+
 ```sql
--- Tables
 select tablename from pg_tables
 where schemaname = 'public'
   and tablename in ('career_scans', 'user_entitlements', 'role_salary_benchmarks')
 order by tablename;
 
--- Cron jobs
 select jobname, schedule, active from cron.job
-where jobname like '%cleanup%';
+where jobname like '%cleanup%' or jobname like '%monthly%';
 ```
+
+## Production setup
+
+See [docs/PRODUCTION_SETUP.md](./docs/PRODUCTION_SETUP.md) for creating a separate prod project, auth URLs, email templates, and cron verification.

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { useEntitlements } from "./entitlements";
 import {
+  ensureMilestonesForGoal,
   fetchActiveGoal,
   fetchExplorationXrays,
   fetchMilestoneWithTasks,
-  fetchMilestonesForGoal,
   getCurrentMilestone,
   overallProgress,
   refreshTransitionState,
@@ -126,20 +126,24 @@ export function useHomeDashboard() {
     }
 
     const uid = userId;
-    const goalId = activeGoal.id;
+    const goal = activeGoal;
     let cancelled = false;
 
     async function loadTransition() {
       setTransitionLoading(true);
       try {
         await refreshTransitionState(uid);
-        const weeks = await fetchMilestonesForGoal(uid, goalId);
+        const weeks = await ensureMilestonesForGoal(uid, goal);
         if (cancelled) return;
         setMilestones(weeks);
         const current = getCurrentMilestone(weeks);
         if (current) {
-          const detail = await fetchMilestoneWithTasks(uid, current.id);
-          if (!cancelled) setCurrentMilestone(detail);
+          try {
+            const detail = await fetchMilestoneWithTasks(uid, current.id);
+            if (!cancelled) setCurrentMilestone(detail);
+          } catch {
+            if (!cancelled) setCurrentMilestone({ ...current, tasks: [] });
+          }
         } else {
           setCurrentMilestone(null);
         }

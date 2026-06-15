@@ -2,7 +2,9 @@
 # Git → Supabase: push Web-Dev; migrations in supabase/migrations/ apply to linked branch.
 # Docs: https://supabase.com/docs/guides/deployment/branching/github-integration
 
-project_id = "sqooryqoncsjrwffosui"
+# Linked via CLI: supabase link --project-ref <ref>
+# Dev: fepqvdleqodzygquihbj | Prod: create separate project (see docs/PRODUCTION_SETUP.md)
+project_id = "fepqvdleqodzygquihbj"
 
 [api]
 enabled = true
@@ -25,14 +27,33 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+site_url = "http://localhost:5173"
 additional_redirect_urls = [
-  "http://localhost:3000/auth/reset-password",
-  "https://future-trace.com/auth/reset-password",
+  "http://localhost:5173/login",
+  "http://localhost:5173/**",
+  "https://app.futuretrace.com/login",
+  "https://app.futuretrace.com/**",
 ]
 jwt_expiry = 3600
 enable_signup = true
 
 [auth.email]
 enable_signup = true
+# Local dev: false for fast iteration. Production: enable in Dashboard (see PRODUCTION_SETUP.md).
 enable_confirmations = false
+
+[auth.email.template.confirmation]
+subject = "Confirm your Future Trace account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your Future Trace sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Future Trace password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new Future Trace email"
+content_path = "./supabase/templates/email_change.html"

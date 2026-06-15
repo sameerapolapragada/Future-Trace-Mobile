@@ -21,7 +21,7 @@ export default function TransitionPlanPage() {
   if (loading) {
     return (
       <div className="flex min-h-[50svh] flex-1 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-accent-gold" />
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function TransitionPlanPage() {
 
 function MonthFocusBanner() {
   return (
-    <section className="rounded-xl border border-white/8 bg-navy-card/60 px-4 py-3">
+    <section className="rounded-xl border border-accent-gold/15 bg-navy-card/60 px-4 py-3">
       <p className="text-xs leading-relaxed text-muted">
         AI Career Transition reveals your plan one month at a time to keep your path focused and
         adaptive. Your next milestone set unlocks after you complete 75% of this month or when the
@@ -118,9 +118,9 @@ function PlanSummaryCard({
   totalCount: number;
 }) {
   return (
-    <section className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/10 to-navy-card p-4">
+    <section className="rounded-2xl border border-accent-purple/30 bg-gradient-to-br from-accent-purple/12 via-navy-card to-navy-card p-4">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-purple/20 text-accent-purple">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-gold/20 text-accent-gold">
           <FlagIcon />
         </span>
         <div className="min-w-0 flex-1">
@@ -130,12 +130,12 @@ function PlanSummaryCard({
             {unlockedCount} of {totalCount} weeks unlocked
           </p>
         </div>
-        <span className="shrink-0 text-sm font-bold tabular-nums text-accent">{progress}%</span>
+        <span className="shrink-0 text-sm font-bold tabular-nums text-accent-gold">{progress}%</span>
       </div>
       <div className="mt-4">
         <div className="h-2 overflow-hidden rounded-full bg-white/8">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-accent to-accent-soft transition-all duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-accent-purple to-accent-gold transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -169,7 +169,7 @@ function TimelineWeekRow({
     isLocked
       ? "border-white/6 bg-white/[0.02] opacity-80"
       : status === "in_progress"
-        ? "border-accent/35 bg-accent/8 shadow-lg shadow-accent/5 ft-focus-ring"
+        ? "border-accent-purple/35 bg-accent-purple/8 shadow-lg shadow-accent-purple/5 ft-focus-ring"
         : status === "completed"
           ? "border-success/20 bg-success/5 ft-focus-ring"
           : "border-white/8 bg-navy-card/60 hover:border-white/15 ft-focus-ring"
@@ -252,9 +252,9 @@ function TimelineNode({ status }: { status: ReturnType<typeof timelineWeekStatus
   if (status === "in_progress") {
     return (
       <span className="relative flex h-5 w-5 items-center justify-center">
-        <span className="absolute inset-0 rounded-full bg-accent/30 blur-sm" />
-        <span className="relative h-5 w-5 rounded-full border-2 border-accent bg-accent/20">
-          <span className="absolute inset-1 rounded-full bg-accent" />
+        <span className="absolute inset-0 rounded-full bg-accent-purple/30 blur-sm" />
+        <span className="relative h-5 w-5 rounded-full border-2 border-accent-gold bg-accent-purple/20">
+          <span className="absolute inset-1 rounded-full bg-accent-gold" />
         </span>
       </span>
     );

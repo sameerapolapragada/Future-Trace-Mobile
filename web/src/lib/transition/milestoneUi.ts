@@ -31,7 +31,7 @@ export function milestoneStatusLabel(
 export function milestoneStatusTone(status: WeeklyMilestoneStatus, isCurrent: boolean): string {
   if (status === "completed") return "text-success border-success/30 bg-success/10";
   if (status === "missed") return "text-danger border-danger/30 bg-danger/10";
-  if (isCurrent || status === "in_progress") return "text-accent border-accent/30 bg-accent/10";
+  if (isCurrent || status === "in_progress") return "text-accent-gold border-accent-purple/30 bg-accent-purple/10";
   return "text-muted border-white/10 bg-white/5";
 }
 
@@ -61,7 +61,7 @@ export function timelineStatusBadge(status: TimelineWeekStatus): {
     case "in_progress":
       return {
         label: "In Progress",
-        className: "bg-accent/20 text-accent border-accent/30",
+        className: "bg-accent-purple/20 text-accent-gold border-accent-purple/30",
       };
     case "missed":
       return {

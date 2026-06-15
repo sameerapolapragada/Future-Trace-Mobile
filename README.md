@@ -46,9 +46,16 @@ npm run dev
 
 | Doc | Purpose |
 |-----|---------|
+| [docs/ARCHITECTURE_AND_DATA_FLOWS.md](docs/ARCHITECTURE_AND_DATA_FLOWS.md) | System architecture, LLM/static frequency, compliance risk map |
+| [docs/TECH_STACK.md](docs/TECH_STACK.md) | Technologies, API calls, auth, LLM, Stripe, env vars |
+| [docs/RELEASE_PENDING_TASKS.md](docs/RELEASE_PENDING_TASKS.md) | Blocking tasks before public launch |
+| [docs/OBSOLETE_DB_TABLES.md](docs/OBSOLETE_DB_TABLES.md) | Supabase tables no longer needed / unused |
+| [docs/TESTING_USE_CASES.md](docs/TESTING_USE_CASES.md) | End-to-end QA test cases |
+| [docs/GO_LIVE_CHECKLIST.md](docs/GO_LIVE_CHECKLIST.md) | Pre-launch checklist (Supabase, BFF, PWA, security) |
 | [docs/MOBILE_VS_WEB.md](docs/MOBILE_VS_WEB.md) | Mobile vs web strategy, repo layout, native roadmap |
 | [docs/PENDING_IMPLEMENTATION_CHECKLIST.md](docs/PENDING_IMPLEMENTATION_CHECKLIST.md) | Week-by-week implementation checklist |
 | [docs/BACKEND_AND_LLM_STRATEGY.md](docs/BACKEND_AND_LLM_STRATEGY.md) | Backend, LLM, and cost strategy |
+| [docs/FEATURE_1_AND_2_PROCESS_FLOW.md](docs/FEATURE_1_AND_2_PROCESS_FLOW.md) | User flow diagrams for scan and transition |
 
 ## Splash screen
 

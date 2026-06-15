@@ -10,6 +10,11 @@ import { useAuth } from "../auth/useAuth";
 import { cn } from "../lib/cn";
 import type { TransitionNotification } from "../types/transition";
 
+function formatNotificationTitle(title: string): string {
+  if (title === "Plan Update Available") return "AI Transition Plan Update Available";
+  return title;
+}
+
 export default function NotificationsPage() {
   const { userId } = useAuth();
   const navigate = useNavigate();
@@ -127,7 +132,7 @@ function NotificationRow({
         )}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium text-white">{notification.title}</p>
+          <p className="text-sm font-medium text-white">{formatNotificationTitle(notification.title)}</p>
           {unread ? <span className="h-2 w-2 shrink-0 rounded-full bg-accent" /> : null}
         </div>
         <p className="mt-1 text-xs leading-relaxed text-muted">{notification.message}</p>

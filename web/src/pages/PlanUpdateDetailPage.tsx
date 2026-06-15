@@ -35,7 +35,7 @@ export default function PlanUpdateDetailPage() {
       const row = await fetchPlanUpdateDetail(userId, recommendationId);
       if (!row || row.status !== "pending") {
         setRec(row);
-        if (!row) setError("Plan update not found");
+        if (!row) setError("AI transition plan update not found");
         else if (row.status === "applied") setError("This update was already applied.");
         else if (row.status === "dismissed") setError("This update was dismissed.");
         else setError("This update is no longer available.");
@@ -43,7 +43,7 @@ export default function PlanUpdateDetailPage() {
         setRec(row);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load plan update");
+      setError(err instanceof Error ? err.message : "Failed to load AI transition plan update");
       setRec(null);
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ export default function PlanUpdateDetailPage() {
     setBusy(true);
     try {
       await dismissPlanUpdate(rec.id);
-      showToast("Plan update dismissed. Your current plan is unchanged.");
+      showToast("AI transition plan update dismissed. Your current plan is unchanged.");
       navigate("/transition");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not dismiss update");
@@ -94,7 +94,7 @@ export default function PlanUpdateDetailPage() {
     return (
       <div className="space-y-4 pb-6">
         <DetailHeader onBack={() => navigate("/transition")} />
-        <p className="text-sm text-danger">{error ?? "Plan update not found"}</p>
+        <p className="text-sm text-danger">{error ?? "AI transition plan update not found"}</p>
         <PrimaryButton fullWidth onClick={() => navigate("/transition")}>
           Back to Plan
         </PrimaryButton>
@@ -228,7 +228,7 @@ function DetailHeader({ onBack }: { onBack: () => void }) {
             <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 className="text-xs font-bold uppercase tracking-[0.2em] text-white">Plan Update</h1>
+        <h1 className="text-xs font-bold uppercase tracking-[0.2em] text-white">AI Transition Plan Update</h1>
         <div className="h-9 w-9" aria-hidden />
       </div>
     </header>

@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { Outlet, useLocation, useMatches } from "react-router-dom";
+import { PageLoader } from "../components/PageLoader";
 import { AppSidebar, SidebarMenuButton } from "../components/AppSidebar";
+import { InstallPrompt } from "../components/InstallPrompt";
 import { NotificationBell } from "../components/NotificationBell";
 import { useAuth } from "../auth/useAuth";
 import { SidebarProvider, useSidebar } from "../lib/SidebarContext";
@@ -21,30 +23,25 @@ function AppShellContent() {
   const matches = useMatches();
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
-  const { closeMobile } = useSidebar();
+  const { closeMenu } = useSidebar();
   const { showNav, centered, header } = getRouteHandle(matches);
-  const showSidebar = isAuthenticated && !centered;
+  const showAppMenu = isAuthenticated && !centered;
 
   useEffect(() => {
-    closeMobile();
-  }, [pathname, closeMobile]);
+    closeMenu();
+  }, [pathname, closeMenu]);
 
   return (
     <div className="flex min-h-svh w-full bg-navy">
-      {showSidebar ? <AppSidebar /> : null}
+      {showAppMenu ? <AppSidebar /> : null}
 
-      <div
-        className={cn(
-          "mx-auto flex min-h-svh w-full min-w-0 flex-1 flex-col shadow-2xl shadow-black/40",
-          showSidebar ? "max-w-none" : "max-w-md"
-        )}
-      >
+      <div className="mx-auto flex min-h-svh w-full min-w-0 max-w-md flex-col md:shadow-2xl md:shadow-black/40">
         {header && <ShellHeader {...header} />}
 
-        {showSidebar && !header ? (
-          <div className="flex items-center justify-between px-5 pt-[max(0.75rem,env(safe-area-inset-top))] lg:px-5">
-            <SidebarMenuButton />
+        {showAppMenu && !header ? (
+          <div className="flex items-center justify-end gap-2 px-5 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <NotificationBell />
+            <SidebarMenuButton />
           </div>
         ) : null}
 
@@ -54,17 +51,20 @@ function AppShellContent() {
             centered
               ? "items-center justify-center px-6"
               : "overflow-y-auto px-5 pb-6",
-            header ? "pt-4" : !showSidebar && "pt-[max(1rem,env(safe-area-inset-top))]",
-            showSidebar && !header ? "pt-2" : null,
+            header ? "pt-4" : !showAppMenu && "pt-[max(1rem,env(safe-area-inset-top))]",
+            showAppMenu && !header ? "pt-2" : null,
             showNav && "pb-2"
           )}
         >
-          {!showSidebar && showNav && !header ? (
+          {!showAppMenu && showNav && !header ? (
             <div className="mb-2 flex justify-end">
               <NotificationBell />
             </div>
           ) : null}
-          <Outlet />
+          {showAppMenu && showNav ? <InstallPrompt /> : null}
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
 
         {showNav && <BottomNav />}
@@ -83,8 +83,8 @@ export function AppShell() {
 
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-svh items-start justify-center bg-navy p-0 sm:bg-surface sm:p-4">
-      <div className="w-full max-w-5xl overflow-hidden bg-navy sm:rounded-[2rem] sm:border sm:border-white/10 sm:shadow-2xl sm:shadow-black/50">
+    <div className="flex min-h-svh w-full bg-navy md:items-start md:justify-center md:bg-surface md:p-4">
+      <div className="min-h-svh w-full bg-navy md:max-w-5xl md:overflow-hidden md:rounded-[2rem] md:border md:border-white/10 md:shadow-2xl md:shadow-black/50">
         {children}
       </div>
     </div>

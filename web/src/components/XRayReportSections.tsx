@@ -1,4 +1,5 @@
 import { PrimaryButtonLink } from "../design-system";
+import { AiDisclaimer } from "./AiDisclaimer";
 import { cn } from "../lib/cn";
 import type {
   TransitionDifficulty,
@@ -292,6 +293,8 @@ export function XRayReportSections({
           Explore Transition Roles
         </PrimaryButtonLink>
       ) : null}
+
+      <AiDisclaimer className="border-t border-white/8 pt-4" />
     </div>
   );
 }

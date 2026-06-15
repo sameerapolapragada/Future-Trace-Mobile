@@ -23,7 +23,7 @@ function isNavActive(pathname: string, id: string): boolean {
   if (id === "plan") return pathname.startsWith("/transition/plan/");
   if (id === "milestones") return pathname.startsWith("/transition/week/");
   if (id === "notifications") return pathname === "/notifications";
-  if (id === "profile" || id === "settings") return pathname === "/profile";
+  if (id === "profile") return pathname === "/profile";
   return false;
 }
 
@@ -31,53 +31,60 @@ export function AppSidebar() {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
   const { entitlements } = useEntitlements();
-  const { collapsed, mobileOpen, toggleCollapsed, closeMobile } = useSidebar();
+  const { menuOpen, closeMenu } = useSidebar();
   const { items } = useSidebarNav();
 
   if (!isAuthenticated) return null;
 
   const renewal = formatRenewalDate(entitlements.subscriptionExpiresAt);
-  const expanded = mobileOpen || !collapsed;
 
   return (
     <>
-      {mobileOpen ? (
+      {menuOpen ? (
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={closeMobile}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={closeMenu}
         />
       ) : null}
 
       <aside
+        aria-hidden={!menuOpen}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/8 bg-[#0a0a0f] transition-all duration-300 ease-out",
-          "lg:static lg:z-auto",
-          expanded ? "w-[220px]" : "w-[68px]",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "fixed inset-y-0 right-0 z-50 flex w-[min(300px,88vw)] flex-col border-l border-white/8 bg-[#0a0a0f] shadow-2xl shadow-black/50 transition-transform duration-300 ease-out",
+          menuOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
         )}
       >
-        <div className={cn("flex items-center gap-2.5 border-b border-white/6 px-3 py-4", !expanded && "justify-center")}>
-          <LogoMark size={expanded ? 32 : 28} className="shrink-0" />
-          {expanded ? (
+        <div className="flex items-center justify-between gap-2.5 border-b border-white/6 px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <LogoMark size={28} className="shrink-0" />
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-white">Future Trace</p>
-          ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={closeMenu}
+            aria-label="Close menu"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/8 ft-focus-ring"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" aria-label="Main menu">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3" aria-label="Main menu">
           {items.map((item) => (
-            <SidebarLink
+            <MenuLink
               key={item.id}
               item={item}
               active={isNavActive(pathname, item.id)}
-              expanded={expanded}
-              onNavigate={closeMobile}
+              onNavigate={closeMenu}
             />
           ))}
         </nav>
 
-        {entitlements.hasRadar && expanded ? (
+        {entitlements.hasRadar ? (
           <div className="border-t border-white/6 p-3">
             <div className="rounded-xl border border-accent-purple/25 bg-navy-card/80 p-3">
               <div className="flex items-center gap-2">
@@ -87,12 +94,10 @@ export function AppSidebar() {
                 </span>
               </div>
               <p className="mt-1 text-[10px] text-muted">Active</p>
-              {renewal ? (
-                <p className="text-[10px] text-muted">Renews on {renewal}</p>
-              ) : null}
+              {renewal ? <p className="text-[10px] text-muted">Renews on {renewal}</p> : null}
               <Link
                 to="/profile"
-                onClick={closeMobile}
+                onClick={closeMenu}
                 className="mt-3 block w-full rounded-lg bg-accent-purple/20 py-2 text-center text-[11px] font-semibold text-white transition hover:bg-accent-purple/30 ft-focus-ring"
               >
                 Manage Plan
@@ -100,55 +105,32 @@ export function AppSidebar() {
             </div>
           </div>
         ) : null}
-
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden border-t border-white/6 px-3 py-3 text-[10px] font-medium text-muted transition hover:text-white lg:block"
-        >
-          {collapsed ? "→" : "← Collapse"}
-        </button>
       </aside>
     </>
   );
 }
 
-function SidebarLink({
+function MenuLink({
   item,
   active,
-  expanded,
   onNavigate,
 }: {
   item: SidebarNavItem;
   active: boolean;
-  expanded: boolean;
   onNavigate: () => void;
 }) {
   return (
     <Link
       to={item.to}
       onClick={onNavigate}
-      title={!expanded ? item.label : undefined}
       className={cn(
-        "relative flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm transition ft-focus-ring",
-        active
-          ? "bg-accent-purple/20 text-white"
-          : "text-muted hover:bg-white/5 hover:text-white",
-        !expanded && "justify-center px-2"
+        "flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm transition ft-focus-ring",
+        active ? "bg-accent-purple/20 text-white" : "text-muted hover:bg-white/5 hover:text-white"
       )}
     >
       <NavIcon id={item.id} active={active} />
-      {expanded ? (
-        <>
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{item.label}</span>
-          {item.badge ? <NavBadge badge={item.badge} /> : null}
-        </>
-      ) : item.badge?.tone === "count" ? (
-        <span className="absolute ml-5 mt-[-14px] flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] font-bold text-white">
-          {item.badge.text}
-        </span>
-      ) : null}
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{item.label}</span>
+      {item.badge ? <NavBadge badge={item.badge} /> : null}
     </Link>
   );
 }
@@ -236,29 +218,22 @@ function NavIcon({ id, active }: { id: string; active: boolean }) {
           <path d="M5 20c0-4 3.5-6 7-6s7 2 7 6" strokeLinecap="round" />
         </svg>
       );
-    case "settings":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" strokeLinecap="round" />
-        </svg>
-      );
     default:
       return null;
   }
 }
 
 export function SidebarMenuButton() {
-  const { toggleMobile } = useSidebar();
+  const { toggleMenu } = useSidebar();
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return null;
 
   return (
     <button
       type="button"
-      onClick={toggleMobile}
+      onClick={toggleMenu}
       aria-label="Open menu"
-      className="flex h-9 w-9 items-center justify-center rounded-xl text-muted transition hover:bg-white/8 hover:text-white lg:hidden ft-focus-ring"
+      className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/8 ft-focus-ring"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />

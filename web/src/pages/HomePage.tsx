@@ -20,6 +20,7 @@ export default function HomePage() {
     explorationXrays,
     milestones,
     currentMilestone,
+    planProgress,
     showActiveGoalHome,
     showRichHome,
     showScansOnlyHome,
@@ -45,6 +46,7 @@ export default function HomePage() {
         goal={activeGoal}
         milestones={milestones}
         currentMilestone={currentMilestone}
+        planProgress={planProgress}
         scanTo={scanTo}
         isPro={entitlements.hasRadar}
         latestScanId={scans[0]?.id}

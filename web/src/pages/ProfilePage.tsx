@@ -1,6 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { DeleteAccountDialog } from "../components/DeleteAccountDialog";
+import { MonthlyUsageCard } from "../components/MonthlyUsageCard";
+import { formatRoleName } from "../components/XRayReportSections";
 import { Badge, Card, GhostButton, SectionHeader } from "../design-system";
 import { useAuth } from "../auth/useAuth";
+import { deleteAccount } from "../lib/accountService";
+import { downloadJsonExport, exportUserData } from "../lib/complianceService";
+import { useToast } from "../lib/ToastContext";
 import { products } from "../data/mockData";
 import { useEntitlements } from "../lib/entitlements";
 import { getCareerXRayPath, getNewScanPath } from "../lib/entitlementsService";
@@ -54,10 +61,13 @@ function getSubscriptionTone(hasRadar: boolean) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, userId, signOut } = useAuth();
+  const { showToast } = useToast();
   const { entitlements, loading: entitlementsLoading } = useEntitlements();
   const { items: scanHistory, loading: historyLoading } = useScanHistory();
   const { profile, scans, loading: profileLoading, error } = useProfileData();
+  const [exportBusy, setExportBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const loading = entitlementsLoading || profileLoading || historyLoading;
   const generatedXrays = scanHistory.filter((s) => s.xray?.status === "generated");
@@ -68,7 +78,10 @@ export default function ProfilePage() {
   const latestScan = scans[0];
   const displayName = getDisplayName(user, profile);
   const email = user?.email ?? profile?.email ?? "";
-  const careerTitle = profile?.job_role ?? latestScan?.currentRole ?? "Complete a scan to add your role";
+  const rawCareerTitle = profile?.job_role ?? latestScan?.currentRole;
+  const careerTitle = rawCareerTitle
+    ? formatRoleName(rawCareerTitle)
+    : "Complete a scan to add your role";
   const avatarInitial = displayName.charAt(0).toUpperCase();
 
   const xrayStatusLabelDisplay = xrayStatusLabel;
@@ -76,6 +89,26 @@ export default function ProfilePage() {
   const lastLogin = formatLastLogin(user?.last_sign_in_at);
 
   async function handleLogout() {
+    await signOut();
+    navigate("/login", { replace: true });
+  }
+
+  async function handleExportData() {
+    if (!userId || exportBusy) return;
+    setExportBusy(true);
+    try {
+      const data = await exportUserData();
+      downloadJsonExport(data, userId);
+      showToast("Your data export has downloaded.", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not export data");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    await deleteAccount();
     await signOut();
     navigate("/login", { replace: true });
   }
@@ -133,6 +166,13 @@ export default function ProfilePage() {
         </Card>
       </section>
 
+      {entitlements.monthlyUsage ? (
+        <section>
+          <SectionHeader title="Monthly Usage" subtitle="Your plan limits this billing cycle" />
+          <MonthlyUsageCard usage={entitlements.monthlyUsage} />
+        </section>
+      ) : null}
+
       <section>
         <SectionHeader title="Scan History" subtitle="Free scans and X-Ray status" />
         {scanHistory.length === 0 ? (
@@ -154,7 +194,7 @@ export default function ProfilePage() {
                 <Card className="flex items-center justify-between py-3 transition active:scale-[0.99]">
                   <div>
                     <p className="text-sm font-medium text-white">
-                      {scan.currentRole} → {scan.targetRole}
+                      {formatRoleName(scan.currentRole)} → {formatRoleName(scan.targetRole)}
                     </p>
                     <p className="mt-0.5 text-xs text-muted">Free Scan Available</p>
                   </div>
@@ -178,14 +218,32 @@ export default function ProfilePage() {
       </section>
 
       <section>
-        <SectionHeader title="Settings" />
+        <SectionHeader title="Settings" subtitle="Privacy and account" />
         <Card className="divide-y divide-white/8 p-0" padding="none">
           <SettingsRow label="Last login" value={lastLogin ?? "—"} />
           <SettingsRow label="Notifications" value="On" onClick={() => {}} />
-          <SettingsRow label="Privacy settings" onClick={() => {}} />
+          <SettingsRow
+            label="Download my data"
+            value={exportBusy ? "Preparing…" : undefined}
+            onClick={() => void handleExportData()}
+          />
           <SettingsRow label="Help and support" onClick={() => {}} />
         </Card>
       </section>
+
+      <section>
+        <SectionHeader title="Danger zone" />
+        <Card className="divide-y divide-white/8 p-0" padding="none">
+          <SettingsRow label="Delete account" onClick={() => setDeleteOpen(true)} />
+        </Card>
+      </section>
+
+      <DeleteAccountDialog
+        email={email}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteAccount}
+      />
 
       {!entitlements.hasRadar ? (
         <Card variant="elevated" padding="md">

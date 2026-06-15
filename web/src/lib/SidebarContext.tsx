@@ -1,28 +1,24 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 type SidebarContextValue = {
-  collapsed: boolean;
-  mobileOpen: boolean;
-  toggleCollapsed: () => void;
-  openMobile: () => void;
-  closeMobile: () => void;
-  toggleMobile: () => void;
+  menuOpen: boolean;
+  openMenu: () => void;
+  closeMenu: () => void;
+  toggleMenu: () => void;
 };
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const toggleCollapsed = useCallback(() => setCollapsed((p) => !p), []);
-  const openMobile = useCallback(() => setMobileOpen(true), []);
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
-  const toggleMobile = useCallback(() => setMobileOpen((p) => !p), []);
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const toggleMenu = useCallback(() => setMenuOpen((open) => !open), []);
 
   const value = useMemo(
-    () => ({ collapsed, mobileOpen, toggleCollapsed, openMobile, closeMobile, toggleMobile }),
-    [collapsed, mobileOpen, toggleCollapsed, openMobile, closeMobile, toggleMobile]
+    () => ({ menuOpen, openMenu, closeMenu, toggleMenu }),
+    [menuOpen, openMenu, closeMenu, toggleMenu]
   );
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
