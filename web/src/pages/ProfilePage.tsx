@@ -222,12 +222,36 @@ export default function ProfilePage() {
         <Card className="divide-y divide-white/8 p-0" padding="none">
           <SettingsRow label="Last login" value={lastLogin ?? "—"} />
           <SettingsRow label="Notifications" value="On" onClick={() => {}} />
+          <Link
+            to="/privacy"
+            className="flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:bg-white/[0.03]"
+          >
+            <span className="text-sm text-white">Privacy Policy</span>
+            <span className="text-sm text-muted" aria-hidden>
+              →
+            </span>
+          </Link>
+          <Link
+            to="/terms"
+            className="flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:bg-white/[0.03]"
+          >
+            <span className="text-sm text-white">Terms of Service</span>
+            <span className="text-sm text-muted" aria-hidden>
+              →
+            </span>
+          </Link>
+          <SettingsRow
+            label="Contact support"
+            value="support@futuretrace.com"
+            onClick={() => {
+              window.location.href = "mailto:support@futuretrace.com";
+            }}
+          />
           <SettingsRow
             label="Download my data"
             value={exportBusy ? "Preparing…" : undefined}
             onClick={() => void handleExportData()}
           />
-          <SettingsRow label="Help and support" onClick={() => {}} />
         </Card>
       </section>
 

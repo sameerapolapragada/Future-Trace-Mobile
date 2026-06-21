@@ -1,4 +1,7 @@
 import { careerScans, currentRoleScanProfile, targetRoleScanProfile } from "../data/mockData";
+import { scanInputCacheKey } from "@ft/ai";
+import { loadAiAccessContext } from "./ai/clientAccess";
+import { apiJson, isApiConfigured } from "./apiClient";
 import { supabase } from "./supabaseClient";
 import { inferTargetRole } from "./targetRole";
 import { recordFreeScanUsage } from "./accessService";
@@ -201,9 +204,33 @@ export async function createCareerScan(
   input: ScanFormInput
 ): Promise<CareerScanRecord> {
   const targetRole = input.targetRole.trim() || inferTargetRole(input.careerGoal, input.currentRole);
-  const freeResult = buildMockFreeResult({ ...input, targetRole });
   const inputHash = computeInputHash({ ...input, targetRole }, String(Date.now()));
   const yearsNum = Math.min(60, Math.max(0, parseInt(input.yearsExperience, 10) || 0));
+
+  const context = await loadAiAccessContext({ userId });
+  const cacheKey = scanInputCacheKey(userId, inputHash);
+
+  if (isApiConfigured()) {
+    const created = await apiJson<{ scanId: string }>("/api/v1/scans", {
+      method: "POST",
+      body: {
+        ...input,
+        targetRole,
+        inputHash,
+        cacheKey,
+        modelTier: context.plan === "free" ? "openrouter_free" : "gemini_flash",
+      },
+    });
+
+    await recordFreeScanUsage(userId);
+
+    const scan = await fetchCareerScan(userId, created.scanId);
+    if (scan) return scan;
+
+    throw new Error("Scan was created but could not be loaded.");
+  }
+
+  const freeResult = buildMockFreeResult({ ...input, targetRole });
 
   // Core columns only — works before optional migration columns are applied.
   const { data: scan, error: scanError } = await supabase

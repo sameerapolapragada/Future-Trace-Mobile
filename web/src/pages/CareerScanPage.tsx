@@ -4,7 +4,7 @@ import { PrimaryButton } from "../design-system";
 import { useAuth } from "../auth/useAuth";
 import { useEntitlements } from "../lib/entitlements";
 import { UPGRADE_SCANS_EXHAUSTED_PATH } from "../lib/entitlementsService";
-import { createCareerScan, type ScanFormInput } from "../lib/scanService";
+import { type ScanFormInput } from "../lib/scanService";
 import { inferTargetRole } from "../lib/targetRole";
 import { cn } from "../lib/cn";
 import type { Entitlements } from "../types";
@@ -234,13 +234,7 @@ export default function CareerScanPage() {
       workPreference,
     };
 
-    try {
-      const scan = await createCareerScan(user.id, input);
-      navigate("/scan-loading", { state: { scanId: scan.id }, replace: true });
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Could not start scan");
-      setSubmitting(false);
-    }
+    navigate("/scan-loading", { state: { pendingInput: input }, replace: true });
   }
 
   if (loading) {

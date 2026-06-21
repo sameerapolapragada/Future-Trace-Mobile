@@ -1,7 +1,7 @@
-import { careerOpportunities, xrayCompleteReport } from "../data/mockData";
+import { orchestrate, xrayReportCacheKey } from "@ft/ai";
+import { loadAiAccessContext } from "./ai/clientAccess";
 import { apiJson, isApiConfigured } from "./apiClient";
 import { mapXrayRow } from "./accessService";
-import { denormalizedMetricsFromResult } from "./goalComparisonService";
 import {
   canGenerateCareerXray,
   incrementCareerXrayUsage,
@@ -9,29 +9,21 @@ import {
 } from "./subscriptionUsageService";
 import { fetchCareerScan } from "./scanService";
 import { supabase } from "./supabaseClient";
+import { isMvpCareerXrayPurchaseEnabled } from "./mvpFlags";
 import type {
   CareerOpportunitiesReport,
   CareerXrayRecord,
   CareerXRaySnapshotResult,
-  XRayCompleteReport,
 } from "../types";
-
-function buildMockXrayResult(scan: {
-  currentRole: string;
-  targetRole: string;
-}): CareerXRaySnapshotResult {
-  const report: XRayCompleteReport = {
-    ...xrayCompleteReport,
-    currentRole: scan.currentRole,
-    targetRole: scan.targetRole,
-  };
-  return { report, opportunities: careerOpportunities };
-}
 
 export async function createPendingXrayPurchase(
   userId: string,
   scanId: string
 ): Promise<CareerXrayRecord> {
+  if (!isMvpCareerXrayPurchaseEnabled()) {
+    throw new Error("Career X-Ray purchases are coming soon.");
+  }
+
   const { data, error } = await supabase
     .from("career_xrays")
     .insert({
@@ -113,58 +105,46 @@ export async function generateCareerXray(
   }
   if (xray.status === "generated" && xray.result) return xray;
 
+  const context = await loadAiAccessContext({ userId, scanId });
+  const route = orchestrate("career_xray_report", context, {
+    cacheKey: xrayReportCacheKey(userId, scanId),
+  });
+
+  if (!route.allowed) {
+    throw new Error(route.reason ?? "Career X-Ray not available for this account.");
+  }
+
+  if (route.reuseExisting && xray.result) return xray;
+
   const canGenerate = await canGenerateCareerXray(userId, scanId);
   if (!canGenerate && xray.status !== "paid") {
     throw new Error("Payment required before generating Career X-Ray");
   }
 
   if (isApiConfigured()) {
-    try {
-      await apiJson("/api/v1/xray/generate", {
-        method: "POST",
-        body: { scanId },
-      });
-      const refreshed = await supabase
-        .from("career_xrays")
-        .select("*")
-        .eq("id", xray.id)
-        .single();
-      if (refreshed.data?.status === "generated") {
-        const generated = mapXrayRow(refreshed.data);
-        await maybeIncrementXrayUsage(userId, isSubscriber, generated);
-        return generated;
-      }
-    } catch {
-      // Dev fallback below
+    await apiJson("/api/v1/xray/generate", {
+      method: "POST",
+      body: {
+        scanId,
+        cacheKey: xrayReportCacheKey(userId, scanId),
+        model: route.model,
+        reuseExisting: route.reuseExisting,
+      },
+    });
+    const refreshed = await supabase
+      .from("career_xrays")
+      .select("*")
+      .eq("id", xray.id)
+      .single();
+    if (refreshed.data?.status === "generated") {
+      const generated = mapXrayRow(refreshed.data);
+      await maybeIncrementXrayUsage(userId, isSubscriber, generated);
+      return generated;
     }
+    throw new Error("Career X-Ray generation did not complete. Check BFF logs.");
   }
 
-  const result = buildMockXrayResult(scan);
-  const now = new Date().toISOString();
-
-  const denorm = denormalizedMetricsFromResult(result);
-
-  const { data, error } = await supabase
-    .from("career_xrays")
-    .update({
-      status: "generated",
-      xray_result_json: result,
-      generated_at: now,
-      readiness_score: denorm.readinessScore,
-      transition_difficulty: denorm.transitionDifficulty,
-      estimated_transition_time: denorm.estimatedTransitionTime,
-      salary_upside: denorm.salaryUpside,
-      market_demand: denorm.marketDemand,
-    })
-    .eq("id", xray.id)
-    .eq("user_id", userId)
-    .select("*")
-    .single();
-
-  if (error) throw error;
-  const generated = mapXrayRow(data);
-  await maybeIncrementXrayUsage(userId, isSubscriber, generated);
-  return generated;
+  throw new Error("Career X-Ray generation requires the BFF. Start it with: npm run dev --prefix bff");
 }
 
 async function maybeIncrementXrayUsage(

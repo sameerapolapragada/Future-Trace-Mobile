@@ -136,9 +136,16 @@ The **UI and mobile shell are largely complete** (PWA, bottom nav, hamburger men
 
 ---
 
-## Two decisions needed before Sprint 1
+## Resolved product decisions (June 2026)
+
+| Decision | Choice | Status |
+|----------|--------|--------|
+| Career X-Ray price | **$1.99** one-time per scan | Stripe test price IDs seeded in `products` (`price_1TfxtpBxBGNjOmXM5gLLn0QZ`) |
+| Free scan limit | **1 per 7 days** | Implemented — `usage_limits` + `accessService.ts` (`FREE_SCANS_PER_WEEK = 1`) |
+| BFF repo location | **Same monorepo** (`future trace mobile`) | No separate `Future-Trace` repo; add BFF here (Next.js API routes) |
+
+## Still open before Sprint 1
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
-| Free scan limit | 1 lifetime vs 1 per 7 days | **1 per 7 days** (already in `usage_limits`) |
 | Auth providers at launch | Email only vs + Google | **Email + Google** for mobile funnel |

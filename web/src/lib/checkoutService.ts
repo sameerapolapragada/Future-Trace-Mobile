@@ -3,6 +3,7 @@ import {
   EXTRA_XRAY_PRODUCT_KEY,
   TRANSITION_PRODUCT_KEY,
 } from "./subscriptionUsageService";
+import { isMvpCheckoutEnabled } from "./mvpFlags";
 
 export type CheckoutProduct = "transition" | "career_xray_extra" | "career_xray_one_time";
 
@@ -24,6 +25,10 @@ export async function startCheckout(
   product: CheckoutProduct,
   options?: { scanId?: string; xrayId?: string }
 ): Promise<string> {
+  if (!isMvpCheckoutEnabled()) {
+    throw new Error("Purchases are coming soon. Career Scan remains free.");
+  }
+
   const productKey =
     product === "transition"
       ? TRANSITION_PRODUCT_KEY

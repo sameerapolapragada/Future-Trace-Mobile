@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { PrimaryButton } from "../design-system";
+import { useAuth } from "../auth/useAuth";
+import { createCareerScan, fetchCareerScan, type ScanFormInput } from "../lib/scanService";
 import { cn } from "../lib/cn";
 
 const STEPS = [
@@ -10,38 +13,92 @@ const STEPS = [
   "Building your resilience index",
 ] as const;
 
-const NAV_DELAY_MS = 4000;
-const STEP_INTERVAL_MS = NAV_DELAY_MS / STEPS.length;
+const MAX_WAIT_MS = 120_000;
+const POLL_MS = 1500;
 
-type LocationState = { scanId?: string };
+type LocationState = {
+  scanId?: string;
+  pendingInput?: ScanFormInput;
+};
 
 export default function ScanLoadingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const scanId = (location.state as LocationState | null)?.scanId;
+  const { user } = useAuth();
+  const state = location.state as LocationState | null;
+  const pendingInput = state?.pendingInput;
+  const scanIdFromState = state?.scanId;
+  const startedRef = useRef(false);
+
   const [activeIndex, setActiveIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!scanId) {
+    if (!pendingInput && !scanIdFromState) {
       navigate("/scan", { replace: true });
       return;
     }
+    if (startedRef.current) return;
+    startedRef.current = true;
 
     const stepTimer = window.setInterval(() => {
       setActiveIndex((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, STEP_INTERVAL_MS);
+    }, MAX_WAIT_MS / STEPS.length);
 
-    const navTimer = window.setTimeout(() => {
-      navigate(`/results/${scanId}`, { replace: true });
-    }, NAV_DELAY_MS);
+    let cancelled = false;
+
+    async function waitForComplete(scanId: string) {
+      const started = Date.now();
+      while (!cancelled && Date.now() - started < MAX_WAIT_MS) {
+        const scan = await fetchCareerScan(user!.id, scanId);
+        if (scan?.freeResult && scan.status === "complete") {
+          navigate(`/results/${scanId}`, { replace: true });
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, POLL_MS));
+      }
+      if (!cancelled) {
+        setError("Scan is taking longer than expected. Please try again.");
+      }
+    }
+
+    async function run() {
+      if (!user?.id) {
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      try {
+        if (pendingInput) {
+          const scan = await createCareerScan(user.id, pendingInput);
+          if (cancelled) return;
+          if (scan.freeResult && scan.status === "complete") {
+            navigate(`/results/${scan.id}`, { replace: true });
+            return;
+          }
+          await waitForComplete(scan.id);
+          return;
+        }
+
+        if (scanIdFromState) {
+          await waitForComplete(scanIdFromState);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Could not complete your scan.");
+        }
+      }
+    }
+
+    void run();
 
     return () => {
+      cancelled = true;
       window.clearInterval(stepTimer);
-      window.clearTimeout(navTimer);
     };
-  }, [navigate, scanId]);
+  }, [navigate, pendingInput, scanIdFromState, user?.id]);
 
-  const progressPercent = Math.round((activeIndex / STEPS.length) * 100);
+  const progressPercent = Math.round(((activeIndex + 1) / STEPS.length) * 100);
 
   return (
     <div className="flex w-full max-w-sm flex-1 flex-col justify-center px-1">
@@ -75,6 +132,17 @@ export default function ScanLoadingPage() {
           style={{ width: `${progressPercent}%` }}
         />
       </div>
+
+      {error ? (
+        <div className="mt-6 space-y-3 text-center">
+          <p className="text-xs text-red-400" role="alert">
+            {error}
+          </p>
+          <PrimaryButton fullWidth onClick={() => navigate("/scan", { replace: true })}>
+            Back to Career Scan
+          </PrimaryButton>
+        </div>
+      ) : null}
     </div>
   );
 }

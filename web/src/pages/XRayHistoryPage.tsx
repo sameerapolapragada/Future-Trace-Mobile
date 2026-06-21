@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge, PrimaryButton, PrimaryButtonLink, SectionHeader } from "../design-system";
+import { EarlyAccessWaitlistForm } from "../components/EarlyAccessWaitlistForm";
 import { formatRoleName } from "../components/XRayReportSections";
 import { XRayReportSections } from "../components/XRayReportSections";
 import { useAuth } from "../auth/useAuth";
@@ -10,6 +11,7 @@ import { createPendingXrayPurchase, generateCareerXray, getXraySummaryMetrics } 
 import { useCheckoutReturn } from "../lib/useCheckoutReturn";
 import { useScanHistory } from "../lib/useScanHistory";
 import { formatScanDate } from "../lib/scanService";
+import { isMvpCareerXrayPurchaseEnabled } from "../lib/mvpFlags";
 import { cn } from "../lib/cn";
 import type { ScanHistoryItem } from "../types";
 
@@ -18,6 +20,7 @@ function ScanHistoryCard({ item, isRadar }: { item: ScanHistoryItem; isRadar: bo
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const xrayPurchaseEnabled = isMvpCareerXrayPurchaseEnabled();
 
   const generated = item.xray?.status === "generated" && item.xray.result;
   const metrics = getXraySummaryMetrics(item.xray?.result ?? null);
@@ -89,10 +92,18 @@ function ScanHistoryCard({ item, isRadar }: { item: ScanHistoryItem; isRadar: bo
             <PrimaryButton fullWidth disabled={loading} onClick={() => void handleGenerate()}>
               {loading ? "Generating…" : "Generate Career X-Ray"}
             </PrimaryButton>
-          ) : (
+          ) : xrayPurchaseEnabled ? (
             <PrimaryButton fullWidth disabled={loading} onClick={() => void handleUnlock()}>
               {loading ? "Starting checkout…" : "Unlock Career X-Ray — $1.99"}
             </PrimaryButton>
+          ) : (
+            <EarlyAccessWaitlistForm
+              email={user?.email ?? ""}
+              currentRole={item.currentRole}
+              targetRole={item.targetRole}
+              source="web_xray_early_access"
+              className="border-white/10 bg-navy-card/80"
+            />
           )}
         </div>
       ) : null}

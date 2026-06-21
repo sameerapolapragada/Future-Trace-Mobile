@@ -1,4 +1,5 @@
 import { supabase } from "../supabaseClient";
+import { isMvpDynamicLaborMarketUpdatesEnabled } from "../mvpFlags";
 import type {
   MilestoneVersion,
   PlanUpdateRecommendation,
@@ -36,6 +37,8 @@ function mapRecommendation(
 }
 
 export async function refreshMarketSignals(role: string, industry?: string): Promise<number> {
+  if (!isMvpDynamicLaborMarketUpdatesEnabled()) return 0;
+
   const { data, error } = await supabase.rpc("refresh_career_market_signals", {
     p_role: role,
     p_industry: industry ?? null,
@@ -45,6 +48,8 @@ export async function refreshMarketSignals(role: string, industry?: string): Pro
 }
 
 export async function checkPlanUpdatesForGoal(goalId: string): Promise<number> {
+  if (!isMvpDynamicLaborMarketUpdatesEnabled()) return 0;
+
   const { data, error } = await supabase.rpc("check_plan_updates_for_goal", {
     p_goal_id: goalId,
   });

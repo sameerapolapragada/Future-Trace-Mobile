@@ -1,0 +1,22 @@
+{
+  "name": "future-trace-bff",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "tsx --test ../lib/ai/tests/*.test.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "@supabase/supabase-js": "^2.107.0",
+    "hono": "^4.9.6",
+    "stripe": "^22.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2"
+  }
+}

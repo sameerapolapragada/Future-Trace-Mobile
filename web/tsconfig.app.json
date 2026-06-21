@@ -19,7 +19,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "paths": {
+      "@ft/ai": ["../lib/ai/client.ts"],
+      "@ft/ai/*": ["../lib/ai/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../lib/ai"],
+  "exclude": ["../lib/ai/tests"]
 }

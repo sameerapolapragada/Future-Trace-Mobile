@@ -14,6 +14,8 @@ const DEFAULT: Entitlements = {
   hasCompletedScan: false,
   canRunScan: true,
   scansRemainingThisWeek: FREE_SCANS_PER_WEEK,
+  nextScanEligibleAt: null,
+  daysUntilNextScan: null,
   subscriptionExpiresAt: null,
   monthlyUsage: null,
 };
@@ -23,6 +25,8 @@ function mapRow(
   hasCompletedScan: boolean,
   scanAllowed: boolean,
   scansRemainingThisWeek: number | null,
+  nextScanEligibleAt: string | null,
+  daysUntilNextScan: number | null,
   monthlyUsage: Entitlements["monthlyUsage"]
 ): Entitlements {
   const hasRadar =
@@ -34,6 +38,8 @@ function mapRow(
     hasCompletedScan,
     canRunScan: hasRadar ? scanAllowed : scanAllowed,
     scansRemainingThisWeek,
+    nextScanEligibleAt,
+    daysUntilNextScan,
     subscriptionExpiresAt: row.subscription_expires_at,
     monthlyUsage: hasRadar ? monthlyUsage : null,
   };
@@ -42,6 +48,8 @@ function mapRow(
 export async function fetchUserEntitlements(userId: string): Promise<Entitlements> {
   let scanAllowed = true;
   let scansRemainingThisWeek: number | null = FREE_SCANS_PER_WEEK;
+  let nextScanEligibleAt: string | null = null;
+  let daysUntilNextScan: number | null = null;
   let monthlyUsage: Entitlements["monthlyUsage"] = null;
 
   try {
@@ -51,6 +59,8 @@ export async function fetchUserEntitlements(userId: string): Promise<Entitlement
     ]);
     monthlyUsage = usage;
     scansRemainingThisWeek = scanStatus.remaining;
+    nextScanEligibleAt = scanStatus.nextEligibleAt;
+    daysUntilNextScan = scanStatus.daysUntilNextScan;
     scanAllowed = scanStatus.remaining === null ? true : scanStatus.remaining > 0;
   } catch {
     scanAllowed = true;
@@ -72,7 +82,14 @@ export async function fetchUserEntitlements(userId: string): Promise<Entitlement
   const hasCompletedScan = (scansResult.data?.length ?? 0) > 0;
 
   if (!entitlementsResult.data) {
-    return { ...DEFAULT, hasCompletedScan, canRunScan: scanAllowed, scansRemainingThisWeek };
+    return {
+      ...DEFAULT,
+      hasCompletedScan,
+      canRunScan: scanAllowed,
+      scansRemainingThisWeek,
+      nextScanEligibleAt,
+      daysUntilNextScan,
+    };
   }
 
   return mapRow(
@@ -80,6 +97,8 @@ export async function fetchUserEntitlements(userId: string): Promise<Entitlement
     hasCompletedScan,
     scanAllowed,
     scansRemainingThisWeek,
+    nextScanEligibleAt,
+    daysUntilNextScan,
     monthlyUsage
   );
 }

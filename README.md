@@ -55,6 +55,7 @@ npm run dev
 | [docs/MOBILE_VS_WEB.md](docs/MOBILE_VS_WEB.md) | Mobile vs web strategy, repo layout, native roadmap |
 | [docs/PENDING_IMPLEMENTATION_CHECKLIST.md](docs/PENDING_IMPLEMENTATION_CHECKLIST.md) | Week-by-week implementation checklist |
 | [docs/BACKEND_AND_LLM_STRATEGY.md](docs/BACKEND_AND_LLM_STRATEGY.md) | Backend, LLM, and cost strategy |
+| [docs/AI_ACCESS_AND_MODEL_ROUTING.md](docs/AI_ACCESS_AND_MODEL_ROUTING.md) | Tier-based model routing, caching, and cost rules |
 | [docs/FEATURE_1_AND_2_PROCESS_FLOW.md](docs/FEATURE_1_AND_2_PROCESS_FLOW.md) | User flow diagrams for scan and transition |
 
 ## Splash screen

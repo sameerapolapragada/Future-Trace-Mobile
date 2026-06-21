@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { FREE_SCANS_PER_WEEK } from "./subscriptionLimits";
+import { isMvpCareerXrayPurchaseEnabled } from "./mvpFlags";
 import {
   canGenerateCareerXray,
   canRunCareerScan,
@@ -18,6 +19,9 @@ export type WeeklyScanStatus = {
   limit: number | null;
   used: number;
   remaining: number | null;
+  /** When the next free scan becomes available (free users only). */
+  nextEligibleAt: string | null;
+  daysUntilNextScan: number | null;
 };
 
 function currentWeekWindow(): { start: Date; end: Date } {
@@ -66,12 +70,52 @@ export async function getWeeklyScanStatus(userId: string): Promise<WeeklyScanSta
       limit: monthly.careerScansLimit,
       used: monthly.careerScansUsed,
       remaining,
+      nextEligibleAt: null,
+      daysUntilNextScan: null,
     };
   }
 
   const used = await getFreeScanUsageCount(userId);
   const remaining = Math.max(0, FREE_SCANS_PER_WEEK - used);
-  return { limit: FREE_SCANS_PER_WEEK, used, remaining };
+  const { nextEligibleAt, daysUntilNextScan } = await getNextFreeScanEligibility(userId, used);
+
+  return {
+    limit: FREE_SCANS_PER_WEEK,
+    used,
+    remaining,
+    nextEligibleAt,
+    daysUntilNextScan,
+  };
+}
+
+async function getNextFreeScanEligibility(
+  userId: string,
+  used: number
+): Promise<{ nextEligibleAt: string | null; daysUntilNextScan: number | null }> {
+  if (used < FREE_SCANS_PER_WEEK) {
+    return { nextEligibleAt: null, daysUntilNextScan: null };
+  }
+
+  const { data: lastScan } = await supabase
+    .from("career_scans")
+    .select("created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!lastScan?.created_at) {
+    return { nextEligibleAt: null, daysUntilNextScan: null };
+  }
+
+  const lastAt = new Date(lastScan.created_at).getTime();
+  const nextAt = lastAt + FREE_SCAN_WINDOW_MS;
+  const daysUntilNextScan = Math.max(0, Math.ceil((nextAt - Date.now()) / (24 * 60 * 60 * 1000)));
+
+  return {
+    nextEligibleAt: new Date(nextAt).toISOString(),
+    daysUntilNextScan,
+  };
 }
 
 export async function canRunScan(userId: string): Promise<boolean> {
@@ -155,6 +199,8 @@ export async function canAccessXray(userId: string, scanId: string): Promise<boo
 
 /** Show $1.99 unlock when no included quota and no paid X-Ray for this scan. */
 export async function shouldShowBuyXray(userId: string, scanId: string): Promise<boolean> {
+  if (!isMvpCareerXrayPurchaseEnabled()) return false;
+
   const xray = await fetchXrayForScan(userId, scanId);
   if (xray?.status === "generated" || xray?.status === "paid") return false;
 

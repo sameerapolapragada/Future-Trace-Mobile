@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { PrimaryButton, SecondaryButton } from "../design-system";
-import { products } from "../data/mockData";
+import { products as fallbackProducts } from "../data/mockData";
 import { isCheckoutConfigured, startTransitionCheckout } from "../lib/checkoutService";
+import { fetchCatalogProducts } from "../lib/productsService";
 import { formatCycleResetDate } from "../lib/subscriptionUsageService";
 import { TRANSITION_PLAN_FEATURES } from "../lib/subscriptionLimits";
 import { useEntitlements } from "../lib/entitlements";
+import {
+  isMvpAiCareerTransitionPurchaseEnabled,
+  isMvpCareerXrayPurchaseEnabled,
+  MVP_COMING_SOON_LABEL,
+} from "../lib/mvpFlags";
 import { cn } from "../lib/cn";
 
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -56,11 +62,20 @@ export default function UpgradePage() {
 
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [products, setProducts] = useState(fallbackProducts);
+  const transitionPurchaseEnabled = isMvpAiCareerTransitionPurchaseEnabled();
+  const xrayPurchaseEnabled = isMvpCareerXrayPurchaseEnabled();
+
+  useEffect(() => {
+    void fetchCatalogProducts().then(setProducts).catch(() => setProducts(fallbackProducts));
+  }, []);
 
   async function handleStartTransition() {
+    if (!transitionPurchaseEnabled) return;
+
     if (!isCheckoutConfigured()) {
       setCheckoutError(
-        "Checkout is not configured. Set VITE_API_BASE_URL in web/.env.local and run the Future-Trace BFF."
+        "Checkout is not configured. Start the BFF on port 3000 (npm run dev:bff) and reload."
       );
       return;
     }
@@ -97,10 +112,16 @@ export default function UpgradePage() {
         <p className="text-sm leading-relaxed text-muted">
           You&apos;ve used all 10 included Career X-Rays this month.
         </p>
-        <p className="text-sm text-white">Extra Career X-Ray: {products.xray.price}</p>
-        <PrimaryButton fullWidth onClick={() => navigate("/xray-history")}>
-          Buy Extra X-Ray — {products.xray.price}
-        </PrimaryButton>
+        {xrayPurchaseEnabled ? (
+          <>
+            <p className="text-sm text-white">Extra Career X-Ray: {products.xray.price}</p>
+            <PrimaryButton fullWidth onClick={() => navigate("/xray-history")}>
+              Buy Extra X-Ray — {products.xray.price}
+            </PrimaryButton>
+          </>
+        ) : (
+          <p className="text-sm text-muted">Extra Career X-Ray — {MVP_COMING_SOON_LABEL}</p>
+        )}
       </LimitLayout>
     );
   }
@@ -176,23 +197,33 @@ export default function UpgradePage() {
 
         <PrimaryButton
           fullWidth
-          disabled={loading}
+          disabled={loading || !transitionPurchaseEnabled}
           onClick={() => void handleStartTransition()}
           className={cn("mt-5 flex items-center justify-center gap-2")}
         >
-          {loading ? "Redirecting to checkout…" : "Start AI Career Transition"}
+          {loading
+            ? "Redirecting to checkout…"
+            : transitionPurchaseEnabled
+              ? "Start AI Career Transition"
+              : MVP_COMING_SOON_LABEL}
         </PrimaryButton>
       </div>
 
       <p className="relative text-center text-xs text-muted">
-        Prefer a one-time snapshot only?{" "}
-        <button
-          type="button"
-          onClick={() => navigate("/xray/new")}
-          className="font-medium text-accent transition hover:text-accent-soft ft-focus-ring"
-        >
-          Get Career X-Ray for {products.xray.price}
-        </button>
+        {xrayPurchaseEnabled ? (
+          <>
+            Prefer a one-time snapshot only?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/xray-history")}
+              className="font-medium text-accent transition hover:text-accent-soft ft-focus-ring"
+            >
+              Get Career X-Ray for {products.xray.price}
+            </button>
+          </>
+        ) : (
+          <>Career X-Ray — {MVP_COMING_SOON_LABEL}</>
+        )}
       </p>
 
       {checkoutError ? (

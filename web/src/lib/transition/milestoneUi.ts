@@ -1,4 +1,5 @@
 import type { WeeklyMilestone, WeeklyMilestoneStatus } from "../../types/transition";
+import { isMvpPremiumMilestoneUnlockingEnabled } from "../mvpFlags";
 
 export function formatShortDate(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`);
@@ -41,6 +42,12 @@ export function timelineWeekStatus(
   milestone: WeeklyMilestone,
   currentId: string | null
 ): TimelineWeekStatus {
+  if (
+    !isMvpPremiumMilestoneUnlockingEnabled() &&
+    milestone.unlockMonthNumber > 1
+  ) {
+    return "locked";
+  }
   if (!milestone.isUnlocked || milestone.status === "locked") return "locked";
   if (milestone.status === "completed") return "completed";
   if (milestone.status === "missed") return "missed";

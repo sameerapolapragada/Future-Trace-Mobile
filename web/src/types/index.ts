@@ -276,6 +276,13 @@ export type FreeScanResult = {
   currentRoleProfile: RoleScanProfile;
   targetRoleProfile: RoleScanProfile;
   summary: string;
+  initialRoleRecommendations?: string[];
+  xrayPreview?: {
+    readinessScore: number;
+    transitionDifficulty: "low" | "medium" | "high";
+    topRoleTeaser: string;
+    unlockMessage: string;
+  };
 };
 
 export type CareerScanRecord = {
@@ -337,6 +344,10 @@ export type Entitlements = {
   canRunScan: boolean;
   /** Remaining scans: monthly quota for subscribers, weekly for free users. */
   scansRemainingThisWeek: number | null;
+  /** ISO timestamp when the next free scan unlocks (free users only). */
+  nextScanEligibleAt: string | null;
+  /** Whole days until next free scan (free users only). */
+  daysUntilNextScan: number | null;
   subscriptionExpiresAt: string | null;
   monthlyUsage: MonthlyUsageSnapshot | null;
 };

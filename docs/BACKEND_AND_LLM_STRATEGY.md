@@ -524,18 +524,20 @@ market_snapshots (
 
 ---
 
-## 16. Open decisions (you should choose explicitly)
+## 16. Product decisions
 
-1. **Single repo vs two:** Merge V1 API into `Future-Trace` or create new `future-trace-api` repo?
-   - *Recommendation:* Keep one Next.js app as BFF; deploy Vite `web/` as static site or separate subdomain.
+| Decision | Choice | Notes |
+|----------|--------|-------|
+| Career X-Ray price | **$1.99** | `products.price_cents = 199`; Stripe test ID `price_1TfxtpBxBGNjOmXM5gLLn0QZ` |
+| Free scan limit | **1 per 7 days** | `usage_limits` + `web/src/lib/accessService.ts` |
+| BFF location | **Same monorepo** | Next.js BFF in this repo (`web/` client + `bff/` or equivalent); no new repo |
 
-2. **Auth provider:** Email only vs Google/Apple for mobile?
+### Still open
+
+1. **Auth provider:** Email only vs Google/Apple for mobile?
    - *Recommendation:* Match Supabase providers across web + future Expo.
 
-3. **Free scan limit:** 1 lifetime vs 1/month?
-   - *Recommendation:* 1 lifetime for MVP; add monthly refresh as Radar upsell.
-
-4. **Disclaimer copy:** Legal review for “AI-generated career insights.”
+2. **Disclaimer copy:** Legal review for “AI-generated career insights.”
 
 ---
 
