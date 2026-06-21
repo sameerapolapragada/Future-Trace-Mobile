@@ -1,7 +1,7 @@
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { StoredScan } from "../../lib/shared";
 import { colors, spacing } from "../../lib/shared/theme";
@@ -14,6 +14,26 @@ type Props = NativeStackScreenProps<RootStackParamList, "ScanHistory">;
 function formatScanDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function ScanHistoryRow({
+  scan,
+  onOpen,
+}: {
+  scan: StoredScan;
+  onOpen: () => void;
+}) {
+  return (
+    <Pressable onPress={onOpen}>
+      <Card>
+        <Text style={styles.roleLine}>
+          {scan.result.currentRole} → {scan.result.targetRole}
+        </Text>
+        <Text style={styles.date}>{formatScanDate(scan.createdAt)}</Text>
+        <SecondaryButton label="View results" onPress={onOpen} />
+      </Card>
+    </Pressable>
+  );
 }
 
 export function ScanHistoryScreen({ navigation }: Props) {
@@ -29,7 +49,11 @@ export function ScanHistoryScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Title>Scan History</Title>
-        <Subtitle>Career Scans stored on this device only.</Subtitle>
+        <Subtitle>
+          {scans.length > 0
+            ? `${scans.length} Career Scan${scans.length === 1 ? "" : "s"} stored on this device only.`
+            : "Career Scans stored on this device only."}
+        </Subtitle>
 
         {scans.length === 0 ? (
           <Card>
@@ -39,16 +63,11 @@ export function ScanHistoryScreen({ navigation }: Props) {
         ) : (
           <View style={styles.list}>
             {scans.map((scan) => (
-              <Card key={scan.id}>
-                <Text style={styles.roleLine}>
-                  {scan.result.currentRole} → {scan.result.targetRole}
-                </Text>
-                <Text style={styles.date}>{formatScanDate(scan.createdAt)}</Text>
-                <SecondaryButton
-                  label="View results"
-                  onPress={() => navigation.navigate("ScanResults", { scanId: scan.id })}
-                />
-              </Card>
+              <ScanHistoryRow
+                key={scan.id}
+                scan={scan}
+                onOpen={() => navigation.navigate("ScanResults", { scanId: scan.id })}
+              />
             ))}
           </View>
         )}

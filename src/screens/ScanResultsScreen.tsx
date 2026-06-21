@@ -126,6 +126,7 @@ export function ScanResultsScreen({ route, navigation }: Props) {
         ) : null}
 
         <PrimaryButton label="Open AI Disruption Radar" onPress={() => navigation.navigate("MainTabs", { screen: "Radar" })} />
+        <SecondaryButton label="Scan History" onPress={() => navigation.navigate("ScanHistory")} />
 
         <Card>
           <Text style={[styles.cardTitle, { color: colors.accentPurple }]}>Career X-Ray — Early Access</Text>

@@ -7,6 +7,7 @@ import {
 } from "../../lib/shared";
 
 const SCANS_KEY = "ft_scans_v1";
+const MAX_STORED_SCANS = 20;
 const WELCOME_KEY = "ft_welcome_seen_v1";
 const WAITLIST_EMAIL_KEY = "ft_waitlist_email_v1";
 const WAITLIST_DRAFT_KEY = "ft_waitlist_draft_v1";
@@ -55,8 +56,19 @@ export async function saveScan(input: NormalizedScanInput, result: StoredScan["r
   };
   const scans = await listScans();
   scans.unshift(scan);
-  await AsyncStorage.setItem(SCANS_KEY, JSON.stringify(scans.slice(0, 20)));
+  await AsyncStorage.setItem(SCANS_KEY, JSON.stringify(scans.slice(0, MAX_STORED_SCANS)));
   return scan;
+}
+
+/** Number of scans saved on this device. */
+export async function getScanCount(): Promise<number> {
+  const scans = await listScans();
+  return scans.length;
+}
+
+/** Remove all locally saved Career Scan history. */
+export async function deleteLocalScans(): Promise<void> {
+  await AsyncStorage.removeItem(SCANS_KEY);
 }
 
 export async function canRunNewScan(): Promise<{ allowed: boolean; daysUntilNext: number | null }> {
@@ -101,5 +113,6 @@ export async function setWaitlistDraft(draft: WaitlistDraft): Promise<void> {
 }
 
 export async function deleteAllLocalData(): Promise<void> {
-  await AsyncStorage.multiRemove([SCANS_KEY, WELCOME_KEY, WAITLIST_EMAIL_KEY, WAITLIST_DRAFT_KEY]);
+  await deleteLocalScans();
+  await AsyncStorage.multiRemove([WELCOME_KEY, WAITLIST_EMAIL_KEY, WAITLIST_DRAFT_KEY]);
 }

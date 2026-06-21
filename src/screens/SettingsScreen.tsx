@@ -53,9 +53,10 @@ export function SettingsScreen() {
         <Card>
           <Text style={styles.cardTitle}>Data on this device</Text>
           <Text style={styles.cardBody}>
-            Scans and preferences are stored locally on your iPhone. No account is required for this MVP.
+            Scans and preferences are stored locally on your iPhone. No account or email is required for Career Scan.
+            Email is collected only if you join Career X-Ray Early Access.
           </Text>
-          <SecondaryButton label="Delete My Local Data" onPress={() => navigation.navigate("DeleteData")} />
+          <SecondaryButton label="Delete Local Data" onPress={() => navigation.navigate("DeleteData")} />
         </Card>
       </ScrollView>
     </SafeAreaView>

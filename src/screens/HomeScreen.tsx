@@ -5,16 +5,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { StoredScan } from "../../lib/shared";
 import { colors, spacing } from "../../lib/shared/theme";
 import { Card, Disclaimer, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
-import { getLatestScan } from "../lib/scanStorage";
+import { getLatestScan, getScanCount } from "../lib/scanStorage";
 import { useAppNavigation } from "../navigation/hooks";
 
 export function HomeScreen() {
   const navigation = useAppNavigation();
   const [latest, setLatest] = useState<StoredScan | null>(null);
+  const [scanCount, setScanCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       getLatestScan().then(setLatest);
+      getScanCount().then(setScanCount);
     }, [])
   );
 
@@ -22,14 +24,25 @@ export function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Title>Future Trace</Title>
-        <Subtitle>Free Career Scan · AI Disruption Radar · Early Access</Subtitle>
+        <Subtitle>Free Career Scan · No login · Saved on your device</Subtitle>
 
         <Card>
           <Text style={styles.cardTitle}>Career Scan</Text>
           <Text style={styles.cardBody}>
-            Compare your current role and target path with rule-based resilience and automation exposure scores.
+            Compare your current role and target path with rule-based resilience and automation exposure scores. No
+            email or account required.
           </Text>
           <PrimaryButton label="Start Career Scan" onPress={() => navigation.navigate("Scan")} />
+        </Card>
+
+        <Card>
+          <Text style={styles.cardTitle}>Scan History</Text>
+          <Text style={styles.cardBody}>
+            {scanCount > 0
+              ? `${scanCount} scan${scanCount === 1 ? "" : "s"} saved on this device.`
+              : "Completed scans are saved locally so you can reopen results anytime."}
+          </Text>
+          <SecondaryButton label="Open Scan History" onPress={() => navigation.navigate("ScanHistory")} />
         </Card>
 
         {latest ? (
@@ -40,7 +53,6 @@ export function HomeScreen() {
             </Text>
             <SecondaryButton label="View results" onPress={() => navigation.navigate("ScanResults", { scanId: latest.id })} />
             <SecondaryButton label="Open Disruption Radar" onPress={() => navigation.navigate("Radar")} />
-            <SecondaryButton label="Scan History" onPress={() => navigation.navigate("ScanHistory")} />
           </Card>
         ) : null}
 

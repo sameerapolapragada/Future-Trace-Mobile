@@ -4,7 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, spacing } from "../../lib/shared/theme";
 import { Card, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
-import { deleteAllLocalData } from "../lib/scanStorage";
+import { deleteAllLocalData, deleteLocalScans } from "../lib/scanStorage";
 import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DeleteData">;
@@ -12,14 +12,39 @@ type Props = NativeStackScreenProps<RootStackParamList, "DeleteData">;
 export function DeleteDataScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
-  async function onDelete() {
+  async function onDeleteScansOnly() {
     Alert.alert(
-      "Delete My Local Data?",
-      "This removes Career Scans, welcome preferences, and any early access info saved on this device. This app does not use an account.",
+      "Delete local scan history?",
+      "This removes all Career Scans saved on this device. Your Early Access info and app preferences are kept.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Delete scans",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await deleteLocalScans();
+              Alert.alert("Scan history deleted", "Local Career Scans have been removed from this device.", [
+                { text: "OK", onPress: () => navigation.goBack() },
+              ]);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  async function onDeleteAll() {
+    Alert.alert(
+      "Delete My Local Data?",
+      "This removes Career Scans, welcome preferences, and any Early Access info saved on this device. No account is used in this app.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete all",
           style: "destructive",
           onPress: async () => {
             setLoading(true);
@@ -48,12 +73,13 @@ export function DeleteDataScreen({ navigation }: Props) {
 
         <Card>
           <Text style={styles.cardBody}>
-            If you joined Early Access, your submission may still exist on our server. Contact support to request
-            removal.
+            Career Scans never leave your device unless you voluntarily join Early Access (email only). If you joined
+            Early Access, that submission may still exist on our server — contact support to request removal.
           </Text>
         </Card>
 
-        <PrimaryButton label="Delete My Local Data" onPress={onDelete} loading={loading} />
+        <PrimaryButton label="Delete Local Scan History" onPress={onDeleteScansOnly} loading={loading} />
+        <SecondaryButton label="Delete All Local Data" onPress={onDeleteAll} />
         <SecondaryButton label="Cancel" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>

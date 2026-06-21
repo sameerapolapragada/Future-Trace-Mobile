@@ -64,7 +64,10 @@ export function ScanFormScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Title>Career Scan</Title>
-        <Subtitle>Tell us about your role today and where you want to go. Analysis runs on your device.</Subtitle>
+        <Subtitle>
+          Tell us about your role today and where you want to go. Analysis runs on your device — no login or email
+          required.
+        </Subtitle>
 
         <Card>
           <Field label="Current role *" value={form.currentRole} onChangeText={(v) => setField("currentRole", v)} placeholder="e.g. Salesforce Administrator" />
