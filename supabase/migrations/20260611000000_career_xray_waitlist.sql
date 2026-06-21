@@ -2,8 +2,8 @@
 create table if not exists public.career_xray_waitlist (
   id uuid primary key default gen_random_uuid(),
   email text not null,
-  current_role text,
-  target_role text,
+  "current_role" text,
+  "target_role" text,
   source text not null default 'ios_app',
   created_at timestamptz not null default now(),
   constraint career_xray_waitlist_email_unique unique (email)
