@@ -2,8 +2,9 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { generateRuleBasedScan } from "../../lib/shared";
+import { generateHybridScan } from "../../lib/shared";
 import { colors, spacing } from "../../lib/shared/theme";
+import { getHybridScanConfig } from "../lib/hybridScanConfig";
 import { takePendingScanInput } from "../lib/scanSession";
 import { saveScan } from "../lib/scanStorage";
 import type { RootStackParamList } from "../navigation/types";
@@ -28,7 +29,7 @@ export function ScanLoadingScreen({ navigation }: Props) {
       await new Promise((r) => setTimeout(r, 900));
 
       try {
-        const result = generateRuleBasedScan(input);
+        const result = await generateHybridScan(input, getHybridScanConfig());
         const stored = await saveScan(input, result);
         if (!cancelled) {
           navigation.replace("ScanResults", { scanId: stored.id });
@@ -62,7 +63,7 @@ export function ScanLoadingScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ActivityIndicator size="large" color={colors.accent} />
       <Text style={styles.title}>Analyzing your career path</Text>
-      <Text style={styles.subtitle}>Running rule-based scoring on your device…</Text>
+      <Text style={styles.subtitle}>Analyzing your career path on your device…</Text>
     </SafeAreaView>
   );
 }

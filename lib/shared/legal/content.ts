@@ -67,4 +67,4 @@ export const TERMS_HTML = `<!DOCTYPE html>
 </html>`;
 
 export const AI_DISCLAIMER =
-  "Informational guidance only. Not career, legal, or financial advice. Scores are illustrative and not real-time job market data.";
+  "Future Trace provides informational career guidance only. Results are not guarantees of job security, salary, or career outcomes. Not career, legal, or financial advice.";

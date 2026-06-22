@@ -15,6 +15,7 @@
     "dev:web": "npm run dev --prefix web",
     "dev:bff": "npm run dev --prefix bff",
     "dev:full": "npm run dev:full --prefix web",
+    "test:shared": "tsx --test lib/shared/tests/*.test.ts",
     "test:ai": "npm run test --prefix bff"
   },
   "dependencies": {
@@ -39,7 +40,8 @@
     "@types/react": "~19.1.10",
     "babel-preset-expo": "^56.0.15",
     "dotenv": "^16.6.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "tsx": "^4.20.5"
   },
   "private": true
 }

@@ -26,11 +26,22 @@ export type NormalizedScanInput = {
 
 export type RoleScanProfile = {
   resilienceScore: number;
+  /** Deterministic 0–100 AI exposure score from the scoring engine. */
+  aiExposureScore?: number;
   aiExposureLevel: AIExposureLevel;
   aiExposureLabel: string;
   strengths: string[];
   vulnerabilities: string[];
   opportunityZones: string[];
+};
+
+export type ExposureMeta = {
+  onetOccupationCode?: string;
+  onetOccupationTitle?: string;
+  matchedVia: "local_index" | "api" | "cache" | "fallback_archetype";
+  keyExposureDrivers: string[];
+  affectedTasks: string[];
+  protectedStrengths: string[];
 };
 
 export type FreeScanResult = {
@@ -40,6 +51,8 @@ export type FreeScanResult = {
   targetRoleProfile: RoleScanProfile;
   summary: string;
   initialRoleRecommendations: string[];
+  /** O*NET + scoring metadata — informational only. */
+  exposureMeta?: ExposureMeta;
   /** Phase 2: paid Career X-Ray preview — omitted in Phase 1 mobile. */
   xrayPreview?: {
     readinessScore: number;
@@ -54,7 +67,7 @@ export type StoredScan = {
   createdAt: string;
   input: NormalizedScanInput;
   result: FreeScanResult;
-  source: "rule_based_v1";
+  source: "rule_based_v1" | "hybrid_v1";
 };
 
 export type DisruptionRadarSnapshot = {

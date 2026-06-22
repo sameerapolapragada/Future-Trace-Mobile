@@ -13,7 +13,8 @@ export function buildDisruptionRadarFromScan(result: FreeScanResult): Disruption
   const readinessScore = Math.round((current.resilienceScore + target.resilienceScore) / 2);
 
   const automationPressure =
-    current.aiExposureLevel === "high" ? 72 : current.aiExposureLevel === "medium" ? 54 : 36;
+    current.aiExposureScore ??
+    (current.aiExposureLevel === "high" ? 72 : current.aiExposureLevel === "medium" ? 54 : 36);
   const skillAlignment = Math.min(
     92,
     Math.max(28, 100 - Math.abs(current.resilienceScore - target.resilienceScore))

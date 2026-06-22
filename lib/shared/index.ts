@@ -4,6 +4,18 @@ export { inferTargetRole, formatRoleLabel } from "./scan/inferTargetRole";
 export { normalizeScanInput, normalizeWorkPreference, clampYearsExperience } from "./scan/normalize";
 export { validateScanForm, type ScanValidationError } from "./scan/validation";
 export { generateRuleBasedScan } from "./scan/ruleBasedScan";
+export { generateHybridScan, type HybridScanConfig } from "./scan/hybridScan";
+export { resolveOccupation } from "./onet/client";
+export { calculateExposureScore, scoreToExposureLevel, fallbackExposureFromArchetype } from "./exposure/scoringEngine";
+export { matchLocalOccupation } from "./onet/matchOccupation";
+export { createOnetCacheAdapter, InMemoryOnetCache, onetCacheKey } from "./onet/cache";
+export {
+  createBundledOccupationProvider,
+  createSupabaseOccupationProvider,
+  type OccupationDataProvider,
+} from "./onet/provider";
+export type { OnetOccupation, OnetMatchResult, OnetCache } from "./onet/types";
+export type { ExposureScoreResult, ExposureExplanation } from "./exposure/types";
 export { buildDisruptionRadarFromScan } from "./radar/disruptionRadar";
 export { buildDisruptionRadarBrief, type DisruptionRadarBrief, type DisruptionRadarStatus } from "./radar/disruptionStatus";
 export {

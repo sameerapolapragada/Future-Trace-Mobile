@@ -2,6 +2,9 @@ import "dotenv/config";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+const openRouterApiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
+const onetUsername = process.env.EXPO_PUBLIC_ONET_USERNAME;
+const onetPassword = process.env.EXPO_PUBLIC_ONET_PASSWORD;
 
 /** @type {import('expo/config').ExpoConfig} */
 export default ({ config }) => ({
@@ -27,5 +30,8 @@ export default ({ config }) => ({
   extra: {
     supabaseUrl,
     supabaseAnonKey,
+    openrouterApiKey: openRouterApiKey,
+    onetUsername,
+    onetPassword,
   },
 });

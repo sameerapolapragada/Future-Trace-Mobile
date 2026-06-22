@@ -46,13 +46,17 @@ export async function getScan(id: string): Promise<StoredScan | null> {
   return scans.find((s) => s.id === id) ?? null;
 }
 
-export async function saveScan(input: NormalizedScanInput, result: StoredScan["result"]): Promise<StoredScan> {
+export async function saveScan(
+  input: NormalizedScanInput,
+  result: StoredScan["result"],
+  source: StoredScan["source"] = "hybrid_v1"
+): Promise<StoredScan> {
   const scan: StoredScan = {
     id: newId(),
     createdAt: new Date().toISOString(),
     input,
     result,
-    source: "rule_based_v1",
+    source,
   };
   const scans = await listScans();
   scans.unshift(scan);

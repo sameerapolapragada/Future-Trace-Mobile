@@ -24,7 +24,10 @@ function RoleProfileCard({ title, profile }: { title: string; profile: RoleScanP
       <Text style={styles.cardTitle}>{title}</Text>
       <View style={styles.metricsRow}>
         <MetricPill label="Resilience" value={`${profile.resilienceScore}`} />
-        <MetricPill label="AI exposure" value={profile.aiExposureLevel.toUpperCase()} />
+        <MetricPill
+          label="AI exposure"
+          value={profile.aiExposureScore != null ? `${profile.aiExposureScore}` : profile.aiExposureLevel.toUpperCase()}
+        />
       </View>
       <Text style={[styles.exposureLabel, { color: exposureColor(profile.aiExposureLevel) }]}>{profile.aiExposureLabel}</Text>
 
@@ -97,7 +100,7 @@ export function ScanResultsScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Title>{result.currentRole}</Title>
         <Subtitle>
-          Target path: {result.targetRole} · Rule-based scan · Stored on device
+          Target path: {result.targetRole} · Stored on device
         </Subtitle>
 
         <Card>
