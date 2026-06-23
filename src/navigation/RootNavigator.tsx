@@ -1,6 +1,8 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { colors } from "../../lib/shared/theme";
+import type { ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
+import { colors, spacing } from "../../lib/shared/theme";
 import { DisruptionRadarScreen } from "../screens/DisruptionRadarScreen";
 import { DeleteDataScreen } from "../screens/DeleteDataScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -9,31 +11,89 @@ import { ScanHistoryScreen } from "../screens/ScanHistoryScreen";
 import { ScanFormScreen } from "../screens/ScanFormScreen";
 import { ScanLoadingScreen } from "../screens/ScanLoadingScreen";
 import { ScanResultsScreen } from "../screens/ScanResultsScreen";
+import { RoleDisruptionAnalysisScreen } from "../screens/RoleDisruptionAnalysisScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { WaitlistScreen } from "../screens/WaitlistScreen";
 import { WelcomeScreen } from "../screens/WelcomeScreen";
+import {
+  HomeTabIcon,
+  ProfileTabIcon,
+  ScanTabIcon,
+  TransitionTabIcon,
+  tabIconColor,
+} from "./TabBarIcons";
 import type { MainTabParamList, RootStackParamList } from "./types";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function TabIconWrap({ active, children }: { active: boolean; children: ReactNode }) {
+  return (
+    <View style={[tabStyles.iconWrap, active && tabStyles.iconWrapActive]}>{children}</View>
+  );
+}
 
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-        },
+        tabBarShowLabel: true,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: tabStyles.label,
+        tabBarItemStyle: tabStyles.item,
+        tabBarStyle: tabStyles.bar,
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Scan" component={ScanFormScreen} />
-      <Tab.Screen name="Radar" component={DisruptionRadarScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: "Home",
+          tabBarIcon: ({ focused, color }) => (
+            <TabIconWrap active={focused}>
+              <HomeTabIcon active={focused} color={tabIconColor(focused)} />
+            </TabIconWrap>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Scan"
+        component={ScanFormScreen}
+        options={{
+          tabBarLabel: "Career Scan",
+          tabBarIcon: ({ focused }) => (
+            <TabIconWrap active={focused}>
+              <ScanTabIcon active={focused} color={tabIconColor(focused)} />
+            </TabIconWrap>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Radar"
+        component={DisruptionRadarScreen}
+        options={{
+          tabBarLabel: "Transition",
+          tabBarIcon: ({ focused }) => (
+            <TabIconWrap active={focused}>
+              <TransitionTabIcon active={focused} color={tabIconColor(focused)} />
+            </TabIconWrap>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarLabel: "Settings",
+          tabBarIcon: ({ focused }) => (
+            <TabIconWrap active={focused}>
+              <ProfileTabIcon active={focused} color={tabIconColor(focused)} />
+            </TabIconWrap>
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -45,26 +105,72 @@ export function RootNavigator({ showWelcome }: { showWelcome: boolean }) {
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        headerBackTitle: "Back",
         contentStyle: { backgroundColor: colors.background },
       }}
       initialRouteName={showWelcome ? "Welcome" : "MainTabs"}
     >
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="MainTabs"
+        component={MainTabs}
+        options={{ headerShown: false, headerBackTitle: "Back" }}
+      />
       <Stack.Screen
         name="ScanLoading"
         component={ScanLoadingScreen}
         options={{ title: "Analyzing…", headerBackVisible: false }}
       />
-      <Stack.Screen name="ScanResults" component={ScanResultsScreen} options={{ title: "Scan Results" }} />
-      <Stack.Screen name="ScanHistory" component={ScanHistoryScreen} options={{ title: "Scan History" }} />
+      <Stack.Screen
+        name="ScanResults"
+        component={ScanResultsScreen}
+        options={{ title: "Your Results", headerShown: false }}
+      />
+      <Stack.Screen
+        name="ScanHistory"
+        component={ScanHistoryScreen}
+        options={{ title: "Scan History", headerShown: false }}
+      />
       <Stack.Screen
         name="LegalWebView"
         component={LegalWebViewScreen}
         options={({ route }) => ({ title: route.params.title })}
       />
+      <Stack.Screen
+        name="RoleDisruptionAnalysis"
+        component={RoleDisruptionAnalysisScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="DeleteData" component={DeleteDataScreen} options={{ title: "Delete My Local Data" }} />
-      <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ title: "Career X-Ray — Early Access" }} />
+      <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
+
+const tabStyles = StyleSheet.create({
+  bar: {
+    backgroundColor: colors.background,
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    paddingTop: spacing.sm,
+  },
+  item: {
+    paddingTop: 2,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+    marginTop: 2,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconWrapActive: {
+    backgroundColor: `${colors.accent}1A`,
+  },
+});

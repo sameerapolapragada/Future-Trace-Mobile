@@ -29,7 +29,7 @@ export default function App() {
     async function boot() {
       const [seenWelcome] = await Promise.all([
         hasSeenWelcome(),
-        new Promise((resolve) => setTimeout(resolve, 1800)),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
       ]);
       if (!mounted) return;
       setShowWelcome(!seenWelcome);

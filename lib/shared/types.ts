@@ -16,6 +16,8 @@ export type ScanFormInput = {
 export type NormalizedScanInput = {
   currentRole: string;
   targetRole: string;
+  /** Canonical current-role profile used for scoring and recommendations. */
+  identifiedCareerProfile: string;
   industry: string;
   yearsExperience: number;
   skills: string;
@@ -38,19 +40,29 @@ export type RoleScanProfile = {
 export type ExposureMeta = {
   onetOccupationCode?: string;
   onetOccupationTitle?: string;
+  /** 0–1 fuzzy match strength when an occupational benchmark was found. */
+  matchConfidence?: number;
   matchedVia: "local_index" | "api" | "cache" | "fallback_archetype";
   keyExposureDrivers: string[];
   affectedTasks: string[];
   protectedStrengths: string[];
 };
 
+export type CareerDirectionRecommendation = {
+  role: string;
+  transferabilityScore: number;
+  why: string;
+};
+
 export type FreeScanResult = {
   currentRole: string;
   targetRole: string;
+  /** Canonical career profile identified from the user's current role input. */
+  identifiedCareerProfile: string;
   currentRoleProfile: RoleScanProfile;
   targetRoleProfile: RoleScanProfile;
   summary: string;
-  initialRoleRecommendations: string[];
+  initialRoleRecommendations: CareerDirectionRecommendation[];
   /** O*NET + scoring metadata — informational only. */
   exposureMeta?: ExposureMeta;
   /** Phase 2: paid Career X-Ray preview — omitted in Phase 1 mobile. */

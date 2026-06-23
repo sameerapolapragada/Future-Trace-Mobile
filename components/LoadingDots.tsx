@@ -3,7 +3,7 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 
 const DOT_COUNT = 3;
 const DOT_SIZE = 7;
-const ACTIVE_COLOR = "#3498DB";
+const ACTIVE_COLOR = "#FF5500";
 
 export default function LoadingDots() {
   const progress = useRef(new Animated.Value(0)).current;

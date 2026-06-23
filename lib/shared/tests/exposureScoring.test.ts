@@ -11,6 +11,7 @@ import type { NormalizedScanInput } from "../types";
 const sampleInput: NormalizedScanInput = {
   currentRole: "Salesforce Administrator",
   targetRole: "RevOps Analyst",
+  identifiedCareerProfile: "Salesforce Administrator",
   industry: "Technology",
   yearsExperience: 5,
   skills: "Salesforce, Flow, Reports",
@@ -133,6 +134,7 @@ describe("generateHybridScan", () => {
     assert.ok(result.currentRoleProfile.aiExposureScore != null);
     assert.ok(result.currentRoleProfile.aiExposureScore! >= 0);
     assert.ok(result.exposureMeta?.onetOccupationCode);
+    assert.ok((result.exposureMeta?.matchConfidence ?? 0) >= 0.35);
     assert.ok(result.summary.length > 40);
   });
 

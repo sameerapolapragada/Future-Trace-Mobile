@@ -4,7 +4,7 @@ const CACHE_PREFIX = "onet_occ:";
 
 /** In-memory cache for tests and serverless. */
 export class InMemoryOnetCache implements OnetCache {
-  private store = new Map<string, OnetOccupation>();
+  store = new Map<string, OnetOccupation>();
 
   async get(key: string): Promise<OnetOccupation | null> {
     return this.store.get(key) ?? null;

@@ -1,3 +1,4 @@
+import { firstCareerRecommendationRole } from "../scan/careerRecommendations";
 import type { DisruptionRadarSnapshot, FreeScanResult } from "../types";
 
 function readinessLabel(score: number): string {
@@ -46,7 +47,7 @@ export function buildDisruptionRadarFromScan(result: FreeScanResult): Disruption
       },
       {
         title: "Adjacent opportunities",
-        detail: result.initialRoleRecommendations[0] ?? result.targetRole,
+        detail: firstCareerRecommendationRole(result.initialRoleRecommendations, result.targetRole),
         trend: "up",
       },
     ],

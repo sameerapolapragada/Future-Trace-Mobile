@@ -10,13 +10,8 @@ export function validateScanForm(input: ScanFormInput): ScanValidationError | nu
     return { field: "currentRole", message: "Current role is required." };
   }
 
-  const hasTarget = input.targetRole.trim().length > 0;
-  const hasGoal = input.careerGoal.trim().length > 0;
-  if (!hasTarget && !hasGoal) {
-    return {
-      field: "targetRole",
-      message: "Add a target role or describe your career goal.",
-    };
+  if (!input.targetRole.trim()) {
+    return { field: "targetRole", message: "Target role is required." };
   }
 
   const years = parseInt(input.yearsExperience, 10);

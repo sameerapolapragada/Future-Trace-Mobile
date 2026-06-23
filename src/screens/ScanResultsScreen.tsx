@@ -1,85 +1,269 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import type { AIExposureLevel, DisruptionRadarStatus, RoleScanProfile, StoredScan } from "../../lib/shared";
-import { buildDisruptionRadarBrief } from "../../lib/shared";
-import { AI_DISCLAIMER } from "../../lib/shared/legal/content";
-import { colors, spacing } from "../../lib/shared/theme";
-import { Card, MetricPill, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Alert,
+  Easing,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { AIExposureLevel, CareerDirectionRecommendation, RoleScanProfile, StoredScan } from "../../lib/shared";
+import {
+  CAREER_ANALYSIS_SOURCE,
+  formatExposureLevelDisplay,
+  formatExposureHelpAlert,
+  formatResilienceHelpAlert,
+  normalizeCareerRecommendations,
+  SCAN_RESULTS_NOTE,
+  TOP_CAREER_DIRECTIONS_INTRO,
+} from "../../lib/shared";
+import { colors, radius, spacing } from "../../lib/shared/theme";
+import { FadeInView } from "../components/FadeInView";
+import { PrimaryButton, SecondaryButton } from "../components/ui";
 import { getScan } from "../lib/scanStorage";
 import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ScanResults">;
 
-function exposureColor(level: AIExposureLevel): string {
+function exposureTone(level: AIExposureLevel): string {
+  if (level === "low") return colors.success;
   if (level === "high") return colors.danger;
-  if (level === "medium") return colors.warning;
-  return colors.success;
+  return colors.warning;
 }
 
-function RoleProfileCard({ title, profile }: { title: string; profile: RoleScanProfile }) {
+function AnimatedScore({ value, delay = 0, style }: { value: number; delay?: number; style?: object }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    anim.setValue(0);
+    setDisplay(0);
+    const id = anim.addListener(({ value: v }) => setDisplay(Math.round(v)));
+    Animated.timing(anim, {
+      toValue: value,
+      duration: 900,
+      delay,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    return () => anim.removeListener(id);
+  }, [anim, delay, value]);
+
+  return <Text style={style}>{display}</Text>;
+}
+
+function TransitionHero({
+  currentRole,
+  targetRole,
+  identifiedCareerProfile,
+}: {
+  currentRole: string;
+  targetRole: string;
+  identifiedCareerProfile: string;
+}) {
   return (
-    <Card>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <View style={styles.metricsRow}>
-        <MetricPill label="Resilience" value={`${profile.resilienceScore}`} />
-        <MetricPill
-          label="AI exposure"
-          value={profile.aiExposureScore != null ? `${profile.aiExposureScore}` : profile.aiExposureLevel.toUpperCase()}
-        />
-      </View>
-      <Text style={[styles.exposureLabel, { color: exposureColor(profile.aiExposureLevel) }]}>{profile.aiExposureLabel}</Text>
-
-      <Text style={styles.sectionLabel}>Strengths</Text>
-      {profile.strengths.map((item) => (
-        <Text key={item} style={styles.bullet}>
-          • {item}
-        </Text>
-      ))}
-
-      <Text style={styles.sectionLabel}>Watch areas</Text>
-      {profile.vulnerabilities.map((item) => (
-        <Text key={item} style={styles.bullet}>
-          • {item}
-        </Text>
-      ))}
-
-      <Text style={styles.sectionLabel}>Opportunity zones</Text>
-      {profile.opportunityZones.map((item) => (
-        <Text key={item} style={styles.bullet}>
-          • {item}
-        </Text>
-      ))}
-    </Card>
+    <FadeInView delay={0} duration={520}>
+      <LinearGradient
+        colors={[`${colors.accentPurple}22`, `${colors.accentGold}12`, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <Text style={styles.heroEyebrow}>Career Scan Complete</Text>
+        <View style={styles.identifiedProfileBox}>
+          <Text style={styles.identifiedLabel}>Career Profile Identified</Text>
+          <Text style={styles.identifiedValue}>{identifiedCareerProfile}</Text>
+        </View>
+        <View style={styles.transitionRow}>
+          <View style={styles.roleBlock}>
+            <Text style={styles.roleLabel}>Current</Text>
+            <Text style={styles.roleName} numberOfLines={2}>
+              {currentRole}
+            </Text>
+          </View>
+          <View style={styles.arrowWrap}>
+            <LinearGradient
+              colors={[colors.accentPurple, colors.accentGold]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.arrowBadge}
+            >
+              <Text style={styles.arrowText}>→</Text>
+            </LinearGradient>
+          </View>
+          <View style={styles.roleBlock}>
+            <Text style={[styles.roleLabel, styles.roleLabelTarget]}>Target</Text>
+            <Text style={styles.roleName} numberOfLines={2}>
+              {targetRole}
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </FadeInView>
   );
 }
 
-function DisruptionRadarCard({ result }: { result: StoredScan["result"] }) {
-  const radar = buildDisruptionRadarBrief(result);
-  const toneColor = (status: DisruptionRadarStatus) => {
-    if (status === "Stable") return colors.success;
-    if (status === "At Risk") return colors.danger;
-    return colors.warning;
-  };
+function MetricHelpButton({
+  accessibilityLabel,
+  getAlert,
+}: {
+  accessibilityLabel: string;
+  getAlert: () => { title: string; message: string };
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={8}
+      onPress={() => {
+        const { title, message } = getAlert();
+        Alert.alert(title, message);
+      }}
+      style={styles.helpBtn}
+    >
+      <Text style={styles.helpBtnText}>?</Text>
+    </Pressable>
+  );
+}
+
+function ScoreCard({
+  label,
+  profile,
+  tone,
+  scoreDelay,
+}: {
+  label: string;
+  profile: RoleScanProfile;
+  tone: "current" | "target";
+  scoreDelay: number;
+}) {
+  const accent = tone === "current" ? colors.accent : colors.success;
+  const border = tone === "current" ? `${colors.accent}40` : `${colors.success}40`;
 
   return (
-    <Card>
-      <View style={styles.radarHeader}>
-        <Text style={styles.cardTitle}>AI Disruption Radar</Text>
-        <Text style={[styles.radarStatus, { color: toneColor(radar.status) }]}>{radar.status}</Text>
+    <View style={[styles.scoreCard, { borderColor: border }]}>
+      <Text style={[styles.scoreCardLabel, { color: accent }]}>{label}</Text>
+      <Text style={styles.scoreCardRole} numberOfLines={1}>
+        {label === "Current role" ? "Today" : "Goal"}
+      </Text>
+      <View style={styles.metricsGrid}>
+        <View style={styles.metricBox}>
+          <View style={styles.metricValueRow}>
+            <AnimatedScore value={profile.resilienceScore} delay={scoreDelay} style={styles.metricNumber} />
+            <Text style={styles.metricSuffix}>/100</Text>
+          </View>
+          <View style={styles.metricCaptionRow}>
+            <Text style={styles.metricCaption}>Resilience</Text>
+            <MetricHelpButton
+              accessibilityLabel="What is career resilience?"
+              getAlert={formatResilienceHelpAlert}
+            />
+          </View>
+        </View>
+        <View style={styles.metricDivider} />
+        <View style={styles.metricBox}>
+          <Text style={[styles.exposureBadge, { color: exposureTone(profile.aiExposureLevel) }]}>
+            {formatExposureLevelDisplay(profile.aiExposureLevel)}
+          </Text>
+          <View style={styles.metricCaptionRow}>
+            <Text style={styles.metricCaption}>AI Exposure</Text>
+            <MetricHelpButton
+              accessibilityLabel="What is AI exposure level?"
+              getAlert={formatExposureHelpAlert}
+            />
+          </View>
+          {profile.aiExposureScore != null ? (
+            <Text style={styles.exposureScore}>{profile.aiExposureScore}/100</Text>
+          ) : null}
+        </View>
       </View>
-      <Text style={styles.summary}>{radar.explanation}</Text>
-      <View style={styles.nextActionBox}>
-        <Text style={styles.sectionLabel}>Suggested next action</Text>
-        <Text style={styles.bullet}>{radar.nextAction}</Text>
-      </View>
-    </Card>
+    </View>
+  );
+}
+
+function InsightPanel({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items: string[];
+  tone: "strength" | "watch" | "opportunity";
+}) {
+  const toneStyles = {
+    strength: { border: `${colors.success}55`, title: colors.success, dot: colors.success },
+    watch: { border: `${colors.danger}55`, title: colors.danger, dot: colors.danger },
+    opportunity: { border: `${colors.accent}55`, title: colors.accent, dot: colors.accent },
+  }[tone];
+
+  return (
+    <View style={[styles.insightPanel, { borderColor: toneStyles.border }]}>
+      <Text style={[styles.insightTitle, { color: toneStyles.title }]}>{title}</Text>
+      {items.map((item, i) => (
+        <View key={`${title}-${i}`} style={styles.insightRow}>
+          <View style={[styles.insightDot, { backgroundColor: toneStyles.dot }]} />
+          <Text style={styles.insightText}>{item}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function RecommendationsCard({ items }: { items: CareerDirectionRecommendation[] }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Top Career Directions</Text>
+      <Text style={styles.recIntro}>{TOP_CAREER_DIRECTIONS_INTRO}</Text>
+      {items.map((item, i) => (
+        <View key={`${item.role}-${i}`} style={[styles.recBlock, i > 0 && styles.recBlockDivider]}>
+          <View style={styles.recRow}>
+            <LinearGradient
+              colors={[colors.accentPurple, colors.accentGold]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.recBadge}
+            >
+              <Text style={styles.recBadgeText}>{i + 1}</Text>
+            </LinearGradient>
+            <Text style={styles.recTitle}>{item.role}</Text>
+          </View>
+          <Text style={styles.recTransferability}>Transferability: {item.transferabilityScore}%</Text>
+          <Text style={styles.recWhyLabel}>Why:</Text>
+          <Text style={styles.recWhyText}>{item.why}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ComingSoonCard({
+  title,
+  body,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  body: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View style={[styles.card, styles.comingSoonCard]}>
+      <Text style={styles.comingSoonTitle}>{title}</Text>
+      <Text style={styles.bodyText}>{body}</Text>
+      {actionLabel && onAction ? <SecondaryButton label={actionLabel} onPress={onAction} /> : null}
+    </View>
   );
 }
 
 export function ScanResultsScreen({ route, navigation }: Props) {
   const [scan, setScan] = useState<StoredScan | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getScan(route.params.scanId).then(setScan);
@@ -87,89 +271,258 @@ export function ScanResultsScreen({ route, navigation }: Props) {
 
   if (!scan) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <Text style={styles.loading}>Loading results…</Text>
-      </SafeAreaView>
+      <View style={[styles.safe, { paddingTop: insets.top }]}>
+        <View style={styles.loadingWrap}>
+          <View style={styles.loadingDot} />
+          <Text style={styles.loadingText}>Loading your results…</Text>
+        </View>
+      </View>
     );
   }
 
   const { result } = scan;
+  const current = result.currentRoleProfile;
+  const target = result.targetRoleProfile;
+  const recommendations = normalizeCareerRecommendations(result.initialRoleRecommendations);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["bottom"]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Title>{result.currentRole}</Title>
-        <Subtitle>
-          Target path: {result.targetRole} · Stored on device
-        </Subtitle>
+    <View style={styles.safe}>
+      <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={styles.backText}>← Back</Text>
+        </Pressable>
+      </View>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + spacing.xxl }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <TransitionHero
+          currentRole={result.currentRole}
+          targetRole={result.targetRole}
+          identifiedCareerProfile={result.identifiedCareerProfile ?? result.currentRole}
+        />
 
-        <Card>
-          <Text style={styles.disclaimerTitle}>Informational guidance only</Text>
-          <Text style={styles.disclaimerBody}>{AI_DISCLAIMER}</Text>
-        </Card>
+        <FadeInView delay={100}>
+          <ScoreCard label="Current role" profile={current} tone="current" scoreDelay={180} />
+        </FadeInView>
 
-        <Card>
-          <Text style={styles.summary}>{result.summary}</Text>
-        </Card>
+        <FadeInView delay={180}>
+          <ScoreCard label="Target role" profile={target} tone="target" scoreDelay={260} />
+        </FadeInView>
 
-        <DisruptionRadarCard result={result} />
+        <FadeInView delay={260}>
+          <InsightPanel title="Strengths" items={current.strengths} tone="strength" />
+        </FadeInView>
 
-        <RoleProfileCard title="Current role profile" profile={result.currentRoleProfile} />
-        <RoleProfileCard title="Target role profile" profile={result.targetRoleProfile} />
+        <FadeInView delay={320}>
+          <InsightPanel title="Risks" items={current.vulnerabilities} tone="watch" />
+        </FadeInView>
 
-        {result.initialRoleRecommendations.length > 0 ? (
-          <Card>
-            <Text style={styles.cardTitle}>Adjacent roles to explore</Text>
-            {result.initialRoleRecommendations.map((role) => (
-              <Text key={role} style={styles.bullet}>
-                • {role}
-              </Text>
-            ))}
-          </Card>
+        {current.opportunityZones.length > 0 ? (
+          <FadeInView delay={380}>
+            <InsightPanel title="Opportunities" items={current.opportunityZones} tone="opportunity" />
+          </FadeInView>
         ) : null}
 
-        <PrimaryButton label="Open AI Disruption Radar" onPress={() => navigation.navigate("MainTabs", { screen: "Radar" })} />
-        <SecondaryButton label="Scan History" onPress={() => navigation.navigate("ScanHistory")} />
+        {recommendations.length > 0 ? (
+          <FadeInView delay={440}>
+            <RecommendationsCard items={recommendations} />
+          </FadeInView>
+        ) : null}
 
-        <Card>
-          <Text style={[styles.cardTitle, { color: colors.accentPurple }]}>Career X-Ray — Early Access</Text>
-          <Text style={styles.summary}>
-            Deep skill-gap analysis and transition roles are coming soon. Join Early Access to get notified at launch.
-          </Text>
-          <SecondaryButton label="Join Early Access" onPress={() => navigation.navigate("Waitlist")} />
-        </Card>
+        <FadeInView delay={500}>
+          <PrimaryButton
+            label="Open AI Disruption Radar"
+            onPress={() => navigation.navigate("MainTabs", { screen: "Radar" })}
+          />
+          <SecondaryButton label="Scan history" onPress={() => navigation.navigate("ScanHistory")} />
+        </FadeInView>
 
-        <Card>
-          <Text style={[styles.cardTitle, { color: colors.accentPurple }]}>AI Career Roadmap — Coming Soon</Text>
-          <Text style={styles.summary}>
-            Learn what skills to build, understand transition pathways, and track progress toward future roles.
-          </Text>
-        </Card>
+        <FadeInView delay={560}>
+          <ComingSoonCard
+            title="Career X-Ray — Early Access"
+            body="Deep skill-gap analysis and transition roles are coming soon. Join Early Access to get notified at launch."
+            actionLabel="Join Early Access"
+            onAction={() => navigation.navigate("Waitlist")}
+          />
+        </FadeInView>
+
+        <FadeInView delay={620}>
+          <Text style={styles.footerDisclaimer}>{CAREER_ANALYSIS_SOURCE}</Text>
+          <Text style={styles.footerNote}>Results saved on this device.</Text>
+          <Text style={styles.footerNote}>{SCAN_RESULTS_NOTE}</Text>
+        </FadeInView>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  loading: { color: colors.muted, textAlign: "center", marginTop: spacing.xxl },
-  summary: { color: colors.text, fontSize: 15, lineHeight: 22 },
-  disclaimerTitle: { color: colors.muted, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
-  disclaimerBody: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: spacing.sm },
-  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
-  metricsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  exposureLabel: { fontSize: 13, fontWeight: "600", marginTop: spacing.md },
-  sectionLabel: { color: colors.muted, fontSize: 12, fontWeight: "700", marginTop: spacing.md, textTransform: "uppercase" },
-  bullet: { color: colors.text, fontSize: 14, lineHeight: 21, marginTop: 4 },
-  radarHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  radarStatus: { fontSize: 13, fontWeight: "700" },
-  nextActionBox: {
-    marginTop: spacing.md,
-    borderRadius: 12,
+  topBar: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
+  backBtn: { alignSelf: "flex-start" },
+  backText: { color: colors.accent, fontSize: 16, fontWeight: "600" },
+  scroll: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.md },
+  loadingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.accentPurple,
+  },
+  loadingText: { color: colors.muted, fontSize: 14 },
+
+  hero: {
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  heroEyebrow: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+  identifiedProfileBox: {
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.elevated,
     padding: spacing.md,
+    marginBottom: spacing.md,
   },
+  identifiedLabel: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  identifiedValue: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  transitionRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  roleBlock: { flex: 1 },
+  roleLabel: {
+    color: colors.accent,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  roleLabelTarget: { color: colors.success },
+  roleName: { color: colors.text, fontSize: 15, fontWeight: "700", marginTop: 4, lineHeight: 20 },
+  arrowWrap: { paddingHorizontal: 2 },
+  arrowBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  arrowText: { color: colors.text, fontSize: 18, fontWeight: "700" },
+
+  scoreCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
+  },
+  scoreCardLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  scoreCardRole: { color: colors.muted, fontSize: 12, marginTop: 2, marginBottom: spacing.md },
+  metricsGrid: { flexDirection: "row", alignItems: "center" },
+  metricBox: { flex: 1, alignItems: "center" },
+  metricDivider: { width: 1, height: 48, backgroundColor: colors.border },
+  metricValueRow: { flexDirection: "row", alignItems: "baseline" },
+  metricNumber: { color: colors.text, fontSize: 36, fontWeight: "700", fontVariant: ["tabular-nums"] },
+  metricSuffix: { color: colors.muted, fontSize: 14, marginLeft: 2 },
+  metricCaption: { color: colors.muted, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 },
+  metricCaptionRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 },
+  helpBtn: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.elevated,
+  },
+  helpBtnText: { color: colors.muted, fontSize: 10, fontWeight: "700", lineHeight: 12 },
+  exposureBadge: { fontSize: 22, fontWeight: "700" },
+  exposureScore: { color: colors.muted, fontSize: 11, marginTop: 2 },
+
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
+  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+  bodyText: { color: colors.text, fontSize: 15, lineHeight: 22, marginTop: spacing.sm },
+  pressed: { opacity: 0.85 },
+
+  insightPanel: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.lg,
+  },
+  insightTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
+  insightRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, marginTop: 8 },
+  insightDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7 },
+  insightText: { flex: 1, color: colors.text, fontSize: 14, lineHeight: 21 },
+
+  recIntro: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: spacing.sm },
+  recBlock: { marginTop: spacing.lg },
+  recBlockDivider: {
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  recRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
+  recBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recBadgeText: { color: colors.text, fontSize: 12, fontWeight: "700" },
+  recTitle: { flex: 1, color: colors.text, fontSize: 15, fontWeight: "700", lineHeight: 21, paddingTop: 2 },
+  recTransferability: { color: colors.accentGold, fontSize: 13, fontWeight: "700", marginTop: spacing.sm, marginLeft: 38 },
+  recWhyLabel: { color: colors.muted, fontSize: 12, fontWeight: "700", marginTop: spacing.sm, marginLeft: 38 },
+  recWhyText: { color: colors.text, fontSize: 14, lineHeight: 21, marginTop: 4, marginLeft: 38 },
+
+  comingSoonCard: { borderColor: `${colors.accentPurple}44` },
+  comingSoonTitle: { color: colors.accentPurple, fontSize: 16, fontWeight: "700" },
+
+  footerDisclaimer: { color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: spacing.sm },
+  footerNote: { color: colors.muted, fontSize: 10, textAlign: "center", marginTop: spacing.md, opacity: 0.7 },
 });

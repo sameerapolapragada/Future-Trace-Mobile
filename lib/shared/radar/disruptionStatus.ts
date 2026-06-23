@@ -1,4 +1,5 @@
-import type { FreeScanResult } from "../types";
+import { firstCareerRecommendationRole } from "../scan/careerRecommendations";
+import type { FreeScanResult, RoleScanProfile } from "../types";
 
 export type DisruptionRadarStatus = "Stable" | "Evolving" | "At Risk";
 
@@ -8,24 +9,26 @@ export type DisruptionRadarBrief = {
   nextAction: string;
 };
 
-function resolveStatus(result: FreeScanResult): DisruptionRadarStatus {
-  const current = result.currentRoleProfile;
-
-  if (current.aiExposureLevel === "high" || current.resilienceScore < 52) {
+export function resolveDisruptionStatus(profile: RoleScanProfile): DisruptionRadarStatus {
+  if (profile.aiExposureLevel === "high" || profile.resilienceScore < 52) {
     return "At Risk";
   }
 
-  if (current.aiExposureLevel === "low" && current.resilienceScore >= 68) {
+  if (profile.aiExposureLevel === "low" && profile.resilienceScore >= 68) {
     return "Stable";
   }
 
   return "Evolving";
 }
 
+function resolveStatus(result: FreeScanResult): DisruptionRadarStatus {
+  return resolveDisruptionStatus(result.currentRoleProfile);
+}
+
 /** Compact disruption snapshot for Career Scan Results — informational only. */
 export function buildDisruptionRadarBrief(result: FreeScanResult): DisruptionRadarBrief {
   const status = resolveStatus(result);
-  const adjacent = result.initialRoleRecommendations[0] ?? result.targetRole;
+  const adjacent = firstCareerRecommendationRole(result.initialRoleRecommendations, result.targetRole);
 
   const copy: Record<
     DisruptionRadarStatus,

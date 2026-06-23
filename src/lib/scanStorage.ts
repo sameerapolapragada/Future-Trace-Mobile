@@ -1,10 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  FREE_SCAN_WINDOW_MS,
-  FREE_SCANS_PER_WEEK,
-  type NormalizedScanInput,
-  type StoredScan,
-} from "../../lib/shared";
+import { type NormalizedScanInput, type StoredScan } from "../../lib/shared";
 
 const SCANS_KEY = "ft_scans_v1";
 const MAX_STORED_SCANS = 20;
@@ -73,20 +68,6 @@ export async function getScanCount(): Promise<number> {
 /** Remove all locally saved Career Scan history. */
 export async function deleteLocalScans(): Promise<void> {
   await AsyncStorage.removeItem(SCANS_KEY);
-}
-
-export async function canRunNewScan(): Promise<{ allowed: boolean; daysUntilNext: number | null }> {
-  const scans = await listScans();
-  if (scans.length === 0) return { allowed: true, daysUntilNext: null };
-
-  const windowStart = Date.now() - FREE_SCAN_WINDOW_MS;
-  const recent = scans.filter((s) => new Date(s.createdAt).getTime() >= windowStart);
-  if (recent.length < FREE_SCANS_PER_WEEK) return { allowed: true, daysUntilNext: null };
-
-  const oldest = recent.reduce((min, s) => (s.createdAt < min ? s.createdAt : min), recent[0]!.createdAt);
-  const nextAt = new Date(oldest).getTime() + FREE_SCAN_WINDOW_MS;
-  const days = Math.ceil((nextAt - Date.now()) / (24 * 60 * 60 * 1000));
-  return { allowed: false, daysUntilNext: Math.max(1, days) };
 }
 
 export async function getLatestScan(): Promise<StoredScan | null> {

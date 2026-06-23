@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 
 export function Screen({ children, padded = true }: { children: React.ReactNode; padded?: boolean }) {
@@ -22,27 +23,37 @@ export function PrimaryButton({
   onPress,
   disabled,
   loading,
+  compact,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
+  compact?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       style={({ pressed }) => [
-        styles.primaryBtn,
+        styles.primaryBtnWrap,
+        compact && styles.primaryBtnWrapCompact,
         (disabled || loading) && styles.btnDisabled,
         pressed && !disabled && styles.btnPressed,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color="#000" />
-      ) : (
-        <Text style={styles.primaryBtnText}>{label}</Text>
-      )}
+      <LinearGradient
+        colors={[colors.accentPurple, colors.accentGold]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.primaryBtn}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.text} />
+        ) : (
+          <Text style={styles.primaryBtnText}>{label}</Text>
+        )}
+      </LinearGradient>
     </Pressable>
   );
 }
@@ -113,14 +124,23 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginTop: spacing.lg,
   },
-  primaryBtn: {
-    backgroundColor: colors.accent,
+  primaryBtnWrap: {
+    marginTop: spacing.lg,
     borderRadius: radius.lg,
+    overflow: "hidden",
+    shadowColor: colors.accentPurple,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  primaryBtnWrapCompact: {
+    marginTop: spacing.md,
+  },
+  primaryBtn: {
     paddingVertical: 16,
     alignItems: "center",
-    marginTop: spacing.lg,
   },
-  primaryBtnText: { color: "#000", fontSize: 16, fontWeight: "700" },
+  primaryBtnText: { color: colors.text, fontSize: 16, fontWeight: "700" },
   secondaryBtn: {
     borderRadius: radius.lg,
     borderWidth: 1,

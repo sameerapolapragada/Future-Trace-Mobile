@@ -7,6 +7,7 @@ export type RootStackParamList = {
   LegalWebView: { title: string; html: string };
   DeleteData: undefined;
   Waitlist: undefined;
+  RoleDisruptionAnalysis: { scanId: string; focus: "current" | "target" };
 };
 
 export type MainTabParamList = {

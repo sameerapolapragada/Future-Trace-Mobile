@@ -6,7 +6,16 @@ let client: SupabaseClient | null = null;
 
 function readExtra(key: string): string | undefined {
   const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
-  return extra?.[key] ?? process.env[key];
+  if (extra?.[key]) return extra[key];
+
+  if (key === "supabaseUrl") {
+    return process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  }
+  if (key === "supabaseAnonKey") {
+    return process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  }
+
+  return process.env[key];
 }
 
 export function getSupabase(): SupabaseClient | null {
@@ -35,6 +44,15 @@ export async function submitWaitlistEntrySafe(entry: WaitlistEntry): Promise<Wai
     return { ok: false, message: "Enter a valid email address." };
   }
 
+  const currentRole = entry.currentRole?.trim() ?? "";
+  const targetRole = entry.targetRole?.trim() ?? "";
+  if (!currentRole) {
+    return { ok: false, message: "Enter your current role." };
+  }
+  if (!targetRole) {
+    return { ok: false, message: "Enter your target role." };
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return {
@@ -46,8 +64,8 @@ export async function submitWaitlistEntrySafe(entry: WaitlistEntry): Promise<Wai
   try {
     const { error } = await supabase.from("career_xray_waitlist").insert({
       email,
-      current_role: entry.currentRole?.trim() || null,
-      target_role: entry.targetRole?.trim() || null,
+      current_role: currentRole,
+      target_role: targetRole,
       source: entry.source ?? "ios_app",
     });
 

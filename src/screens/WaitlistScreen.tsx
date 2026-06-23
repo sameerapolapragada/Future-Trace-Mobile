@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AI_DISCLAIMER } from "../../lib/shared/legal/content";
 import { colors, spacing } from "../../lib/shared/theme";
@@ -11,7 +11,7 @@ import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Waitlist">;
 
-export function WaitlistScreen(_props: Props) {
+export function WaitlistScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
@@ -33,7 +33,7 @@ export function WaitlistScreen(_props: Props) {
     });
     getLatestScan().then((scan) => {
       if (!scan) return;
-      setCurrentRole((prev) => prev || scan.result.currentRole);
+      setCurrentRole((prev) => prev || scan.result.identifiedCareerProfile || scan.result.currentRole);
       setTargetRole((prev) => prev || scan.result.targetRole);
     });
   }, []);
@@ -74,7 +74,17 @@ export function WaitlistScreen(_props: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={8}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.backLabel}>← Back</Text>
+        </Pressable>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Title>Career X-Ray — Early Access</Title>
         <Subtitle>
@@ -97,22 +107,22 @@ export function WaitlistScreen(_props: Props) {
             keyboardType="email-address"
           />
           <Field
-            label="Current role"
+            label="Current role *"
             value={currentRole}
             onChangeText={(v) => {
               setCurrentRole(v);
               void persistDraft({ currentRole: v });
             }}
-            placeholder="Optional"
+            placeholder="e.g. Salesforce Administrator"
           />
           <Field
-            label="Target role"
+            label="Target role *"
             value={targetRole}
             onChangeText={(v) => {
               setTargetRole(v);
               void persistDraft({ targetRole: v });
             }}
-            placeholder="Optional"
+            placeholder="e.g. Salesforce AI Administrator"
           />
         </Card>
 
@@ -128,7 +138,21 @@ export function WaitlistScreen(_props: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  backButton: { alignSelf: "flex-start" },
+  backLabel: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: "500",
+  },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   cardBody: { color: colors.muted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
   notice: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: spacing.md },
+  pressed: { opacity: 0.75 },
 });

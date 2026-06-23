@@ -50,37 +50,15 @@ function mergeProfile(
   input: NormalizedScanInput,
   role: string,
   isTarget: boolean,
-  exposure: ExposureScoreResult,
-  explanationSkills: string[],
-  explanationTasks: string[]
+  exposure: ExposureScoreResult
 ): RoleScanProfile {
   const base = buildResilienceProfile(input, role, isTarget);
-
-  const strengths =
-    exposure.protectedStrengths.length > 0
-      ? exposure.protectedStrengths.slice(0, 4)
-      : base.strengths;
-
-  const vulnerabilities =
-    explanationTasks.length > 0
-      ? explanationTasks.slice(0, 4)
-      : exposure.affectedTasks.length > 0
-        ? exposure.affectedTasks.slice(0, 4)
-        : base.vulnerabilities;
-
-  const opportunityZones =
-    explanationSkills.length > 0
-      ? explanationSkills.slice(0, 4)
-      : base.opportunityZones;
 
   return {
     ...base,
     aiExposureScore: exposure.aiExposureScore,
     aiExposureLevel: exposure.aiExposureLevel,
     aiExposureLabel: exposure.aiExposureLabel,
-    strengths,
-    vulnerabilities,
-    opportunityZones,
   };
 }
 
@@ -95,7 +73,7 @@ function buildHybridSummary(
   const difficulty =
     gap >= 55 ? "a meaningful transition that will take focused upskilling" : "a realistic next step with steady preparation";
 
-  return `${explanationText} ${whyLevel} Your scan compares ${formatRoleLabel(input.currentRole)} with a target of ${formatRoleLabel(input.targetRole)} in ${input.industry}. Current role resilience is ${current.resilienceScore}/100; target role resilience is ${target.resilienceScore}/100. Moving toward your target looks like ${difficulty}. Future Trace provides informational career guidance only. Results are not guarantees of job security, salary, or career outcomes.`;
+  return `${explanationText} ${whyLevel} Your scan compares ${formatRoleLabel(input.currentRole)} with a target of ${formatRoleLabel(input.targetRole)} in ${input.industry}. Current role resilience is ${current.resilienceScore}/100; target role resilience is ${target.resilienceScore}/100. Moving toward your target looks like ${difficulty}.`;
 }
 
 async function scoreRole(
@@ -138,18 +116,14 @@ export async function generateHybridScan(
     input,
     input.currentRole,
     false,
-    currentExposure,
-    explanation.skillsToStrengthen,
-    explanation.tasksAffectedSummary
+    currentExposure
   );
 
   const targetRoleProfile = mergeProfile(
     input,
     input.targetRole,
     true,
-    targetExposure,
-    [],
-    []
+    targetExposure
   );
 
   const summary = buildHybridSummary(
@@ -163,6 +137,7 @@ export async function generateHybridScan(
   return {
     currentRole: formatRoleLabel(input.currentRole),
     targetRole: formatRoleLabel(input.targetRole),
+    identifiedCareerProfile: input.identifiedCareerProfile,
     currentRoleProfile,
     targetRoleProfile,
     summary,
@@ -170,6 +145,7 @@ export async function generateHybridScan(
     exposureMeta: {
       onetOccupationCode: currentMatch?.occupation.code,
       onetOccupationTitle: currentMatch?.occupation.title,
+      matchConfidence: currentMatch?.matchScore,
       matchedVia: currentMatch?.matchedVia ?? "fallback_archetype",
       keyExposureDrivers: currentExposure.keyExposureDrivers,
       affectedTasks: currentExposure.affectedTasks,

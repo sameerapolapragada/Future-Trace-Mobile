@@ -66,5 +66,16 @@ export const TERMS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+export const SCAN_RESULTS_NOTE =
+  "Future Trace provides informational career guidance only. Results are not guarantees of job security, salary, or career outcomes.";
+
 export const AI_DISCLAIMER =
-  "Future Trace provides informational career guidance only. Results are not guarantees of job security, salary, or career outcomes. Not career, legal, or financial advice.";
+  `${SCAN_RESULTS_NOTE} Not career, legal, or financial advice.`;
+
+const SUMMARY_DISCLAIMER_SUFFIX =
+  /\s*Future Trace provides informational career guidance only\.\s*Results are not guarantees of job security, salary, or career outcomes\.?\s*$/i;
+
+/** Remove legacy disclaimer copy embedded in stored scan summaries. */
+export function stripScanSummaryDisclaimer(summary: string): string {
+  return summary.replace(SUMMARY_DISCLAIMER_SUFFIX, "").trim();
+}

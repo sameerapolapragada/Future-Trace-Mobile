@@ -1,5 +1,5 @@
 import type { AIExposureLevel, NormalizedScanInput, RoleScanProfile } from "../types";
-import { formatRoleLabel } from "./inferTargetRole";
+import { buildRoleInsights } from "./roleInsights";
 
 type RoleArchetype = {
   resilience: number;
@@ -33,14 +33,25 @@ export function matchArchetype(role: string): RoleArchetype {
     };
   }
 
-  if (/salesforce|crm admin|platform admin|business analyst|administrator/.test(r)) {
+  if (/salesforce|sfdc|crm admin|platform admin/.test(r)) {
     return {
       resilience: 66,
       exposure: "medium",
       exposureLabel: "Rising platform automation",
-      strengthSeeds: ["Platform certifications", "Business process knowledge", "Stakeholder coordination"],
-      vulnerabilitySeeds: ["Declarative automation reduces manual config", "AI copilots in CRM", "Commodity admin tasks"],
-      opportunitySeeds: ["RevOps analytics", "AI operations", "Solution architecture"],
+      strengthSeeds: [],
+      vulnerabilitySeeds: [],
+      opportunitySeeds: [],
+    };
+  }
+
+  if (/business analyst|systems analyst|functional analyst/.test(r)) {
+    return {
+      resilience: 68,
+      exposure: "medium",
+      exposureLabel: "Moderate automation risk",
+      strengthSeeds: [],
+      vulnerabilitySeeds: [],
+      opportunitySeeds: [],
     };
   }
 
@@ -88,21 +99,12 @@ function clampScore(value: number): number {
   return Math.min(100, Math.max(1, Math.round(value)));
 }
 
-function tokenizeSkills(text: string): string[] {
-  return text
-    .split(/[,;\n/|]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 1 && s !== "—")
-    .slice(0, 8);
-}
-
 export function buildResilienceProfile(
   input: NormalizedScanInput,
   role: string,
   isTarget: boolean
 ): RoleScanProfile {
   const archetype = matchArchetype(role);
-  const skills = tokenizeSkills(input.skills);
   const yearsBonus = Math.min(12, Math.floor(input.yearsExperience / 3));
 
   let resilience = archetype.resilience + yearsBonus;
@@ -120,32 +122,16 @@ export function buildResilienceProfile(
     resilience = clampScore(resilience);
   }
 
-  const strengths = [
-    ...skills.slice(0, 2).map((s) => `Strong ${s} experience`),
-    ...archetype.strengthSeeds.slice(0, 3),
-  ].slice(0, 4);
-
-  const vulnerabilities = [
-    ...(isTarget && transitionGapScore(input.currentRole, role) > 40
-      ? [`Skill gap for ${formatRoleLabel(role)} transition`]
-      : []),
-    ...archetype.vulnerabilitySeeds.slice(0, 3),
-  ].slice(0, 4);
-
-  const opportunities = [
-    ...archetype.opportunitySeeds.slice(0, 2),
-    input.industry !== "General"
-      ? `Growing demand in ${input.industry}`
-      : "Explore adjacent roles in your industry",
-  ].slice(0, 4);
+  const gap = isTarget ? transitionGapScore(input.currentRole, role) : 0;
+  const insights = buildRoleInsights(input, role, isTarget, gap);
 
   return {
     resilienceScore: resilience,
     aiExposureLevel: archetype.exposure,
     aiExposureLabel: archetype.exposureLabel,
-    strengths,
-    vulnerabilities,
-    opportunityZones: opportunities,
+    strengths: insights.strengths,
+    vulnerabilities: insights.vulnerabilities,
+    opportunityZones: insights.opportunityZones,
   };
 }
 
@@ -160,17 +146,4 @@ export function transitionGapScore(fromRole: string, toRole: string): number {
   return clampScore(30 + resilienceDelta + exposureDelta + lexical);
 }
 
-export function buildRecommendations(input: NormalizedScanInput): string[] {
-  const target = input.targetRole;
-  const recs = [target];
-
-  if (/salesforce|admin|crm/i.test(input.currentRole)) {
-    recs.push("RevOps Analyst", "AI Operations Specialist", "Business Systems Analyst");
-  } else if (/engineer|developer/i.test(input.currentRole)) {
-    recs.push("Platform Engineer", "ML Engineer", "Technical Product Manager");
-  } else {
-    recs.push("Operations Analyst", "Product Coordinator", "Customer Success Engineer");
-  }
-
-  return [...new Set(recs.map((r) => formatRoleLabel(r)))].slice(0, 3);
-}
+export { buildRecommendations } from "./careerRecommendations";

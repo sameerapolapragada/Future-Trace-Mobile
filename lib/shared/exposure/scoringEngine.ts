@@ -78,9 +78,8 @@ function selectProtectedStrengths(
     .slice(0, 2);
 
   const merged = [
-    ...strengths,
-    ...onetSkills.slice(0, 2).map((s) => `${s} (O*NET skill)`),
     ...userSkillTokens.map((s) => `Strong ${s} experience`),
+    ...strengths,
   ];
 
   return [...new Set(merged)].slice(0, 4);
