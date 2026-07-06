@@ -14,6 +14,20 @@ export {
   roleStringSimilarity,
   ROLE_MATCH_CONFIDENCE_THRESHOLD,
 } from "./scan/roleCanonicalization";
+export {
+  matchRole,
+  canGenerateScan,
+  formatRoleMatchQualityLabel,
+  shouldTrackUnknownRole,
+  normalizeRoleInputForTracking,
+  confidenceLabelFromScore,
+  type RoleMatchInput,
+  type RoleMatchResult,
+  type MatchStatus,
+  type ConfidenceLabel,
+  type AnalysisQuality,
+  type SuggestedRole,
+} from "./scan/roleMatch";
 export { normalizeScanInput, normalizeWorkPreference, clampYearsExperience } from "./scan/normalize";
 export { validateScanForm, type ScanValidationError } from "./scan/validation";
 export {

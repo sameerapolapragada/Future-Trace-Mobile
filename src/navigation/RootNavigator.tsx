@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { colors, spacing } from "../../lib/shared/theme";
+import { CareerTransitionScreen } from "../screens/CareerTransitionScreen";
 import { DisruptionRadarScreen } from "../screens/DisruptionRadarScreen";
 import { DeleteDataScreen } from "../screens/DeleteDataScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -10,6 +11,10 @@ import { LegalWebViewScreen } from "../screens/LegalWebViewScreen";
 import { ScanHistoryScreen } from "../screens/ScanHistoryScreen";
 import { ScanFormScreen } from "../screens/ScanFormScreen";
 import { ScanLoadingScreen } from "../screens/ScanLoadingScreen";
+import { ScanReviewRoleScreen } from "../screens/ScanReviewRoleScreen";
+import { ScanRoleConfirmScreen } from "../screens/ScanRoleConfirmScreen";
+import { ScanRoleNeedsInfoScreen } from "../screens/ScanRoleNeedsInfoScreen";
+import { AdminUnknownRolesScreen } from "../screens/AdminUnknownRolesScreen";
 import { ScanResultsScreen } from "../screens/ScanResultsScreen";
 import { RoleDisruptionAnalysisScreen } from "../screens/RoleDisruptionAnalysisScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -122,6 +127,21 @@ export function RootNavigator({ showWelcome }: { showWelcome: boolean }) {
         options={{ title: "Analyzing…", headerBackVisible: false }}
       />
       <Stack.Screen
+        name="ScanReviewRole"
+        component={ScanReviewRoleScreen}
+        options={{ title: "Review Role", headerShown: false }}
+      />
+      <Stack.Screen
+        name="ScanRoleConfirm"
+        component={ScanRoleConfirmScreen}
+        options={{ title: "Confirm Role", headerShown: false }}
+      />
+      <Stack.Screen
+        name="ScanRoleNeedsInfo"
+        component={ScanRoleNeedsInfoScreen}
+        options={{ title: "Role Match", headerShown: false }}
+      />
+      <Stack.Screen
         name="ScanResults"
         component={ScanResultsScreen}
         options={{ title: "Your Results", headerShown: false }}
@@ -141,8 +161,18 @@ export function RootNavigator({ showWelcome }: { showWelcome: boolean }) {
         component={RoleDisruptionAnalysisScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="CareerTransition"
+        component={CareerTransitionScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen name="DeleteData" component={DeleteDataScreen} options={{ title: "Delete My Local Data" }} />
       <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="AdminUnknownRoles"
+        component={AdminUnknownRolesScreen}
+        options={{ title: "Unknown Roles", presentation: "modal" }}
+      />
     </Stack.Navigator>
   );
 }

@@ -4,7 +4,6 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   formatWorkPreferenceHelpAlert,
-  normalizeScanInput,
   type ScanFormInput,
   type WorkPreference,
   validateScanForm,
@@ -13,7 +12,8 @@ import { AI_DISCLAIMER } from "../../lib/shared/legal/content";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, Disclaimer, Field, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
 import { getScanCount } from "../lib/scanStorage";
-import { setPendingScanInput } from "../lib/scanSession";
+import { runRoleMatch } from "../lib/roleMatchService";
+import { setPendingScanForm, setPendingRoleMatch } from "../lib/scanSession";
 import { useAppNavigation } from "../navigation/hooks";
 
 const WORK_PREFS: WorkPreference[] = ["Technical", "Business", "Hybrid"];
@@ -53,10 +53,27 @@ export function ScanFormScreen() {
     }
 
     setSubmitting(true);
-    const normalized = normalizeScanInput(form);
-    setPendingScanInput(normalized);
-    setSubmitting(false);
-    navigation.navigate("ScanLoading");
+    try {
+      setPendingScanForm(form);
+      const snapshot = await runRoleMatch({
+        originalRoleInput: form.currentRole.trim(),
+        industry: form.industry.trim() || undefined,
+        yearsExperience: parseInt(form.yearsExperience, 10) || 0,
+        skills: form.skills.trim() || undefined,
+        tools: form.tools.trim() || undefined,
+      });
+      setPendingRoleMatch(snapshot);
+
+      if (snapshot.matchStatus === "matched") {
+        navigation.navigate("ScanReviewRole");
+      } else if (snapshot.matchStatus === "partial_match") {
+        navigation.navigate("ScanRoleConfirm");
+      } else {
+        navigation.navigate("ScanRoleNeedsInfo");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (

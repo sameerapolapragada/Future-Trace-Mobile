@@ -6,6 +6,7 @@ import { useEntitlements } from "../lib/entitlements";
 import { UPGRADE_SCANS_EXHAUSTED_PATH } from "../lib/entitlementsService";
 import { type ScanFormInput } from "../lib/scanService";
 import { inferTargetRole } from "../lib/targetRole";
+import { runRoleMatch } from "../lib/roleMatchService";
 import { cn } from "../lib/cn";
 import type { Entitlements } from "../types";
 
@@ -223,18 +224,36 @@ export default function CareerScanPage() {
     setSubmitting(true);
     setSubmitError(null);
 
-    const input: ScanFormInput = {
-      currentRole,
-      targetRole: targetRole || inferTargetRole(careerGoal, currentRole),
-      industry,
-      yearsExperience,
-      skills,
-      tools,
-      careerGoal,
-      workPreference,
-    };
+    try {
+      const input: ScanFormInput = {
+        currentRole,
+        targetRole: targetRole || inferTargetRole(careerGoal, currentRole),
+        industry,
+        yearsExperience,
+        skills,
+        tools,
+        careerGoal,
+        workPreference,
+      };
 
-    navigate("/scan-loading", { state: { pendingInput: input }, replace: true });
+      const snapshot = await runRoleMatch(user.id, {
+        originalRoleInput: currentRole.trim(),
+        industry: industry.trim() || undefined,
+        yearsExperience: parseInt(yearsExperience, 10) || 0,
+        skills: skills.trim() || undefined,
+        tools: tools.trim() || undefined,
+      });
+
+      if (snapshot.matchStatus === "matched") {
+        navigate("/scan/review-role", { state: { form: input, roleMatch: snapshot } });
+      } else if (snapshot.matchStatus === "partial_match") {
+        navigate("/scan/role-confirm", { state: { form: input, roleMatch: snapshot } });
+      } else {
+        navigate("/scan/role-needs-info", { state: { form: input, roleMatch: snapshot } });
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (loading) {

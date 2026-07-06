@@ -23,9 +23,9 @@ import {
   type StoredScan,
 } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
-import { Field, PrimaryButton, Subtitle, Title } from "../components/ui";
-import { getLatestScan, getWaitlistDraft, getWaitlistEmail, setWaitlistDraft, setWaitlistEmail } from "../lib/scanStorage";
-import { submitWaitlistEntrySafe } from "../lib/waitlistService";
+import { PrimaryButton, Subtitle, Title } from "../components/ui";
+import { EarlyAccessSignupCard } from "../components/EarlyAccessSignupCard";
+import { getLatestScan } from "../lib/scanStorage";
 import { useAppNavigation } from "../navigation/hooks";
 
 function radarTone(status: DisruptionRadarStatus): string {
@@ -137,24 +137,6 @@ function TrophyIcon({ color }: { color: string }) {
   );
 }
 
-function RocketIcon({ color }: { color: string }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 14c3-2 5-5 5-9-4 0-7 2-9 5 1 3 2 5 4 4z" stroke={color} strokeWidth={2} strokeLinejoin="round" />
-      <Path d="M9 15 6 18M15 15l3 3M10 10l-2 4 4-2" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function LockIcon({ color }: { color: string }) {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
-      <Rect x={5} y={11} width={14} height={10} rx={2} stroke={color} strokeWidth={2} />
-      <Path d="M8 11V8a4 4 0 0 1 8 0v3" stroke={color} strokeWidth={2} />
-    </Svg>
-  );
-}
-
 function LegendCard() {
   return (
     <View style={styles.legendCard}>
@@ -242,115 +224,14 @@ function RoleCard({
 }
 
 function EarlyAccessCard({ scan }: { scan: StoredScan }) {
-  const [email, setEmail] = useState("");
-  const [currentRole, setCurrentRole] = useState(
-    scan.result.identifiedCareerProfile ?? scan.result.currentRole
-  );
-  const [targetRole, setTargetRole] = useState(scan.result.targetRole);
-  const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      getWaitlistDraft().then((draft) => {
-        if (draft) {
-          if (draft.email) setEmail(draft.email);
-          if (draft.currentRole) setCurrentRole(draft.currentRole);
-          if (draft.targetRole) setTargetRole(draft.targetRole);
-          return;
-        }
-        getWaitlistEmail().then((saved) => {
-          if (saved) setEmail(saved);
-        });
-      });
-    }, [])
-  );
-
-  async function persistDraft(next?: { email?: string; currentRole?: string; targetRole?: string }) {
-    await setWaitlistDraft({
-      email: next?.email ?? email,
-      currentRole: next?.currentRole ?? currentRole,
-      targetRole: next?.targetRole ?? targetRole,
-    });
-  }
-
-  async function onJoin() {
-    setLoading(true);
-    setNotice(null);
-
-    const draft = { email, currentRole, targetRole };
-    await setWaitlistDraft(draft);
-
-    const result = await submitWaitlistEntrySafe({
-      email,
-      currentRole,
-      targetRole,
-      source: "ios_app_radar",
-    });
-
-    if (result.ok) {
-      await setWaitlistEmail(email);
-      setNotice("You're on the Early Access list. We'll notify you when Career X-Ray launches.");
-    } else {
-      if (email) await setWaitlistEmail(email);
-      setNotice(result.message);
-    }
-
-    setLoading(false);
-  }
-
   return (
-    <View style={styles.earlyAccessCard}>
-      <View style={styles.earlyAccessHeader}>
-        <View style={styles.earlyAccessIconWrap}>
-          <RocketIcon color={colors.accentPurple} />
-        </View>
-        <View style={styles.earlyAccessHeaderText}>
-          <Text style={styles.earlyAccessTitle}>Join Career X-Ray Early Access</Text>
-          <Text style={styles.earlyAccessBody}>
-            Get notified when deeper career insights, skills gap analysis, and personalized roadmaps become available.
-          </Text>
-        </View>
-      </View>
-
-      <Field
-        label="Email *"
-        value={email}
-        onChangeText={(value) => {
-          setEmail(value);
-          void persistDraft({ email: value });
-        }}
-        placeholder="Enter your email"
-        keyboardType="email-address"
-      />
-      <Field
-        label="Current role *"
-        value={currentRole}
-        onChangeText={(value) => {
-          setCurrentRole(value);
-          void persistDraft({ currentRole: value });
-        }}
-        placeholder="e.g. Salesforce Administrator"
-      />
-      <Field
-        label="Target role *"
-        value={targetRole}
-        onChangeText={(value) => {
-          setTargetRole(value);
-          void persistDraft({ targetRole: value });
-        }}
-        placeholder="e.g. Salesforce AI Administrator"
-      />
-
-      <PrimaryButton label="Join Early Access" onPress={onJoin} loading={loading} compact />
-
-      {notice ? <Text style={styles.earlyAccessNotice}>{notice}</Text> : null}
-
-      <View style={styles.earlyAccessFooter}>
-        <LockIcon color={colors.muted} />
-        <Text style={styles.earlyAccessFooterText}>No spam. Unsubscribe anytime.</Text>
-      </View>
-    </View>
+    <EarlyAccessSignupCard
+      title="Join Career X-Ray Early Access"
+      body="Get notified when deeper career insights, skills gap analysis, and personalized roadmaps become available."
+      source="ios_app_radar"
+      defaultCurrentRole={scan.result.identifiedCareerProfile ?? scan.result.currentRole}
+      defaultTargetRole={scan.result.targetRole}
+    />
   );
 }
 
@@ -561,30 +442,6 @@ const styles = StyleSheet.create({
   detailText: { color: colors.text, fontSize: 11, lineHeight: 16, marginTop: 3 },
   viewLinkWrap: { alignSelf: "center", marginTop: spacing.md },
   viewLink: { fontSize: 12, fontWeight: "700" },
-
-  earlyAccessCard: {
-    backgroundColor: `${colors.accentPurple}14`,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: `${colors.accentPurple}44`,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  earlyAccessHeader: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  earlyAccessIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: `${colors.accentPurple}22`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  earlyAccessHeaderText: { flex: 1 },
-  earlyAccessTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
-  earlyAccessBody: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  earlyAccessNotice: { color: colors.success, fontSize: 12, lineHeight: 18 },
-  earlyAccessFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-  earlyAccessFooterText: { color: colors.muted, fontSize: 11 },
 
   footerSource: { color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: "center" },
   footerNote: { color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: "center" },

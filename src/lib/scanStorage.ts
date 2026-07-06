@@ -6,6 +6,10 @@ const MAX_STORED_SCANS = 20;
 const WELCOME_KEY = "ft_welcome_seen_v1";
 const WAITLIST_EMAIL_KEY = "ft_waitlist_email_v1";
 const WAITLIST_DRAFT_KEY = "ft_waitlist_draft_v1";
+const WAITLIST_JOINED_KEY = "ft_waitlist_joined_v1";
+
+export const EARLY_ACCESS_JOINED_MESSAGE =
+  "You're on the Early Access list. We'll notify you when Career X-Ray launches.";
 
 export type WaitlistDraft = {
   email: string;
@@ -44,6 +48,7 @@ export async function getScan(id: string): Promise<StoredScan | null> {
 export async function saveScan(
   input: NormalizedScanInput,
   result: StoredScan["result"],
+  roleMatchEventId?: string,
   source: StoredScan["source"] = "hybrid_v1"
 ): Promise<StoredScan> {
   const scan: StoredScan = {
@@ -52,6 +57,7 @@ export async function saveScan(
     input,
     result,
     source,
+    roleMatchEventId,
   };
   const scans = await listScans();
   scans.unshift(scan);
@@ -83,6 +89,14 @@ export async function getWaitlistEmail(): Promise<string | null> {
   return AsyncStorage.getItem(WAITLIST_EMAIL_KEY);
 }
 
+export async function hasJoinedEarlyAccess(): Promise<boolean> {
+  return (await AsyncStorage.getItem(WAITLIST_JOINED_KEY)) === "1";
+}
+
+export async function markEarlyAccessJoined(): Promise<void> {
+  await AsyncStorage.setItem(WAITLIST_JOINED_KEY, "1");
+}
+
 export async function getWaitlistDraft(): Promise<WaitlistDraft | null> {
   const raw = await AsyncStorage.getItem(WAITLIST_DRAFT_KEY);
   if (!raw) return null;
@@ -99,5 +113,5 @@ export async function setWaitlistDraft(draft: WaitlistDraft): Promise<void> {
 
 export async function deleteAllLocalData(): Promise<void> {
   await deleteLocalScans();
-  await AsyncStorage.multiRemove([WELCOME_KEY, WAITLIST_EMAIL_KEY, WAITLIST_DRAFT_KEY]);
+  await AsyncStorage.multiRemove([WELCOME_KEY, WAITLIST_EMAIL_KEY, WAITLIST_DRAFT_KEY, WAITLIST_JOINED_KEY]);
 }

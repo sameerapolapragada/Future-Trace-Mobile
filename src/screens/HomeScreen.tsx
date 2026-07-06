@@ -79,7 +79,7 @@ export function HomeScreen() {
     (id: string) => {
       if (id === "scan") navigation.navigate("Scan");
       else if (id === "xray") navigation.navigate("Waitlist");
-      else navigation.navigate("Radar");
+      else navigation.navigate("CareerTransition");
     },
     [navigation]
   );

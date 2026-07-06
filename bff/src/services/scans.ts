@@ -94,7 +94,17 @@ async function persistScan(
   input: ScanFormPayload,
   inputHash: string,
   result: FreeScanResultJson,
-  llmJobId: string | null
+  llmJobId: string | null,
+  roleMatch?: {
+    roleMatchEventId?: string | null;
+    originalRoleInput?: string | null;
+    normalizedCurrentRole?: string | null;
+    roleFamily?: string | null;
+    confidenceScore?: number | null;
+    confidenceLabel?: string | null;
+    matchStatus?: string | null;
+    analysisQuality?: string | null;
+  }
 ): Promise<string> {
   const yearsNum = Math.min(60, Math.max(0, parseInt(input.yearsExperience, 10) || 0));
   const workPreference = normalizeWorkPreference(input.workPreference);
@@ -105,7 +115,7 @@ async function persistScan(
     input_hash: inputHash,
     prompt_version: SCAN_PROMPT_VERSION,
     llm_job_id: llmJobId,
-    current_role: input.currentRole.trim(),
+    current_role: roleMatch?.normalizedCurrentRole ?? input.currentRole.trim(),
     target_role: input.targetRole.trim(),
     industry: input.industry.trim() || null,
     years_experience: input.yearsExperience.trim() || null,
@@ -118,6 +128,14 @@ async function persistScan(
     resilience_score: result.currentRoleProfile.resilienceScore,
     ai_exposure_level: result.currentRoleProfile.aiExposureLevel,
     summary: result.summary,
+    role_match_event_id: roleMatch?.roleMatchEventId ?? null,
+    original_role_input: roleMatch?.originalRoleInput ?? input.currentRole.trim(),
+    normalized_current_role: roleMatch?.normalizedCurrentRole ?? input.currentRole.trim(),
+    role_family: roleMatch?.roleFamily ?? null,
+    role_match_confidence_score: roleMatch?.confidenceScore ?? null,
+    role_match_confidence_label: roleMatch?.confidenceLabel ?? null,
+    role_match_status: roleMatch?.matchStatus ?? null,
+    analysis_quality: roleMatch?.analysisQuality ?? null,
   });
 
   const scanId = rows[0]?.id;

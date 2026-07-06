@@ -4,8 +4,17 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AI_DISCLAIMER } from "../../lib/shared/legal/content";
 import { colors, spacing } from "../../lib/shared/theme";
+import { EarlyAccessJoinedBanner } from "../components/EarlyAccessJoinedBanner";
 import { Card, Disclaimer, Field, PrimaryButton, Subtitle, Title } from "../components/ui";
-import { getLatestScan, getWaitlistDraft, getWaitlistEmail, setWaitlistDraft, setWaitlistEmail } from "../lib/scanStorage";
+import {
+  getLatestScan,
+  getWaitlistDraft,
+  getWaitlistEmail,
+  hasJoinedEarlyAccess,
+  markEarlyAccessJoined,
+  setWaitlistDraft,
+  setWaitlistEmail,
+} from "../lib/scanStorage";
 import { submitWaitlistEntrySafe } from "../lib/waitlistService";
 import type { RootStackParamList } from "../navigation/types";
 
@@ -16,25 +25,34 @@ export function WaitlistScreen({ navigation }: Props) {
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [joined, setJoined] = useState(false);
+  const [joinedEmail, setJoinedEmail] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getWaitlistDraft().then((draft) => {
-      if (draft) {
-        setEmail(draft.email);
-        setCurrentRole(draft.currentRole);
-        setTargetRole(draft.targetRole);
+    hasJoinedEarlyAccess().then((isJoined) => {
+      setJoined(isJoined);
+      if (isJoined) {
+        getWaitlistEmail().then(setJoinedEmail);
         return;
       }
-      getWaitlistEmail().then((saved) => {
-        if (saved) setEmail(saved);
+
+      getWaitlistDraft().then((draft) => {
+        if (draft) {
+          setEmail(draft.email);
+          setCurrentRole(draft.currentRole);
+          setTargetRole(draft.targetRole);
+          return;
+        }
+        getWaitlistEmail().then((saved) => {
+          if (saved) setEmail(saved);
+        });
       });
-    });
-    getLatestScan().then((scan) => {
-      if (!scan) return;
-      setCurrentRole((prev) => prev || scan.result.identifiedCareerProfile || scan.result.currentRole);
-      setTargetRole((prev) => prev || scan.result.targetRole);
+      getLatestScan().then((scan) => {
+        if (!scan) return;
+        setCurrentRole((prev) => prev || scan.result.identifiedCareerProfile || scan.result.currentRole);
+        setTargetRole((prev) => prev || scan.result.targetRole);
+      });
     });
   }, []);
 
@@ -49,7 +67,7 @@ export function WaitlistScreen({ navigation }: Props) {
 
   async function onSubmit() {
     setLoading(true);
-    setNotice(null);
+    setError(null);
 
     const draft = { email, currentRole, targetRole };
     await setWaitlistDraft(draft);
@@ -63,11 +81,11 @@ export function WaitlistScreen({ navigation }: Props) {
 
     if (result.ok) {
       await setWaitlistEmail(email);
-      setSubmitted(true);
-      setNotice("You're on the Early Access list. We'll notify you when Career X-Ray launches.");
+      await markEarlyAccessJoined();
+      setJoinedEmail(email.trim().toLowerCase());
+      setJoined(true);
     } else {
-      await setWaitlistEmail(email);
-      setNotice(result.message);
+      setError(result.message);
     }
 
     setLoading(false);
@@ -92,43 +110,49 @@ export function WaitlistScreen({ navigation }: Props) {
           notified at launch.
         </Subtitle>
 
-        <Card>
-          <Text style={styles.cardBody}>
-            Share your email and roles so we can notify you when Career X-Ray is ready.
-          </Text>
-          <Field
-            label="Email *"
-            value={email}
-            onChangeText={(v) => {
-              setEmail(v);
-              void persistDraft({ email: v });
-            }}
-            placeholder="you@company.com"
-            keyboardType="email-address"
-          />
-          <Field
-            label="Current role *"
-            value={currentRole}
-            onChangeText={(v) => {
-              setCurrentRole(v);
-              void persistDraft({ currentRole: v });
-            }}
-            placeholder="e.g. Salesforce Administrator"
-          />
-          <Field
-            label="Target role *"
-            value={targetRole}
-            onChangeText={(v) => {
-              setTargetRole(v);
-              void persistDraft({ targetRole: v });
-            }}
-            placeholder="e.g. Salesforce AI Administrator"
-          />
-        </Card>
+        {joined ? (
+          <EarlyAccessJoinedBanner email={joinedEmail} />
+        ) : (
+          <>
+            <Card>
+              <Text style={styles.cardBody}>
+                Share your email and roles so we can notify you when Career X-Ray is ready.
+              </Text>
+              <Field
+                label="Email *"
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  void persistDraft({ email: v });
+                }}
+                placeholder="you@company.com"
+                keyboardType="email-address"
+              />
+              <Field
+                label="Current role *"
+                value={currentRole}
+                onChangeText={(v) => {
+                  setCurrentRole(v);
+                  void persistDraft({ currentRole: v });
+                }}
+                placeholder="e.g. Salesforce Administrator"
+              />
+              <Field
+                label="Target role *"
+                value={targetRole}
+                onChangeText={(v) => {
+                  setTargetRole(v);
+                  void persistDraft({ targetRole: v });
+                }}
+                placeholder="e.g. Salesforce AI Administrator"
+              />
+            </Card>
 
-        <PrimaryButton label={submitted ? "Update Early Access" : "Join Early Access"} onPress={onSubmit} loading={loading} />
+            <PrimaryButton label="Join Early Access" onPress={onSubmit} loading={loading} />
 
-        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+          </>
+        )}
 
         <Disclaimer text={AI_DISCLAIMER} />
       </ScrollView>
@@ -153,6 +177,6 @@ const styles = StyleSheet.create({
   },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   cardBody: { color: colors.muted, fontSize: 14, lineHeight: 21, marginBottom: spacing.sm },
-  notice: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: spacing.md },
+  error: { color: colors.danger, fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: spacing.md },
   pressed: { opacity: 0.75 },
 });

@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { generateHybridScan } from "../../lib/shared";
+import { generateHybridScan, canGenerateScan, formatRoleMatchQualityLabel } from "../../lib/shared";
 import { colors, spacing } from "../../lib/shared/theme";
 import { getHybridScanConfig } from "../lib/hybridScanConfig";
 import { takePendingScanInput } from "../lib/scanSession";
@@ -26,11 +26,29 @@ export function ScanLoadingScreen({ navigation }: Props) {
         return;
       }
 
+      const roleMatch = input.roleMatch;
+      if (roleMatch && !canGenerateScan(roleMatch, roleMatch.userAction)) {
+        if (!cancelled) {
+          setError("This role cannot be scanned yet. Please confirm or edit your role.");
+        }
+        return;
+      }
+
       await new Promise((r) => setTimeout(r, 900));
 
       try {
         const result = await generateHybridScan(input, getHybridScanConfig());
-        const stored = await saveScan(input, result);
+        const enrichedResult = {
+          ...result,
+          originalRoleInput: input.originalCurrentRole ?? roleMatch?.originalRoleInput ?? input.currentRole,
+          normalizedCurrentRole: input.currentRole,
+          roleMatchStatus: roleMatch?.matchStatus,
+          roleMatchUserAction: roleMatch?.userAction,
+          analysisQualityLabel: roleMatch
+            ? formatRoleMatchQualityLabel(roleMatch.matchStatus, roleMatch.userAction)
+            : undefined,
+        };
+        const stored = await saveScan(input, enrichedResult, roleMatch?.roleMatchEventId);
         if (!cancelled) {
           navigation.replace("ScanResults", { scanId: stored.id });
         }

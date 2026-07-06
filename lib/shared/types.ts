@@ -13,6 +13,34 @@ export type ScanFormInput = {
   workPreference: WorkPreference;
 };
 
+export type RoleMatchStatus = "matched" | "partial_match" | "unsupported" | "no_match";
+export type RoleMatchConfidenceLabel = "excellent" | "high" | "medium" | "low" | "none";
+export type RoleMatchAnalysisQuality = "high" | "medium" | "low" | "none";
+export type RoleMatchUserAction =
+  | "auto_accepted"
+  | "confirmed"
+  | "corrected"
+  | "rejected"
+  | "needs_more_info"
+  | "approximate_continue"
+  | "abandoned";
+
+export type RoleMatchSnapshot = {
+  roleMatchEventId?: string;
+  originalRoleInput: string;
+  normalizedRole: string | null;
+  roleFamily: string | null;
+  matchStatus: RoleMatchStatus;
+  confidenceScore: number;
+  confidenceLabel: RoleMatchConfidenceLabel;
+  suggestedRoles: { role: string; confidence: number }[];
+  needsMoreInfo: boolean;
+  analysisQuality: RoleMatchAnalysisQuality;
+  genericResultFlag: boolean;
+  userAction?: RoleMatchUserAction;
+  userSelectedRole?: string;
+};
+
 export type NormalizedScanInput = {
   currentRole: string;
   targetRole: string;
@@ -24,6 +52,10 @@ export type NormalizedScanInput = {
   tools: string;
   careerGoal: string;
   workPreference: WorkPreferenceNormalized;
+  /** Role match metadata from smarter role matching flow. */
+  roleMatch?: RoleMatchSnapshot;
+  /** Raw user-entered current role before normalization. */
+  originalCurrentRole?: string;
 };
 
 export type RoleScanProfile = {
@@ -59,6 +91,13 @@ export type FreeScanResult = {
   targetRole: string;
   /** Canonical career profile identified from the user's current role input. */
   identifiedCareerProfile: string;
+  /** Original user-entered current role for transparency. */
+  originalRoleInput?: string;
+  /** Normalized role used for analysis. */
+  normalizedCurrentRole?: string;
+  roleMatchStatus?: RoleMatchStatus;
+  roleMatchUserAction?: RoleMatchUserAction;
+  analysisQualityLabel?: string;
   currentRoleProfile: RoleScanProfile;
   targetRoleProfile: RoleScanProfile;
   summary: string;
@@ -80,6 +119,7 @@ export type StoredScan = {
   input: NormalizedScanInput;
   result: FreeScanResult;
   source: "rule_based_v1" | "hybrid_v1";
+  roleMatchEventId?: string;
 };
 
 export type DisruptionRadarSnapshot = {
