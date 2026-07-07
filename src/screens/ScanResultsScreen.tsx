@@ -19,7 +19,7 @@ import {
   formatExposureHelpAlert,
   formatResilienceHelpAlert,
   normalizeCareerRecommendations,
-  SCAN_RESULTS_NOTE,
+  AI_DISCLAIMER,
   TOP_CAREER_DIRECTIONS_INTRO,
 } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
@@ -60,24 +60,24 @@ function AnimatedScore({ value, delay = 0, style }: { value: number; delay?: num
 function TransitionHero({
   currentRole,
   targetRole,
-  identifiedCareerProfile,
-  originalRoleInput,
-  normalizedCurrentRole,
+  originalTargetRoleInput,
+  normalizedTargetRole,
   analysisQualityLabel,
   roleMatchStatus,
   roleMatchUserAction,
 }: {
   currentRole: string;
   targetRole: string;
-  identifiedCareerProfile: string;
-  originalRoleInput?: string;
-  normalizedCurrentRole?: string;
+  originalTargetRoleInput?: string;
+  normalizedTargetRole?: string;
   analysisQualityLabel?: string;
   roleMatchStatus?: string;
   roleMatchUserAction?: string;
 }) {
   const showInputDiff =
-    originalRoleInput && normalizedCurrentRole && originalRoleInput.trim() !== normalizedCurrentRole.trim();
+    originalTargetRoleInput &&
+    normalizedTargetRole &&
+    originalTargetRoleInput.trim() !== normalizedTargetRole.trim();
 
   return (
     <FadeInView delay={0} duration={520}>
@@ -88,30 +88,6 @@ function TransitionHero({
         style={styles.hero}
       >
         <Text style={styles.heroEyebrow}>Career Scan Complete</Text>
-        <View style={styles.identifiedProfileBox}>
-          <Text style={styles.identifiedLabel}>Role analyzed</Text>
-          <Text style={styles.identifiedValue}>{normalizedCurrentRole ?? identifiedCareerProfile}</Text>
-          {showInputDiff ? (
-            <>
-              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Based on your input</Text>
-              <Text style={styles.inputEcho}>{originalRoleInput}</Text>
-            </>
-          ) : null}
-          {analysisQualityLabel ? (
-            <>
-              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Analysis quality</Text>
-              <Text style={styles.qualityValue}>{analysisQualityLabel}</Text>
-            </>
-          ) : null}
-          {roleMatchStatus === "partial_match" ? (
-            <Text style={styles.roleMatchNote}>We analyzed the closest confirmed role.</Text>
-          ) : null}
-          {roleMatchStatus === "unsupported" && roleMatchUserAction === "approximate_continue" ? (
-            <Text style={styles.roleMatchWarning}>
-              This scan is based on an approximate role match and may be less precise.
-            </Text>
-          ) : null}
-        </View>
         <View style={styles.transitionRow}>
           <View style={styles.roleBlock}>
             <Text style={styles.roleLabel}>Current</Text>
@@ -135,6 +111,30 @@ function TransitionHero({
               {targetRole}
             </Text>
           </View>
+        </View>
+        <View style={styles.identifiedProfileBox}>
+          <Text style={styles.identifiedLabel}>Target role match</Text>
+          <Text style={styles.identifiedValue}>{normalizedTargetRole ?? targetRole}</Text>
+          {showInputDiff ? (
+            <>
+              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Based on your input</Text>
+              <Text style={styles.inputEcho}>{originalTargetRoleInput}</Text>
+            </>
+          ) : null}
+          {analysisQualityLabel ? (
+            <>
+              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Match quality</Text>
+              <Text style={styles.qualityValue}>{analysisQualityLabel}</Text>
+            </>
+          ) : null}
+          {roleMatchStatus === "partial_match" ? (
+            <Text style={styles.roleMatchNote}>We analyzed the closest confirmed target role.</Text>
+          ) : null}
+          {roleMatchStatus === "unsupported" && roleMatchUserAction === "approximate_continue" ? (
+            <Text style={styles.roleMatchWarning}>
+              This scan is based on an approximate target role match and may be less precise.
+            </Text>
+          ) : null}
         </View>
       </LinearGradient>
     </FadeInView>
@@ -338,9 +338,10 @@ export function ScanResultsScreen({ route, navigation }: Props) {
         <TransitionHero
           currentRole={result.currentRole}
           targetRole={result.targetRole}
-          identifiedCareerProfile={result.identifiedCareerProfile ?? result.currentRole}
-          originalRoleInput={result.originalRoleInput ?? scan.input.originalCurrentRole}
-          normalizedCurrentRole={result.normalizedCurrentRole ?? result.currentRole}
+          originalTargetRoleInput={
+            result.originalTargetRoleInput ?? scan.input.originalTargetRole ?? scan.input.roleMatch?.originalRoleInput
+          }
+          normalizedTargetRole={result.normalizedTargetRole ?? result.targetRole}
           analysisQualityLabel={result.analysisQualityLabel}
           roleMatchStatus={result.roleMatchStatus ?? scan.input.roleMatch?.matchStatus}
           roleMatchUserAction={result.roleMatchUserAction ?? scan.input.roleMatch?.userAction}
@@ -394,7 +395,7 @@ export function ScanResultsScreen({ route, navigation }: Props) {
         <FadeInView delay={620}>
           <Text style={styles.footerDisclaimer}>{CAREER_ANALYSIS_SOURCE}</Text>
           <Text style={styles.footerNote}>Results saved on this device.</Text>
-          <Text style={styles.footerNote}>{SCAN_RESULTS_NOTE}</Text>
+          <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
         </FadeInView>
       </ScrollView>
     </View>

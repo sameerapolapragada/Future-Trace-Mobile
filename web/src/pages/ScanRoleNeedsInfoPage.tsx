@@ -40,7 +40,7 @@ export default function ScanRoleNeedsInfoPage() {
   async function onRetry() {
     setRetrying(true);
     const snapshot = await runRoleMatch(user?.id, {
-      originalRoleInput: form!.currentRole,
+      originalRoleInput: form!.targetRole,
       industry: form!.industry,
       yearsExperience: parseInt(form!.yearsExperience, 10) || 0,
       skills: responsibilities || form!.skills,
@@ -70,7 +70,7 @@ export default function ScanRoleNeedsInfoPage() {
     navigate("/scan-loading", {
       replace: true,
       state: {
-        pendingInput: { ...form!, currentRole: selectedRole },
+        pendingInput: { ...form!, targetRole: selectedRole },
         roleMatch: { ...match!, userSelectedRole: selectedRole, userAction: "corrected" },
       },
     });
@@ -85,7 +85,7 @@ export default function ScanRoleNeedsInfoPage() {
     navigate("/scan-loading", {
       replace: true,
       state: {
-        pendingInput: { ...form!, currentRole: role },
+        pendingInput: { ...form!, targetRole: role },
         roleMatch: { ...match!, userSelectedRole: role, userAction: "approximate_continue" },
       },
     });
@@ -93,15 +93,15 @@ export default function ScanRoleNeedsInfoPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 py-6">
-      <h1 className="text-xl font-bold text-white">{isNoMatch ? "Role not identified" : "Role needs more info"}</h1>
+      <h1 className="text-xl font-bold text-white">{isNoMatch ? "Target role not identified" : "Target role needs more info"}</h1>
       <p className="text-sm text-muted">
         {isNoMatch
-          ? "We couldn't identify this role. Please edit your job title or choose a common role."
-          : "We don't fully support this role yet. Help us understand it or choose the closest supported role."}
+          ? "We couldn't identify your target role. Please edit your job title or choose a common role."
+          : "We don't fully support your target role yet. Help us understand it or choose the closest supported role."}
       </p>
 
       <div className="rounded-2xl border border-white/8 bg-navy-elevated p-4">
-        <p className="text-xs font-semibold uppercase text-muted">Your input</p>
+        <p className="text-xs font-semibold uppercase text-muted">Your target role input</p>
         <p className="font-semibold text-white">{match.originalRoleInput}</p>
       </div>
 
@@ -133,7 +133,7 @@ export default function ScanRoleNeedsInfoPage() {
 
       {match.suggestedRoles.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-white">Suggested supported roles</p>
+          <p className="text-sm font-semibold text-white">Suggested supported target roles</p>
           {match.suggestedRoles.map((option) => (
             <button
               key={option.role}
@@ -166,7 +166,7 @@ export default function ScanRoleNeedsInfoPage() {
       ) : null}
 
       <button type="button" className="text-sm text-muted" onClick={() => navigate("/scan")}>
-        Edit job title
+        Edit target role
       </button>
     </div>
   );

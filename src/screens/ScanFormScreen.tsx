@@ -56,7 +56,7 @@ export function ScanFormScreen() {
     try {
       setPendingScanForm(form);
       const snapshot = await runRoleMatch({
-        originalRoleInput: form.currentRole.trim(),
+        originalRoleInput: form.targetRole.trim(),
         industry: form.industry.trim() || undefined,
         yearsExperience: parseInt(form.yearsExperience, 10) || 0,
         skills: form.skills.trim() || undefined,
@@ -87,8 +87,10 @@ export function ScanFormScreen() {
 
         <Card>
           <Field label="Current role *" value={form.currentRole} onChangeText={(v) => setField("currentRole", v)} placeholder="e.g. Salesforce Administrator" />
+          <Text style={styles.fieldHint}>Your current role is used as entered for the transition analysis.</Text>
           <Field label="Target role *" value={form.targetRole} onChangeText={(v) => setField("targetRole", v)} placeholder="e.g. RevOps Analyst" />
-          <Field label="Industry" value={form.industry} onChangeText={(v) => setField("industry", v)} placeholder="e.g. SaaS" />
+          <Text style={styles.fieldHint}>We match and verify your target role before running the scan.</Text>
+          <Field label="Industry (optional)" value={form.industry} onChangeText={(v) => setField("industry", v)} placeholder="e.g. SaaS" />
           <Field
             label="Years of experience"
             value={form.yearsExperience}
@@ -96,9 +98,9 @@ export function ScanFormScreen() {
             placeholder="5"
             keyboardType="numeric"
           />
-          <Field label="Key skills" value={form.skills} onChangeText={(v) => setField("skills", v)} placeholder="Comma-separated" multiline />
-          <Field label="Tools & platforms" value={form.tools} onChangeText={(v) => setField("tools", v)} placeholder="Salesforce, HubSpot…" multiline />
-          <Field label="Career goal" value={form.careerGoal} onChangeText={(v) => setField("careerGoal", v)} placeholder="Optional — e.g. transition into AI/ML leadership" multiline />
+          <Field label="Key skills (optional)" value={form.skills} onChangeText={(v) => setField("skills", v)} placeholder="Comma-separated" multiline />
+          <Field label="Tools & platforms (optional)" value={form.tools} onChangeText={(v) => setField("tools", v)} placeholder="Salesforce, HubSpot…" multiline />
+          <Field label="Career goal (optional)" value={form.careerGoal} onChangeText={(v) => setField("careerGoal", v)} placeholder="Optional — e.g. transition into AI/ML leadership" multiline />
 
           <View style={styles.labelRow}>
             <Text style={styles.inlineLabel}>Work preference</Text>
@@ -145,6 +147,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   fieldLabel: { color: colors.muted, fontSize: 12, fontWeight: "600", marginTop: spacing.md, marginBottom: 6 },
+  fieldHint: { color: colors.muted, fontSize: 12, marginTop: -4, marginBottom: spacing.sm, fontStyle: "italic" },
   inlineLabel: { color: colors.muted, fontSize: 12, fontWeight: "600" },
   labelRow: {
     flexDirection: "row",

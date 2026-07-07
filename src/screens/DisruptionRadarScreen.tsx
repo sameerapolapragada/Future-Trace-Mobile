@@ -16,7 +16,7 @@ import {
   CAREER_ANALYSIS_SOURCE,
   DISRUPTION_LEVEL_LEGEND,
   formatDisruptionRadarHelpAlert,
-  SCAN_RESULTS_NOTE,
+  AI_DISCLAIMER,
   type DisruptionRadarPageModel,
   type DisruptionRadarRoleCard,
   type DisruptionRadarStatus,
@@ -305,7 +305,7 @@ export function DisruptionRadarScreen() {
         <EarlyAccessCard scan={scan} />
 
         <Text style={styles.footerSource}>{CAREER_ANALYSIS_SOURCE}</Text>
-        <Text style={styles.footerNote}>{SCAN_RESULTS_NOTE}</Text>
+        <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
       </ScrollView>
     </SafeAreaView>
   );

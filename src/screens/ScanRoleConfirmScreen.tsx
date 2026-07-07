@@ -2,11 +2,11 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { normalizeScanInput, type ScanFormInput } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
 import { updateRoleMatchUserAction } from "../lib/roleMatchService";
 import {
+  buildPendingScanInput,
   getPendingRoleMatch,
   getPendingScanForm,
   setPendingRoleMatch,
@@ -15,18 +15,6 @@ import {
 import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ScanRoleConfirm">;
-
-function buildScanInput(form: ScanFormInput, currentRole: string) {
-  const normalized = normalizeScanInput({ ...form, currentRole });
-  const match = getPendingRoleMatch();
-  return {
-    ...normalized,
-    currentRole,
-    identifiedCareerProfile: currentRole,
-    originalCurrentRole: match?.originalRoleInput ?? form.currentRole.trim(),
-    roleMatch: match ? { ...match, userSelectedRole: currentRole, userAction: "confirmed" as const } : undefined,
-  };
-}
 
 export function ScanRoleConfirmScreen({ navigation }: Props) {
   const match = getPendingRoleMatch();
@@ -43,6 +31,7 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
     );
   }
 
+  const currentRole = form.currentRole.trim();
   const options = [
     ...(match.normalizedRole ? [{ role: match.normalizedRole, confidence: match.confidenceScore }] : []),
     ...match.suggestedRoles.filter((s) => s.role !== match.normalizedRole),
@@ -55,27 +44,34 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
     if (match!.roleMatchEventId) {
       await updateRoleMatchUserAction(match!.roleMatchEventId, action, { userSelectedRole: selectedRole });
     }
-    setPendingRoleMatch({ ...match!, userSelectedRole: selectedRole, userAction: action });
-    setPendingScanInput(buildScanInput(form!, selectedRole));
+    const updatedMatch = { ...match!, userSelectedRole: selectedRole, userAction: action };
+    setPendingRoleMatch(updatedMatch);
+    setPendingScanInput(buildPendingScanInput(form!, selectedRole, updatedMatch, action));
     navigation.replace("ScanLoading");
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Title>Confirm your role</Title>
+        <Title>Confirm your target role</Title>
         <Subtitle>
-          Your title looks like a specialized version of a supported role. Please confirm the closest match before we
-          generate your scan.
+          Your target role title looks like a specialized version of a supported role. Confirm the closest match
+          before we generate your scan.
         </Subtitle>
 
         <Card>
-          <Text style={styles.label}>Your input</Text>
+          <Text style={styles.label}>Your target role input</Text>
           <Text style={styles.inputValue}>{match.originalRoleInput}</Text>
-          <Text style={styles.hint}>We analyzed the closest confirmed role.</Text>
+          <Text style={styles.hint}>We analyzed the closest confirmed role for your target position.</Text>
         </Card>
 
-        <Text style={styles.sectionLabel}>Suggested roles</Text>
+        <Card>
+          <Text style={styles.label}>Your current role</Text>
+          <Text style={styles.inputValue}>{currentRole}</Text>
+          <Text style={styles.contextHint}>Your current role is used as entered for the transition scan.</Text>
+        </Card>
+
+        <Text style={styles.sectionLabel}>Suggested target roles</Text>
         {options.map((option) => {
           const active = selectedRole === option.role;
           return (
@@ -91,7 +87,7 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
         })}
 
         <PrimaryButton label="Confirm and continue" onPress={onConfirm} disabled={!selectedRole} />
-        <SecondaryButton label="Edit role" onPress={() => navigation.goBack()} />
+        <SecondaryButton label="Edit roles" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -104,6 +100,7 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: 12, fontWeight: "600" },
   inputValue: { color: colors.text, fontSize: 17, fontWeight: "600", marginTop: 4 },
   hint: { color: colors.warning, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
+  contextHint: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
   sectionLabel: { color: colors.text, fontSize: 14, fontWeight: "700", marginTop: spacing.lg, marginBottom: spacing.sm },
   option: {
     borderRadius: radius.md,

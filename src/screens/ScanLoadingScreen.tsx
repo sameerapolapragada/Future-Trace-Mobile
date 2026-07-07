@@ -40,8 +40,8 @@ export function ScanLoadingScreen({ navigation }: Props) {
         const result = await generateHybridScan(input, getHybridScanConfig());
         const enrichedResult = {
           ...result,
-          originalRoleInput: input.originalCurrentRole ?? roleMatch?.originalRoleInput ?? input.currentRole,
-          normalizedCurrentRole: input.currentRole,
+          originalTargetRoleInput: input.originalTargetRole ?? roleMatch?.originalRoleInput ?? input.targetRole,
+          normalizedTargetRole: input.targetRole,
           roleMatchStatus: roleMatch?.matchStatus,
           roleMatchUserAction: roleMatch?.userAction,
           analysisQualityLabel: roleMatch

@@ -44,7 +44,7 @@ export default function ScanRoleConfirmPage() {
     navigate("/scan-loading", {
       replace: true,
       state: {
-        pendingInput: { ...form!, currentRole: selectedRole },
+        pendingInput: { ...form!, targetRole: selectedRole },
         roleMatch: { ...match!, userSelectedRole: selectedRole, userAction: action },
       },
     });
@@ -52,14 +52,14 @@ export default function ScanRoleConfirmPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 py-6">
-      <h1 className="text-xl font-bold text-white">Confirm your role</h1>
+      <h1 className="text-xl font-bold text-white">Confirm your target role</h1>
       <p className="text-sm text-muted">
-        Your title looks specialized. Confirm the closest supported role before we generate your scan.
+        Your target role title looks specialized. Confirm the closest supported role before we generate your scan.
       </p>
       <div className="rounded-2xl border border-white/8 bg-navy-elevated p-4">
-        <p className="text-xs font-semibold uppercase text-muted">Your input</p>
+        <p className="text-xs font-semibold uppercase text-muted">Your target role input</p>
         <p className="font-semibold text-white">{match.originalRoleInput}</p>
-        <p className="mt-2 text-xs italic text-amber-300/90">We analyzed the closest confirmed role.</p>
+        <p className="mt-2 text-xs italic text-amber-300/90">We analyzed the closest confirmed target role.</p>
       </div>
       <div className="space-y-2">
         {options.map((option) => (

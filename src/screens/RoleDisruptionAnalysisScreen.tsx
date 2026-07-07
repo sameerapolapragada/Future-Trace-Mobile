@@ -6,7 +6,7 @@ import Svg, { Circle, G, Path, Rect } from "react-native-svg";
 import {
   buildRoleDisruptionAnalysis,
   ROLE_DISRUPTION_ANALYSIS_FOOTER,
-  SCAN_RESULTS_NOTE,
+  AI_DISCLAIMER,
   type DisruptionRadarStatus,
   type RoleDisruptionAnalysis,
   type RoleDisruptionAnalysisSection,
@@ -247,7 +247,7 @@ export function RoleDisruptionAnalysisScreen({ route, navigation }: Props) {
         />
 
         <Text style={styles.footerSource}>{ROLE_DISRUPTION_ANALYSIS_FOOTER}</Text>
-        <Text style={styles.footerNote}>{SCAN_RESULTS_NOTE}</Text>
+        <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
       </ScrollView>
     </View>
   );

@@ -28,14 +28,14 @@ export default function ScanReviewRolePage() {
   }
 
   async function onContinue() {
-    const role = match!.normalizedRole ?? form!.currentRole;
+    const role = match!.normalizedRole ?? form!.targetRole;
     if (match!.roleMatchEventId) {
       await updateRoleMatchUserAction(match!.roleMatchEventId, "auto_accepted");
     }
     navigate("/scan-loading", {
       replace: true,
       state: {
-        pendingInput: { ...form!, currentRole: role },
+        pendingInput: { ...form!, targetRole: role },
         roleMatch: { ...match!, userAction: "auto_accepted" as const },
       },
     });
@@ -43,13 +43,13 @@ export default function ScanReviewRolePage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-5 px-4 py-6">
-      <h1 className="text-xl font-bold text-white">Role match found</h1>
-      <p className="text-sm text-muted">We identified a strong match for your current role.</p>
+      <h1 className="text-xl font-bold text-white">Target role match found</h1>
+      <p className="text-sm text-muted">We identified a strong match for your target role.</p>
       <div className="rounded-2xl border border-white/8 bg-navy-elevated p-4">
         <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
           {formatRoleMatchQualityLabel(match.matchStatus, "auto_accepted")}
         </span>
-        <p className="mt-3 text-xs font-semibold uppercase text-muted">Role analyzed</p>
+        <p className="mt-3 text-xs font-semibold uppercase text-muted">Target role match</p>
         <p className="text-lg font-bold text-white">{match.normalizedRole}</p>
         {match.originalRoleInput !== match.normalizedRole ? (
           <>

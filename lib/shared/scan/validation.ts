@@ -6,6 +6,7 @@ export type ScanValidationError = {
 };
 
 export function validateScanForm(input: ScanFormInput): ScanValidationError | null {
+  // MVP: only job roles are required — no email, name, or other sensitive PII.
   if (!input.currentRole.trim()) {
     return { field: "currentRole", message: "Current role is required." };
   }

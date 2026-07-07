@@ -7,7 +7,7 @@ import Svg, { Circle, Path, Rect } from "react-native-svg";
 import {
   buildDisruptionRadarPageModel,
   normalizeCareerRecommendations,
-  SCAN_RESULTS_NOTE,
+  AI_DISCLAIMER,
   type DisruptionRadarStatus,
   type StoredScan,
 } from "../../lib/shared";
@@ -71,7 +71,7 @@ function buildPathFromScan(scan: StoredScan): TransitionPath {
 
   return {
     currentRole: page.currentRole.title,
-    futureRole: top?.role ?? page.targetRole.title,
+    futureRole: page.targetRole.title,
     currentStatus: page.currentRole.status,
     futureStatus: page.targetRole.status,
     transferability: top?.transferabilityScore ?? 85,
@@ -323,7 +323,7 @@ export function CareerTransitionScreen() {
           defaultTargetRole={path.defaultTargetRole}
         />
 
-        <Text style={styles.footerNote}>{SCAN_RESULTS_NOTE}</Text>
+        <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
       </ScrollView>
     </SafeAreaView>
   );

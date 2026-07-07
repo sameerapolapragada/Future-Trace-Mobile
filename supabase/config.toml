@@ -1,5 +1,5 @@
-# Future Trace — Supabase CLI (Web-Dev branch)
-# Git → Supabase: push Web-Dev; migrations in supabase/migrations/ apply to linked branch.
+# Future Trace — Supabase CLI (Dev branch)
+# Git → Supabase: push Dev; migrations in supabase/migrations/ apply to linked branch.
 # Docs: https://supabase.com/docs/guides/deployment/branching/github-integration
 
 # Linked via CLI: supabase link --project-ref <ref>

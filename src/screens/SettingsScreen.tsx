@@ -507,7 +507,11 @@ export function SettingsScreen() {
             icon={<ShieldIcon color={colors.accentPurple} />}
             label="Privacy Policy"
             onPress={() =>
-              navigation.navigate("LegalWebView", { title: "Privacy Policy", html: PRIVACY_POLICY_HTML })
+              navigation.navigate("LegalWebView", {
+                title: "Privacy Policy",
+                html: PRIVACY_POLICY_HTML,
+                returnTab: "Settings",
+              })
             }
           />
           <View style={styles.listDivider} />
@@ -515,7 +519,11 @@ export function SettingsScreen() {
             icon={<DocumentIcon />}
             label="Terms of Use"
             onPress={() =>
-              navigation.navigate("LegalWebView", { title: "Terms of Service", html: TERMS_HTML })
+              navigation.navigate("LegalWebView", {
+                title: "Terms of Service",
+                html: TERMS_HTML,
+                returnTab: "Settings",
+              })
             }
           />
         </SectionCard>
@@ -536,7 +544,7 @@ export function SettingsScreen() {
             icon={<TrashIcon />}
             label="Delete Local Data"
             subtitle="Remove all scan history and local data from this device"
-            onPress={() => navigation.navigate("DeleteData")}
+            onPress={() => navigation.navigate("DeleteData", { returnTab: "Settings" })}
             danger
           />
         </SectionCard>

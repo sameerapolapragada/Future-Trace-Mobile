@@ -2,11 +2,12 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { canGenerateScan, normalizeScanInput, type ScanFormInput } from "../../lib/shared";
+import { canGenerateScan } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, Field, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
 import { runRoleMatch, updateRoleMatchUserAction } from "../lib/roleMatchService";
 import {
+  buildPendingScanInput,
   getPendingRoleMatch,
   getPendingScanForm,
   setPendingRoleMatch,
@@ -16,19 +17,6 @@ import {
 import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ScanRoleNeedsInfo">;
-
-function buildScanInput(form: ScanFormInput, currentRole: string, approximate = false) {
-  const normalized = normalizeScanInput({ ...form, currentRole });
-  const match = getPendingRoleMatch();
-  const userAction = approximate ? ("approximate_continue" as const) : match?.userAction;
-  return {
-    ...normalized,
-    currentRole,
-    identifiedCareerProfile: currentRole,
-    originalCurrentRole: match?.originalRoleInput ?? form.currentRole.trim(),
-    roleMatch: match ? { ...match, userSelectedRole: currentRole, userAction } : undefined,
-  };
-}
 
 export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
   const match = getPendingRoleMatch();
@@ -59,7 +47,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
     setPendingScanForm(updatedForm);
 
     const snapshot = await runRoleMatch({
-      originalRoleInput: form!.currentRole.trim(),
+      originalRoleInput: form!.targetRole.trim(),
       industry: form!.industry,
       yearsExperience: parseInt(form!.yearsExperience, 10) || 0,
       skills: updatedForm.skills,
@@ -98,7 +86,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
       await updateRoleMatchUserAction(match!.roleMatchEventId, "corrected", { userSelectedRole: selectedRole });
     }
     setPendingRoleMatch({ ...match!, userSelectedRole: selectedRole, userAction: "corrected" });
-    setPendingScanInput(buildScanInput(form!, selectedRole));
+    setPendingScanInput(buildPendingScanInput(form!, selectedRole, { ...match!, userSelectedRole: selectedRole, userAction: "corrected" }, "corrected"));
     navigation.replace("ScanLoading");
   }
 
@@ -113,23 +101,36 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
       await updateRoleMatchUserAction(match!.roleMatchEventId, "approximate_continue", { userSelectedRole: role });
     }
     setPendingRoleMatch({ ...match!, userSelectedRole: role, userAction: "approximate_continue" });
-    setPendingScanInput(buildScanInput(form!, role, true));
+    setPendingScanInput(
+      buildPendingScanInput(
+        form!,
+        role,
+        { ...match!, userSelectedRole: role, userAction: "approximate_continue" },
+        "approximate_continue"
+      )
+    );
     navigation.replace("ScanLoading");
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Title>{isNoMatch ? "Role not identified" : "Role needs more info"}</Title>
+        <Title>{isNoMatch ? "Target role not identified" : "Target role needs more info"}</Title>
         <Subtitle>
           {isNoMatch
-            ? "We couldn't identify this role. Please edit your job title or choose a common role."
-            : "We don't fully support this role yet. Help us understand it better or choose the closest supported role."}
+            ? "We couldn't identify your target role. Please edit your job title or choose a common role."
+            : "We don't fully support your target role yet. Help us understand it better or choose the closest supported role."}
         </Subtitle>
 
         <Card>
-          <Text style={styles.label}>Your input</Text>
+          <Text style={styles.label}>Your target role input</Text>
           <Text style={styles.inputValue}>{match.originalRoleInput}</Text>
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Your current role</Text>
+          <Text style={styles.inputValue}>{form.currentRole.trim()}</Text>
+          <Text style={styles.contextHint}>Your current role is used as entered for the transition scan.</Text>
         </Card>
 
         {!isNoMatch ? (
@@ -154,7 +155,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
 
         {match.suggestedRoles.length > 0 ? (
           <>
-            <Text style={styles.sectionLabel}>Suggested supported roles</Text>
+            <Text style={styles.sectionLabel}>Suggested supported target roles</Text>
             {match.suggestedRoles.map((option) => {
               const active = selectedRole === option.role;
               return (
@@ -181,7 +182,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
           </>
         ) : null}
 
-        <SecondaryButton label="Edit job title" onPress={() => navigation.goBack()} />
+        <SecondaryButton label="Edit target role" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -193,6 +194,8 @@ const styles = StyleSheet.create({
   error: { color: colors.danger, padding: spacing.lg, textAlign: "center" },
   label: { color: colors.muted, fontSize: 12, fontWeight: "600" },
   inputValue: { color: colors.text, fontSize: 17, fontWeight: "600", marginTop: 4 },
+  targetHint: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
+  contextHint: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
   sectionLabel: { color: colors.text, fontSize: 14, fontWeight: "700", marginTop: spacing.lg, marginBottom: spacing.sm },
   option: {
     borderRadius: radius.md,

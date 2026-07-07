@@ -12,4 +12,5 @@ npm-debug.*
 web-build/
 .env
 .env*.local
+ios/.xcode.env.local
 .DS_Store

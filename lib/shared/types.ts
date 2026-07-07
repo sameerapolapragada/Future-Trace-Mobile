@@ -56,6 +56,8 @@ export type NormalizedScanInput = {
   roleMatch?: RoleMatchSnapshot;
   /** Raw user-entered current role before normalization. */
   originalCurrentRole?: string;
+  /** Raw user-entered target role before normalization. */
+  originalTargetRole?: string;
 };
 
 export type RoleScanProfile = {
@@ -93,8 +95,12 @@ export type FreeScanResult = {
   identifiedCareerProfile: string;
   /** Original user-entered current role for transparency. */
   originalRoleInput?: string;
+  /** Original user-entered target role for transparency. */
+  originalTargetRoleInput?: string;
   /** Normalized role used for analysis. */
   normalizedCurrentRole?: string;
+  /** Matched target role used for analysis. */
+  normalizedTargetRole?: string;
   roleMatchStatus?: RoleMatchStatus;
   roleMatchUserAction?: RoleMatchUserAction;
   analysisQualityLabel?: string;

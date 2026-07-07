@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "main": "expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "start:lan": "expo start --lan -c",
-    "start:tunnel": "expo start --tunnel -c",
-    "start:ios": "expo start --ios -c",
-    "start:android": "expo start --android -c",
-    "start:reset": "rm -rf .expo && expo start -c",
+    "start": "bash scripts/start-metro-lan.sh",
+    "start:lan": "bash scripts/start-metro-lan.sh",
+    "sync:packager": "bash scripts/sync-packager-config.sh",
+    "start:tunnel": "bash scripts/start-metro-tunnel.sh",
+    "start:ios": "bash scripts/sync-packager-config.sh && expo start --ios -c --port 8081",
+    "start:android": "expo start --android -c --port 8081",
+    "start:reset": "rm -rf .expo && bash scripts/start-metro-lan.sh",
     "android": "expo run:android",
-    "ios": "expo run:ios",
+    "ios": "bash scripts/sync-packager-config.sh && expo run:ios",
+    "dev:ipad": "bash scripts/dev-ipad.sh",
+    "ios:embedded": "bash scripts/build-ios-embedded.sh",
     "web": "expo start --web",
     "dev:web": "npm run dev --prefix web",
     "dev:bff": "npm run dev --prefix bff",
@@ -40,8 +43,8 @@
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",
     "dotenv": "^16.6.1",
-    "typescript": "~5.9.2",
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2"
   },
   "private": true
 }

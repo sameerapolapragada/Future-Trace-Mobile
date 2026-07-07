@@ -105,7 +105,6 @@ export async function runRoleMatchRemote(
 
   const { data, error } = await supabase.functions.invoke("match-role", {
     body: {
-      user_id: userId,
       original_role_input: input.originalRoleInput,
       industry: input.industry,
       years_experience: input.yearsExperience,

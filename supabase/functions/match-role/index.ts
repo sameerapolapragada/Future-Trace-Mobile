@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 type MatchRoleRequest = {
-  user_id: string;
   original_role_input: string;
   industry?: string;
   years_experience?: number;
@@ -16,6 +15,13 @@ type MatchRoleRequest = {
   responsibilities?: string;
 };
 
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -23,18 +29,32 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonResponse({ error: "Authorization required" }, 401);
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const {
+      data: { user },
+      error: authError,
+    } = await userClient.auth.getUser();
+
+    if (authError || !user) {
+      return jsonResponse({ error: "Invalid or expired session" }, 401);
+    }
 
     const body = (await req.json()) as MatchRoleRequest;
-    const userId = body.user_id?.trim();
     const originalRoleInput = body.original_role_input?.trim();
 
-    if (!userId || !originalRoleInput) {
-      return new Response(JSON.stringify({ error: "user_id and original_role_input are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!originalRoleInput) {
+      return jsonResponse({ error: "original_role_input is required" }, 400);
     }
 
     const match = matchRole({
@@ -46,10 +66,12 @@ Deno.serve(async (req) => {
       responsibilities: body.responsibilities,
     });
 
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
     const { data: eventRow, error: insertError } = await supabase
       .from("role_match_events")
       .insert({
-        user_id: userId,
+        user_id: user.id,
         original_role_input: match.originalRoleInput,
         normalized_role: match.normalizedRole,
         role_family: match.roleFamily,
@@ -68,10 +90,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (insertError) {
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: insertError.message }, 500);
     }
 
     if (shouldTrackUnknownRole(match.matchStatus)) {
@@ -81,7 +100,7 @@ Deno.serve(async (req) => {
         p_normalized_role_input: normalized,
         p_match_status: match.matchStatus,
         p_suggested_family: match.roleFamily,
-        p_example_user_id: userId,
+        p_example_user_id: user.id,
       });
 
       if (trackError) {
@@ -89,7 +108,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const response = {
+    return jsonResponse({
       role_match_event_id: eventRow.id,
       original_role_input: match.originalRoleInput,
       normalized_role: match.normalizedRole,
@@ -100,16 +119,9 @@ Deno.serve(async (req) => {
       suggested_roles: match.suggestedRoles,
       needs_more_info: match.needsMoreInfo,
       analysis_quality: match.analysisQuality,
-    };
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: message }, 500);
   }
 });

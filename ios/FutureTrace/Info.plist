@@ -44,6 +44,12 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Future Trace connects to your Mac on the local network to load development updates.</string>
+    <key>NSBonjourServices</key>
+    <array>
+      <string>_expo._tcp</string>
+    </array>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>

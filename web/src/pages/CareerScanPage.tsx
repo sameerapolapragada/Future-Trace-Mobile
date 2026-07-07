@@ -237,7 +237,7 @@ export default function CareerScanPage() {
       };
 
       const snapshot = await runRoleMatch(user.id, {
-        originalRoleInput: currentRole.trim(),
+        originalRoleInput: (targetRole || inferTargetRole(careerGoal, currentRole)).trim(),
         industry: industry.trim() || undefined,
         yearsExperience: parseInt(yearsExperience, 10) || 0,
         skills: skills.trim() || undefined,

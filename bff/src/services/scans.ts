@@ -98,7 +98,7 @@ async function persistScan(
   roleMatch?: {
     roleMatchEventId?: string | null;
     originalRoleInput?: string | null;
-    normalizedCurrentRole?: string | null;
+    normalizedTargetRole?: string | null;
     roleFamily?: string | null;
     confidenceScore?: number | null;
     confidenceLabel?: string | null;
@@ -115,8 +115,8 @@ async function persistScan(
     input_hash: inputHash,
     prompt_version: SCAN_PROMPT_VERSION,
     llm_job_id: llmJobId,
-    current_role: roleMatch?.normalizedCurrentRole ?? input.currentRole.trim(),
-    target_role: input.targetRole.trim(),
+    current_role: input.currentRole.trim(),
+    target_role: roleMatch?.normalizedTargetRole ?? input.targetRole.trim(),
     industry: input.industry.trim() || null,
     years_experience: input.yearsExperience.trim() || null,
     skills: input.skills.trim() || null,
@@ -129,8 +129,8 @@ async function persistScan(
     ai_exposure_level: result.currentRoleProfile.aiExposureLevel,
     summary: result.summary,
     role_match_event_id: roleMatch?.roleMatchEventId ?? null,
-    original_role_input: roleMatch?.originalRoleInput ?? input.currentRole.trim(),
-    normalized_current_role: roleMatch?.normalizedCurrentRole ?? input.currentRole.trim(),
+    original_role_input: roleMatch?.originalRoleInput ?? input.targetRole.trim(),
+    normalized_current_role: input.currentRole.trim(),
     role_family: roleMatch?.roleFamily ?? null,
     role_match_confidence_score: roleMatch?.confidenceScore ?? null,
     role_match_confidence_label: roleMatch?.confidenceLabel ?? null,
