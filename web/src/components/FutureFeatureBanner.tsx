@@ -58,7 +58,7 @@ export function FutureFeatureBanner({
           email={email}
           currentRole={currentRole}
           targetRole={targetRole}
-          source="web_roadmap_early_access"
+          source="web_app"
           className="mt-4 border-accent-purple/20 bg-navy-card/80"
         />
       )}

@@ -276,7 +276,7 @@ export default function ScanResultsPage() {
               email={user?.email ?? ""}
               currentRole={result.currentRole}
               targetRole={result.targetRole}
-              source="web_xray_early_access"
+              source="web_app"
               className="mt-4 border-white/10 bg-navy-card/80"
             />
           </section>

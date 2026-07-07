@@ -228,7 +228,7 @@ function EarlyAccessCard({ scan }: { scan: StoredScan }) {
     <EarlyAccessSignupCard
       title="Join Career X-Ray Early Access"
       body="Get notified when deeper career insights, skills gap analysis, and personalized roadmaps become available."
-      source="ios_app_radar"
+      source="ios_app"
       defaultCurrentRole={scan.result.identifiedCareerProfile ?? scan.result.currentRole}
       defaultTargetRole={scan.result.targetRole}
     />

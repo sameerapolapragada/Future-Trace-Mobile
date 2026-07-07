@@ -1,10 +1,32 @@
 -- MVP ship: tighten career_xray_waitlist RLS (strict insert, remove open delete)
 begin;
 
--- Normalize existing rows before adding constraints
+-- Normalize legacy rows before adding constraints
 update public.career_xray_waitlist
 set email = lower(trim(email))
 where email is not null and email <> lower(trim(email));
+
+update public.career_xray_waitlist
+set source = case
+  when source like 'ios%' then 'ios_app'
+  when source like 'web%' then 'web_app'
+  else 'ios_app'
+end
+where source is null or source not in ('ios_app', 'web_app');
+
+update public.career_xray_waitlist
+set "current_role" = '—'
+where coalesce(trim("current_role"), '') = '';
+
+update public.career_xray_waitlist
+set "target_role" = '—'
+where coalesce(trim("target_role"), '') = '';
+
+-- Remove rows that cannot satisfy email constraints (test/junk data)
+delete from public.career_xray_waitlist
+where email is null
+   or email !~* '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+   or length(email) > 320;
 
 alter table public.career_xray_waitlist
   drop constraint if exists career_xray_waitlist_email_format_chk,

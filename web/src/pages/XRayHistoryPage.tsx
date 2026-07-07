@@ -101,7 +101,7 @@ function ScanHistoryCard({ item, isRadar }: { item: ScanHistoryItem; isRadar: bo
               email={user?.email ?? ""}
               currentRole={item.currentRole}
               targetRole={item.targetRole}
-              source="web_xray_early_access"
+              source="web_app"
               className="border-white/10 bg-navy-card/80"
             />
           )}

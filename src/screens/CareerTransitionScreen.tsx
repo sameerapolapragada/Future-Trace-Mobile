@@ -318,7 +318,7 @@ export function CareerTransitionScreen() {
         <EarlyAccessSignupCard
           title="Join Early Access"
           body="Be among the first to access AI Career Transition when it launches."
-          source="ios_app_transition"
+          source="ios_app"
           defaultCurrentRole={path.defaultCurrentRole}
           defaultTargetRole={path.defaultTargetRole}
         />
