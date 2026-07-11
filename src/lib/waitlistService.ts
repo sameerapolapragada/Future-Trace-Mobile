@@ -62,7 +62,7 @@ export async function submitWaitlistEntrySafe(entry: WaitlistEntry): Promise<Wai
   }
 
   try {
-    const { error } = await supabase.from("career_xray_waitlist").insert({
+    const { error } = await supabase.from("career_transition_waitlist").insert({
       email,
       current_role: currentRole,
       target_role: targetRole,

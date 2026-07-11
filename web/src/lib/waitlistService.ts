@@ -7,7 +7,7 @@ export async function submitWaitlistEntry(entry: WaitlistEntry): Promise<void> {
     throw new Error("Enter a valid email address.");
   }
 
-  const { error } = await supabase.from("career_xray_waitlist").insert({
+  const { error } = await supabase.from("career_transition_waitlist").insert({
     email,
     current_role: entry.currentRole?.trim() || null,
     target_role: entry.targetRole?.trim() || null,
