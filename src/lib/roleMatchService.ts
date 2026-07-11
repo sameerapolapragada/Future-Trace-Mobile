@@ -36,6 +36,7 @@ function toSnapshot(result: RoleMatchResult, eventId?: string, userAction?: Role
     needsMoreInfo: result.needsMoreInfo,
     analysisQuality: result.analysisQuality,
     genericResultFlag: result.genericResultFlag,
+    outOfTechnologyDomain: result.outOfTechnologyDomain,
     userAction,
   };
 }

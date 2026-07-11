@@ -85,6 +85,7 @@ export type RoleMatchResult = {
   needsMoreInfo: boolean;
   analysisQuality: AnalysisQuality;
   genericResultFlag: boolean;
+  outOfTechnologyDomain?: boolean;
 };
 
 type CatalogEntry = {
@@ -92,28 +93,53 @@ type CatalogEntry = {
   family: string;
   aliases: string[];
   supported: boolean;
+  technologyDomain: boolean;
 };
 
+const TECHNOLOGY_INDUSTRY_PATTERN =
+  /\b(technology|technologies|tech|software|saas|information technology|\bit\b|computer|cyber|cybersecurity|cloud|devops|fintech|edtech|artificial intelligence|\bai\b|data|analytics|digital|platform|startup|semiconductor|electronics)\b/i;
+
+function isTechnologyDomain(industry: string): boolean {
+  const trimmed = industry.trim();
+  if (!trimmed) return false;
+  return TECHNOLOGY_INDUSTRY_PATTERN.test(trimmed);
+}
+
 const ROLE_CATALOG: CatalogEntry[] = [
-  { canonical: "Salesforce Administrator", family: "Salesforce", aliases: ["salesforce admin", "salesforce administrator", "sf admin", "sfdc admin"], supported: true },
-  { canonical: "Salesforce Solution Architect", family: "Salesforce", aliases: ["salesforce solution architect", "salesforce architect", "salesforce revenue cloud solution architect", "senior salesforce solution architect"], supported: true },
-  { canonical: "Salesforce Consultant", family: "Salesforce", aliases: ["salesforce consultant", "sfdc consultant"], supported: true },
-  { canonical: "Salesforce Business Analyst", family: "Salesforce", aliases: ["salesforce business analyst", "salesforce ba"], supported: true },
-  { canonical: "Business Analyst", family: "Business & Strategy", aliases: ["business analyst", "systems analyst"], supported: true },
-  { canonical: "Data Analyst", family: "Data & Analytics", aliases: ["data analyst", "analytics analyst", "bi analyst"], supported: true },
-  { canonical: "QA Analyst", family: "Quality & Testing", aliases: ["qa analyst", "quality assurance analyst", "software tester"], supported: true },
-  { canonical: "Project Manager", family: "Program & Project Management", aliases: ["project manager", "program manager"], supported: true },
-  { canonical: "Product Manager", family: "Product", aliases: ["product manager", "product owner"], supported: true },
-  { canonical: "Software Developer", family: "Software Engineering", aliases: ["software developer", "software engineer", "programmer"], supported: true },
-  { canonical: "RevOps Analyst", family: "Revenue Operations", aliases: ["revops analyst", "revenue operations analyst"], supported: true },
-  { canonical: "Customer Support Specialist", family: "Customer Success", aliases: ["customer support specialist", "customer support"], supported: true },
-  { canonical: "Marketing Manager", family: "Marketing", aliases: ["marketing manager"], supported: true },
-  { canonical: "Accountant", family: "Finance", aliases: ["accountant", "cpa"], supported: true },
-  { canonical: "Registered Nurse", family: "Healthcare", aliases: ["registered nurse", "rn"], supported: true },
-  { canonical: "Graphic Designer", family: "Design", aliases: ["graphic designer"], supported: true },
-  { canonical: "UX Designer", family: "Design", aliases: ["ux designer", "ui designer"], supported: true },
-  { canonical: "DevOps Engineer", family: "Software Engineering", aliases: ["devops engineer", "sre"], supported: true },
-  { canonical: "Data Scientist", family: "Data & Analytics", aliases: ["data scientist", "ml engineer"], supported: true },
+  { canonical: "Salesforce Administrator", family: "Salesforce", aliases: ["salesforce admin", "salesforce administrator", "sf admin", "sfdc admin"], supported: true, technologyDomain: true },
+  { canonical: "Salesforce Solution Architect", family: "Salesforce", aliases: ["salesforce solution architect", "salesforce architect", "salesforce revenue cloud solution architect", "senior salesforce solution architect"], supported: true, technologyDomain: true },
+  { canonical: "Salesforce Consultant", family: "Salesforce", aliases: ["salesforce consultant", "sfdc consultant"], supported: true, technologyDomain: true },
+  { canonical: "Salesforce Business Analyst", family: "Salesforce", aliases: ["salesforce business analyst", "salesforce ba"], supported: true, technologyDomain: true },
+  { canonical: "Business Analyst", family: "Business & Strategy", aliases: ["business analyst", "systems analyst"], supported: true, technologyDomain: true },
+  { canonical: "Data Analyst", family: "Data & Analytics", aliases: ["data analyst", "analytics analyst", "bi analyst"], supported: true, technologyDomain: true },
+  { canonical: "QA Analyst", family: "Quality & Testing", aliases: ["qa analyst", "quality assurance analyst", "software tester"], supported: true, technologyDomain: true },
+  { canonical: "Project Manager", family: "Program & Project Management", aliases: ["project manager", "program manager"], supported: true, technologyDomain: true },
+  { canonical: "Product Manager", family: "Product", aliases: ["product manager", "product owner"], supported: true, technologyDomain: true },
+  { canonical: "Software Developer", family: "Software Engineering", aliases: ["software developer", "software engineer", "programmer"], supported: true, technologyDomain: true },
+  { canonical: "RevOps Analyst", family: "Revenue Operations", aliases: ["revops analyst", "revenue operations analyst"], supported: true, technologyDomain: true },
+  { canonical: "Customer Support Specialist", family: "Customer Success", aliases: ["customer support specialist", "customer support"], supported: true, technologyDomain: true },
+  { canonical: "Marketing Manager", family: "Marketing", aliases: ["marketing manager"], supported: true, technologyDomain: false },
+  { canonical: "Accountant", family: "Finance", aliases: ["accountant", "cpa"], supported: true, technologyDomain: false },
+  { canonical: "Registered Nurse", family: "Healthcare", aliases: ["registered nurse", "nurse", "nursing", "rn", "staff nurse", "clinical nurse", "charge nurse"], supported: true, technologyDomain: false },
+  { canonical: "Graphic Designer", family: "Design", aliases: ["graphic designer"], supported: true, technologyDomain: false },
+  { canonical: "UX Designer", family: "Design", aliases: ["ux designer", "ui designer"], supported: true, technologyDomain: true },
+  { canonical: "DevOps Engineer", family: "Software Engineering", aliases: ["devops engineer", "sre"], supported: true, technologyDomain: true },
+  { canonical: "Data Scientist", family: "Data & Analytics", aliases: ["data scientist", "ml engineer"], supported: true, technologyDomain: true },
+  { canonical: "Salesforce Developer", family: "Salesforce", aliases: ["salesforce developer", "sfdc developer", "apex developer"], supported: true, technologyDomain: true },
+  { canonical: "Frontend Developer", family: "Software Engineering", aliases: ["frontend developer", "front end developer", "ui developer"], supported: true, technologyDomain: true },
+  { canonical: "Backend Developer", family: "Software Engineering", aliases: ["backend developer", "back end developer", "api developer"], supported: true, technologyDomain: true },
+  { canonical: "Full Stack Developer", family: "Software Engineering", aliases: ["full stack developer", "fullstack developer"], supported: true, technologyDomain: true },
+  { canonical: "Mobile Developer", family: "Software Engineering", aliases: ["mobile developer", "ios developer", "android developer"], supported: true, technologyDomain: true },
+  { canonical: "Cloud Engineer", family: "Software Engineering", aliases: ["cloud engineer", "aws engineer", "azure engineer"], supported: true, technologyDomain: true },
+  { canonical: "Platform Engineer", family: "Software Engineering", aliases: ["platform engineer"], supported: true, technologyDomain: true },
+  { canonical: "Cybersecurity Analyst", family: "Security", aliases: ["cybersecurity analyst", "security analyst", "infosec analyst"], supported: true, technologyDomain: true },
+  { canonical: "Systems Administrator", family: "IT Operations", aliases: ["systems administrator", "system administrator", "sysadmin"], supported: true, technologyDomain: true },
+  { canonical: "IT Support Specialist", family: "IT Operations", aliases: ["it support specialist", "it support", "desktop support"], supported: true, technologyDomain: true },
+  { canonical: "Database Administrator", family: "Data & Analytics", aliases: ["database administrator", "dba"], supported: true, technologyDomain: true },
+  { canonical: "Solutions Architect", family: "Software Engineering", aliases: ["solutions architect", "solution architect"], supported: true, technologyDomain: true },
+  { canonical: "Scrum Master", family: "Program & Project Management", aliases: ["scrum master"], supported: true, technologyDomain: true },
+  { canonical: "Customer Success Manager", family: "Customer Success", aliases: ["customer success manager", "csm"], supported: true, technologyDomain: true },
+  { canonical: "Technical Writer", family: "Product", aliases: ["technical writer", "tech writer"], supported: true, technologyDomain: true },
 ];
 
 const UNSUPPORTED_BUT_REAL_PATTERNS = ["agentforce", "prompt engineer", "ai engineer", "llm engineer"];
@@ -146,7 +172,7 @@ function looksLikeUnsupportedRealRole(normalized: string): boolean {
   return UNSUPPORTED_BUT_REAL_PATTERNS.some((pattern) => normalized.includes(pattern));
 }
 
-type CandidateMatch = { canonical: string; family: string; supported: boolean; score: number };
+type CandidateMatch = { canonical: string; family: string; supported: boolean; technologyDomain: boolean; score: number };
 
 function findCandidates(raw: string): CandidateMatch[] {
   const trimmed = raw.trim();
@@ -157,7 +183,7 @@ function findCandidates(raw: string): CandidateMatch[] {
     for (const form of forms) {
       bestScore = Math.max(bestScore, roleStringSimilarity(trimmed, form));
     }
-    results.push({ canonical: formatRoleLabel(entry.canonical), family: entry.family, supported: entry.supported, score: bestScore });
+    results.push({ canonical: formatRoleLabel(entry.canonical), family: entry.family, supported: entry.supported, technologyDomain: entry.technologyDomain, score: bestScore });
   }
   return results.sort((a, b) => b.score - a.score);
 }
@@ -166,7 +192,7 @@ function buildSuggestedRoles(candidates: CandidateMatch[], limit = 3): Suggested
   const seen = new Set<string>();
   const out: SuggestedRole[] = [];
   for (const candidate of candidates) {
-    if (!candidate.supported || candidate.score < 0.35) continue;
+    if (!candidate.supported || !candidate.technologyDomain || candidate.score < 0.35) continue;
     if (seen.has(candidate.canonical)) continue;
     seen.add(candidate.canonical);
     out.push({ role: candidate.canonical, confidence: scoreToPercent(candidate.score) });
@@ -183,6 +209,10 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
     return { originalRoleInput, normalizedRole: null, roleFamily: null, matchStatus: "no_match", confidenceScore: 0, confidenceLabel: "none", suggestedRoles: [], needsMoreInfo: true, analysisQuality: "none", genericResultFlag: true };
   }
 
+  if (input.industry != null && input.industry.trim() && !isTechnologyDomain(input.industry)) {
+    return { originalRoleInput, normalizedRole: null, roleFamily: null, matchStatus: "no_match", confidenceScore: 0, confidenceLabel: "none", suggestedRoles: [], needsMoreInfo: true, analysisQuality: "none", genericResultFlag: true, outOfTechnologyDomain: true };
+  }
+
   const candidates = findCandidates(originalRoleInput);
   const best = candidates[0];
   const scorePercent = best ? scoreToPercent(best.score) : 0;
@@ -191,6 +221,10 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
 
   if (isLikelyNonsense(normalizedTracking, scorePercent)) {
     return { originalRoleInput, normalizedRole: null, roleFamily: null, matchStatus: "no_match", confidenceScore: scorePercent, confidenceLabel: "none", suggestedRoles, needsMoreInfo: true, analysisQuality: "none", genericResultFlag: true };
+  }
+
+  if (best && scorePercent >= 31 && !best.technologyDomain) {
+    return { originalRoleInput, normalizedRole: null, roleFamily: best.family, matchStatus: "no_match", confidenceScore: scorePercent, confidenceLabel: "none", suggestedRoles: [], needsMoreInfo: true, analysisQuality: "none", genericResultFlag: true, outOfTechnologyDomain: true };
   }
 
   if (scorePercent >= 90 && best) {

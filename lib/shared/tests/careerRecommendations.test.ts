@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildRecommendations } from "../scan/careerRecommendations";
+import { buildRecommendations, NEXT_ROLES_COUNT } from "../scan/careerRecommendations";
 import type { NormalizedScanInput } from "../types";
 
 function baseInput(overrides: Partial<NormalizedScanInput>): NormalizedScanInput {
@@ -31,12 +31,15 @@ describe("buildRecommendations", () => {
       })
     );
 
-    assert.equal(recs.length, 3);
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
     assert.equal(recs[0]?.role, "Salesforce AI Administrator");
     assert.equal(recs[1]?.role, "Agentforce Specialist");
     assert.equal(recs[2]?.role, "Salesforce Automation Consultant");
     assert.ok(recs[0]!.transferabilityScore >= 88);
     assert.ok(recs[0]!.why.length > 20);
+    assert.ok(recs[0]!.salaryLabel);
+    assert.equal(recs[0]!.transferableSkills?.length, 3);
+    assert.ok(recs[0]!.transitionLabel);
     assert.ok(!recs.some((item) => /machine learning engineer|ai product manager/i.test(item.role)));
   });
 
@@ -49,10 +52,10 @@ describe("buildRecommendations", () => {
       })
     );
 
-    assert.deepEqual(
-      recs.map((item) => item.role),
-      ["AI Business Analyst", "Product Operations Analyst", "Process Automation Analyst"]
-    );
+    assert.equal(recs[0]?.role, "AI Business Analyst");
+    assert.equal(recs[1]?.role, "Product Operations Analyst");
+    assert.equal(recs[2]?.role, "Process Automation Analyst");
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
     assert.ok(recs[0]!.transferabilityScore >= 85);
   });
 
@@ -65,10 +68,10 @@ describe("buildRecommendations", () => {
       })
     );
 
-    assert.deepEqual(
-      recs.map((item) => item.role),
-      ["AI Data Analyst", "Analytics Engineer", "BI Automation Analyst"]
-    );
+    assert.equal(recs[0]?.role, "AI Data Analyst");
+    assert.equal(recs[1]?.role, "Analytics Engineer");
+    assert.equal(recs[2]?.role, "BI Automation Analyst");
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
   });
 
   it("returns QA analyst next-step roles", () => {
@@ -80,10 +83,10 @@ describe("buildRecommendations", () => {
       })
     );
 
-    assert.deepEqual(
-      recs.map((item) => item.role),
-      ["AI QA Analyst", "Test Automation Analyst", "AI Evaluation Specialist"]
-    );
+    assert.equal(recs[0]?.role, "AI QA Analyst");
+    assert.equal(recs[1]?.role, "Test Automation Analyst");
+    assert.equal(recs[2]?.role, "AI Evaluation Specialist");
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
   });
 
   it("returns project manager next-step roles", () => {
@@ -95,10 +98,10 @@ describe("buildRecommendations", () => {
       })
     );
 
-    assert.deepEqual(
-      recs.map((item) => item.role),
-      ["AI Project Manager", "Technical Program Analyst", "AI Program Coordinator"]
-    );
+    assert.equal(recs[0]?.role, "AI Project Manager");
+    assert.equal(recs[1]?.role, "Technical Program Analyst");
+    assert.equal(recs[2]?.role, "AI Program Coordinator");
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
   });
 
   it("does not recommend distant roles for a generic profile without overlap", () => {
@@ -111,7 +114,7 @@ describe("buildRecommendations", () => {
     );
 
     assert.ok(!recs.some((item) => /machine learning engineer|ai product manager|ai governance lead/i.test(item.role)));
-    assert.equal(recs.length, 3);
+    assert.equal(recs.length, NEXT_ROLES_COUNT);
   });
 
   it("sorts recommendations by transferability descending", () => {

@@ -1,5 +1,6 @@
 import { formatRoleLabel } from "./inferTargetRole";
 import { normalizeRoleText, roleStringSimilarity } from "./roleCanonicalization";
+import { isTechnologyDomain } from "./technologyDomain";
 
 export type MatchStatus = "matched" | "partial_match" | "unsupported" | "no_match";
 export type ConfidenceLabel = "excellent" | "high" | "medium" | "low" | "none";
@@ -39,6 +40,8 @@ export type RoleMatchResult = {
   needsMoreInfo: boolean;
   analysisQuality: AnalysisQuality;
   genericResultFlag: boolean;
+  /** True when industry or matched role is outside the technology MVP scope. */
+  outOfTechnologyDomain?: boolean;
 };
 
 type CatalogEntry = {
@@ -46,6 +49,7 @@ type CatalogEntry = {
   family: string;
   aliases: string[];
   supported: boolean;
+  technologyDomain: boolean;
 };
 
 const ROLE_CATALOG: CatalogEntry[] = [
@@ -61,6 +65,7 @@ const ROLE_CATALOG: CatalogEntry[] = [
       "salesforce platform administrator",
     ],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Salesforce Solution Architect",
@@ -74,108 +79,242 @@ const ROLE_CATALOG: CatalogEntry[] = [
       "senior salesforce solution architect",
     ],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Salesforce Consultant",
     family: "Salesforce",
     aliases: ["salesforce consultant", "sfdc consultant", "salesforce implementation consultant"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Salesforce Business Analyst",
     family: "Salesforce",
     aliases: ["salesforce business analyst", "salesforce ba", "sfdc business analyst"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Business Analyst",
     family: "Business & Strategy",
     aliases: ["business analyst", "systems analyst", "functional analyst", "it business analyst"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Data Analyst",
     family: "Data & Analytics",
     aliases: ["data analyst", "analytics analyst", "bi analyst", "business intelligence analyst"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "QA Analyst",
     family: "Quality & Testing",
     aliases: ["qa analyst", "quality assurance analyst", "software tester", "test analyst"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Project Manager",
     family: "Program & Project Management",
     aliases: ["project manager", "program manager", "programme manager"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Product Manager",
     family: "Product",
     aliases: ["product manager", "product owner"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Software Developer",
     family: "Software Engineering",
     aliases: ["software developer", "software engineer", "programmer", "application developer"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "RevOps Analyst",
     family: "Revenue Operations",
     aliases: ["revops analyst", "revenue operations analyst", "rev ops analyst"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Customer Support Specialist",
     family: "Customer Success",
     aliases: ["customer support specialist", "customer support", "support specialist", "help desk"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Marketing Manager",
     family: "Marketing",
     aliases: ["marketing manager", "digital marketing manager"],
     supported: true,
+    technologyDomain: false,
   },
   {
     canonical: "Accountant",
     family: "Finance",
     aliases: ["accountant", "accountant and auditor", "cpa"],
     supported: true,
+    technologyDomain: false,
   },
   {
     canonical: "Registered Nurse",
     family: "Healthcare",
-    aliases: ["registered nurse", "rn", "staff nurse", "clinical nurse"],
+    aliases: [
+      "registered nurse",
+      "nurse",
+      "nursing",
+      "rn",
+      "r.n.",
+      "staff nurse",
+      "clinical nurse",
+      "charge nurse",
+      "er nurse",
+      "icu nurse",
+    ],
     supported: true,
+    technologyDomain: false,
   },
   {
     canonical: "Graphic Designer",
     family: "Design",
     aliases: ["graphic designer", "visual designer"],
     supported: true,
+    technologyDomain: false,
   },
   {
     canonical: "UX Designer",
     family: "Design",
     aliases: ["ux designer", "ui designer", "ui/ux designer"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "DevOps Engineer",
     family: "Software Engineering",
     aliases: ["devops engineer", "dev ops engineer", "site reliability engineer", "sre"],
     supported: true,
+    technologyDomain: true,
   },
   {
     canonical: "Data Scientist",
     family: "Data & Analytics",
     aliases: ["data scientist", "machine learning engineer", "ml engineer"],
     supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Salesforce Developer",
+    family: "Salesforce",
+    aliases: ["salesforce developer", "sfdc developer", "apex developer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Frontend Developer",
+    family: "Software Engineering",
+    aliases: ["frontend developer", "front end developer", "front-end developer", "ui developer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Backend Developer",
+    family: "Software Engineering",
+    aliases: ["backend developer", "back end developer", "back-end developer", "api developer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Full Stack Developer",
+    family: "Software Engineering",
+    aliases: ["full stack developer", "fullstack developer", "full-stack developer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Mobile Developer",
+    family: "Software Engineering",
+    aliases: ["mobile developer", "ios developer", "android developer", "mobile app developer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Cloud Engineer",
+    family: "Software Engineering",
+    aliases: ["cloud engineer", "aws engineer", "azure engineer", "gcp engineer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Platform Engineer",
+    family: "Software Engineering",
+    aliases: ["platform engineer", "developer platform engineer"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Cybersecurity Analyst",
+    family: "Security",
+    aliases: ["cybersecurity analyst", "security analyst", "information security analyst", "infosec analyst"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Systems Administrator",
+    family: "IT Operations",
+    aliases: ["systems administrator", "system administrator", "sysadmin", "sys admin"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "IT Support Specialist",
+    family: "IT Operations",
+    aliases: ["it support specialist", "it support", "desktop support", "technical support specialist"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Database Administrator",
+    family: "Data & Analytics",
+    aliases: ["database administrator", "dba", "sql dba"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Solutions Architect",
+    family: "Software Engineering",
+    aliases: ["solutions architect", "solution architect", "enterprise solutions architect"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Scrum Master",
+    family: "Program & Project Management",
+    aliases: ["scrum master", "agile scrum master"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Customer Success Manager",
+    family: "Customer Success",
+    aliases: ["customer success manager", "csm", "customer success lead"],
+    supported: true,
+    technologyDomain: true,
+  },
+  {
+    canonical: "Technical Writer",
+    family: "Product",
+    aliases: ["technical writer", "tech writer", "documentation specialist"],
+    supported: true,
+    technologyDomain: true,
   },
 ];
 
@@ -186,6 +325,57 @@ const UNSUPPORTED_BUT_REAL_PATTERNS = [
   "llm engineer",
   "automation specialist",
 ];
+
+/** Curated technology roles shown in the MVP current-role picker (A–Z). */
+export const TECHNOLOGY_CURRENT_ROLES: string[] = ROLE_CATALOG.filter(
+  (entry) => entry.supported && entry.technologyDomain
+)
+  .map((entry) => formatRoleLabel(entry.canonical))
+  .sort((a, b) => a.localeCompare(b));
+
+/** Sentinel picklist value for roles not in the curated catalog. */
+export const OTHER_ROLE_OPTION = "Other";
+
+export function isOtherRoleSelection(role: string): boolean {
+  return role.trim().toLowerCase() === OTHER_ROLE_OPTION.toLowerCase();
+}
+
+/** Filter curated roles by typed query; results stay alphabetical, with Other last. */
+export function filterTechnologyCurrentRoles(
+  query: string,
+  roles: readonly string[] = TECHNOLOGY_CURRENT_ROLES,
+  limit = 8
+): string[] {
+  const normalized = query.trim().toLowerCase();
+  const source = [...roles].sort((a, b) => a.localeCompare(b));
+  const matches = (
+    normalized ? source.filter((role) => role.toLowerCase().includes(normalized)) : source
+  ).slice(0, limit);
+
+  return [...matches.filter((role) => !isOtherRoleSelection(role)), OTHER_ROLE_OPTION];
+}
+
+export function isTechnologyCurrentRole(role: string, roles: readonly string[] = TECHNOLOGY_CURRENT_ROLES): boolean {
+  if (isOtherRoleSelection(role)) return false;
+  const normalized = role.trim().toLowerCase();
+  return roles.some((entry) => entry.toLowerCase() === normalized);
+}
+
+/** Effective role string used for matching / scan generation. */
+export function resolveScanFormRoleInput(input: {
+  currentRole: string;
+  otherRoleName?: string;
+}): string {
+  if (isOtherRoleSelection(input.currentRole)) {
+    return (input.otherRoleName ?? "").trim();
+  }
+  return input.currentRole.trim();
+}
+
+/** Common technology industries for the scan form picker. */
+export const TECHNOLOGY_INDUSTRY_OPTIONS = ["Technology", "SaaS", "IT", "Software", "Cloud"] as const;
+
+export const DEFAULT_TECHNOLOGY_INDUSTRY = TECHNOLOGY_INDUSTRY_OPTIONS[0];
 
 function scoreToPercent(score: number): number {
   return Math.min(100, Math.max(0, Math.round(score * 100)));
@@ -217,7 +407,7 @@ function isLikelyNonsense(normalized: string, scorePercent: number): boolean {
   if (scorePercent <= 30 && normalized.split(" ").length <= 2) return true;
 
   const vowelRatio =
-    (normalized.replace(/[^aeiou]/g, "").length / Math.max(normalized.replace(/\s/g, "").length, 1));
+    normalized.replace(/[^aeiou]/g, "").length / Math.max(normalized.replace(/\s/g, "").length, 1);
   if (scorePercent <= 20 && vowelRatio < 0.15) return true;
 
   return false;
@@ -231,6 +421,7 @@ type CandidateMatch = {
   canonical: string;
   family: string;
   supported: boolean;
+  technologyDomain: boolean;
   score: number;
 };
 
@@ -248,6 +439,7 @@ function findCandidates(raw: string): CandidateMatch[] {
       canonical: formatRoleLabel(entry.canonical),
       family: entry.family,
       supported: entry.supported,
+      technologyDomain: entry.technologyDomain,
       score: bestScore,
     });
   }
@@ -260,7 +452,7 @@ function buildSuggestedRoles(candidates: CandidateMatch[], limit = 3): Suggested
   const out: SuggestedRole[] = [];
 
   for (const candidate of candidates) {
-    if (!candidate.supported || candidate.score < 0.35) continue;
+    if (!candidate.supported || !candidate.technologyDomain || candidate.score < 0.35) continue;
     if (seen.has(candidate.canonical)) continue;
     seen.add(candidate.canonical);
     out.push({ role: candidate.canonical, confidence: scoreToPercent(candidate.score) });
@@ -268,6 +460,26 @@ function buildSuggestedRoles(candidates: CandidateMatch[], limit = 3): Suggested
   }
 
   return out;
+}
+
+function outOfDomainResult(
+  originalRoleInput: string,
+  scorePercent: number,
+  family: string | null
+): RoleMatchResult {
+  return {
+    originalRoleInput,
+    normalizedRole: null,
+    roleFamily: family,
+    matchStatus: "no_match",
+    confidenceScore: scorePercent,
+    confidenceLabel: "none",
+    suggestedRoles: [],
+    needsMoreInfo: true,
+    analysisQuality: "none",
+    genericResultFlag: true,
+    outOfTechnologyDomain: true,
+  };
 }
 
 /** Core role matching — used by mobile (offline), web, and edge function. */
@@ -290,6 +502,10 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
     };
   }
 
+  if (input.industry != null && input.industry.trim() && !isTechnologyDomain(input.industry)) {
+    return outOfDomainResult(originalRoleInput, 0, null);
+  }
+
   const candidates = findCandidates(originalRoleInput);
   const best = candidates[0];
   const scorePercent = best ? scoreToPercent(best.score) : 0;
@@ -309,6 +525,12 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
       analysisQuality: "none",
       genericResultFlag: true,
     };
+  }
+
+  // Any credible non-tech match (same floor as "unsupported") must stop here —
+  // e.g. "nurse" scores ~48% vs "Registered Nurse" and used to slip into Needs Info.
+  if (best && scorePercent >= 31 && !best.technologyDomain) {
+    return outOfDomainResult(originalRoleInput, scorePercent, best.family);
   }
 
   if (scorePercent >= 90 && best) {
@@ -375,6 +597,7 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
 }
 
 export function canGenerateScan(match: RoleMatchResult, userAction?: RoleMatchUserAction): boolean {
+  if (match.outOfTechnologyDomain) return false;
   if (match.matchStatus === "no_match") return false;
   if (match.matchStatus === "matched") return true;
   if (match.matchStatus === "partial_match") {

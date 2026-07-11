@@ -334,7 +334,7 @@ function CareerSnapshotCard({ scan }: { scan: StoredScan | null }) {
           title="Your Career Snapshot"
           subtitle="Quick overview from your latest scan"
         />
-        <Text style={styles.emptySnapshot}>Run a Career Scan to see your snapshot here.</Text>
+        <Text style={styles.emptySnapshot}>Find your next roles to see your snapshot here.</Text>
       </SectionCard>
     );
   }

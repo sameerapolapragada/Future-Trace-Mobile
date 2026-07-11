@@ -23,16 +23,15 @@ export function ScanReviewRoleScreen({ navigation }: Props) {
     return (
       <SafeAreaView style={styles.safe}>
         <Text style={styles.error}>Session expired. Please enter your role again.</Text>
-        <SecondaryButton label="Back to scan form" onPress={() => navigation.navigate("MainTabs")} />
+        <SecondaryButton label="Back to form" onPress={() => navigation.navigate("MainTabs")} />
       </SafeAreaView>
     );
   }
 
   const qualityLabel = formatRoleMatchQualityLabel(match.matchStatus, "auto_accepted");
-  const currentRole = form.currentRole.trim();
 
   async function onContinue() {
-    const role = match!.normalizedRole ?? form!.targetRole.trim();
+    const role = match!.normalizedRole ?? form!.currentRole.trim();
     if (match!.roleMatchEventId) {
       await updateRoleMatchUserAction(match!.roleMatchEventId, "auto_accepted");
     }
@@ -43,16 +42,14 @@ export function ScanReviewRoleScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.content}>
-        <Title>Target role match found</Title>
-        <Subtitle>
-          We matched your target role. Your current role stays as entered for the transition scan.
-        </Subtitle>
+        <Title>Current role match found</Title>
+        <Subtitle>We matched your current role. Next we&apos;ll suggest realistic roles you can move into.</Subtitle>
 
         <Card>
           <View style={styles.matchBadge}>
             <Text style={styles.matchBadgeText}>{qualityLabel}</Text>
           </View>
-          <Text style={styles.label}>Target role match</Text>
+          <Text style={styles.label}>Current role match</Text>
           <Text style={styles.roleValue}>{match.normalizedRole}</Text>
           {match.originalRoleInput !== match.normalizedRole ? (
             <>
@@ -71,14 +68,8 @@ export function ScanReviewRoleScreen({ navigation }: Props) {
           </Text>
         </Card>
 
-        <Card>
-          <Text style={styles.label}>Your current role</Text>
-          <Text style={styles.roleValue}>{currentRole}</Text>
-          <Text style={styles.contextHint}>This is where you are today — not the match above.</Text>
-        </Card>
-
-        <PrimaryButton label="Continue to Career Scan" onPress={onContinue} />
-        <SecondaryButton label="Edit roles" onPress={() => navigation.goBack()} />
+        <PrimaryButton label="Find my next roles" onPress={onContinue} />
+        <SecondaryButton label="Edit role" onPress={() => navigation.goBack()} />
       </View>
     </SafeAreaView>
   );
@@ -102,5 +93,4 @@ const styles = StyleSheet.create({
   inputValue: { color: colors.muted, fontSize: 15, marginTop: 4 },
   metaValue: { color: colors.text, fontSize: 15, marginTop: 4 },
   confidence: { color: colors.muted, fontSize: 13, marginTop: spacing.md },
-  contextHint: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
 });

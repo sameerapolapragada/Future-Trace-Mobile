@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { canGenerateScan, matchRole } from "../scan/roleMatch";
+import {
+  canGenerateScan,
+  filterTechnologyCurrentRoles,
+  isOtherRoleSelection,
+  matchRole,
+  OTHER_ROLE_OPTION,
+  resolveScanFormRoleInput,
+  TECHNOLOGY_CURRENT_ROLES,
+} from "../scan/roleMatch";
 
 describe("matchRole", () => {
   it("matches Salesforce Administrator with high confidence", () => {
@@ -56,5 +64,57 @@ describe("matchRole", () => {
     if (result.normalizedRole) {
       assert.equal(canGenerateScan(result, "approximate_continue"), true);
     }
+  });
+
+  it("blocks non-technology roles like Registered Nurse", () => {
+    const result = matchRole({
+      originalRoleInput: "Registered Nurse",
+      industry: "Technology",
+    });
+    assert.equal(result.outOfTechnologyDomain, true);
+    assert.equal(result.matchStatus, "no_match");
+    assert.equal(result.normalizedRole, null);
+    assert.equal(canGenerateScan(result), false);
+  });
+
+  it("blocks short nurse titles even with a SaaS industry", () => {
+    const result = matchRole({
+      originalRoleInput: "nurse",
+      industry: "SaaS",
+    });
+    assert.equal(result.outOfTechnologyDomain, true);
+    assert.equal(result.matchStatus, "no_match");
+    assert.equal(canGenerateScan(result), false);
+  });
+
+  it("blocks non-technology industries", () => {
+    const result = matchRole({
+      originalRoleInput: "Salesforce Administrator",
+      industry: "Healthcare",
+    });
+    assert.equal(result.outOfTechnologyDomain, true);
+    assert.equal(canGenerateScan(result), false);
+  });
+
+  it("exposes curated technology roles for the form picker", () => {
+    assert.equal(TECHNOLOGY_CURRENT_ROLES.length, 30);
+    assert.ok(TECHNOLOGY_CURRENT_ROLES.includes("Salesforce Administrator"));
+    assert.ok(TECHNOLOGY_CURRENT_ROLES.includes("Software Developer"));
+    assert.equal(TECHNOLOGY_CURRENT_ROLES.includes("Registered Nurse"), false);
+    assert.deepEqual(
+      TECHNOLOGY_CURRENT_ROLES,
+      [...TECHNOLOGY_CURRENT_ROLES].sort((a, b) => a.localeCompare(b))
+    );
+  });
+
+  it("appends Other to role suggestions and resolves Other free-text", () => {
+    const suggestions = filterTechnologyCurrentRoles("data");
+    assert.ok(suggestions.includes("Data Analyst"));
+    assert.equal(suggestions[suggestions.length - 1], OTHER_ROLE_OPTION);
+    assert.equal(isOtherRoleSelection("Other"), true);
+    assert.equal(
+      resolveScanFormRoleInput({ currentRole: "Other", otherRoleName: "RevOps Lead" }),
+      "RevOps Lead"
+    );
   });
 });

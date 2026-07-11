@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { generateHybridScan, canGenerateScan, formatRoleMatchQualityLabel } from "../../lib/shared";
 import { colors, spacing } from "../../lib/shared/theme";
@@ -40,15 +40,19 @@ export function ScanLoadingScreen({ navigation }: Props) {
         const result = await generateHybridScan(input, getHybridScanConfig());
         const enrichedResult = {
           ...result,
-          originalTargetRoleInput: input.originalTargetRole ?? roleMatch?.originalRoleInput ?? input.targetRole,
-          normalizedTargetRole: input.targetRole,
+          originalRoleInput: input.originalCurrentRole ?? roleMatch?.originalRoleInput ?? input.currentRole,
+          normalizedCurrentRole: input.currentRole,
           roleMatchStatus: roleMatch?.matchStatus,
           roleMatchUserAction: roleMatch?.userAction,
           analysisQualityLabel: roleMatch
             ? formatRoleMatchQualityLabel(roleMatch.matchStatus, roleMatch.userAction)
             : undefined,
         };
-        const stored = await saveScan(input, enrichedResult, roleMatch?.roleMatchEventId);
+        const stored = await saveScan(
+          { ...input, targetRole: result.targetRole },
+          enrichedResult,
+          roleMatch?.roleMatchEventId
+        );
         if (!cancelled) {
           navigation.replace("ScanResults", { scanId: stored.id });
         }
@@ -80,8 +84,8 @@ export function ScanLoadingScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ActivityIndicator size="large" color={colors.accent} />
-      <Text style={styles.title}>Analyzing your career path</Text>
-      <Text style={styles.subtitle}>Analyzing your career path on your device…</Text>
+      <Text style={styles.title}>Finding your next roles</Text>
+      <Text style={styles.subtitle}>Analyzing your experience and matching realistic next-step careers…</Text>
     </SafeAreaView>
   );
 }

@@ -57,27 +57,24 @@ function AnimatedScore({ value, delay = 0, style }: { value: number; delay?: num
   return <Text style={style}>{display}</Text>;
 }
 
-function TransitionHero({
+function ResultsHero({
   currentRole,
-  targetRole,
-  originalTargetRoleInput,
-  normalizedTargetRole,
+  originalRoleInput,
+  normalizedCurrentRole,
   analysisQualityLabel,
   roleMatchStatus,
   roleMatchUserAction,
 }: {
   currentRole: string;
-  targetRole: string;
-  originalTargetRoleInput?: string;
-  normalizedTargetRole?: string;
+  originalRoleInput?: string;
+  normalizedCurrentRole?: string;
   analysisQualityLabel?: string;
   roleMatchStatus?: string;
   roleMatchUserAction?: string;
 }) {
+  const matched = normalizedCurrentRole ?? currentRole;
   const showInputDiff =
-    originalTargetRoleInput &&
-    normalizedTargetRole &&
-    originalTargetRoleInput.trim() !== normalizedTargetRole.trim();
+    originalRoleInput && matched && originalRoleInput.trim() !== matched.trim();
 
   return (
     <FadeInView delay={0} duration={520}>
@@ -87,55 +84,23 @@ function TransitionHero({
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <Text style={styles.heroEyebrow}>Career Scan Complete</Text>
-        <View style={styles.transitionRow}>
-          <View style={styles.roleBlock}>
-            <Text style={styles.roleLabel}>Current</Text>
-            <Text style={styles.roleName} numberOfLines={2}>
-              {currentRole}
-            </Text>
-          </View>
-          <View style={styles.arrowWrap}>
-            <LinearGradient
-              colors={[colors.accentPurple, colors.accentGold]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.arrowBadge}
-            >
-              <Text style={styles.arrowText}>→</Text>
-            </LinearGradient>
-          </View>
-          <View style={styles.roleBlock}>
-            <Text style={[styles.roleLabel, styles.roleLabelTarget]}>Target</Text>
-            <Text style={styles.roleName} numberOfLines={2}>
-              {targetRole}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.identifiedProfileBox}>
-          <Text style={styles.identifiedLabel}>Target role match</Text>
-          <Text style={styles.identifiedValue}>{normalizedTargetRole ?? targetRole}</Text>
-          {showInputDiff ? (
-            <>
-              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Based on your input</Text>
-              <Text style={styles.inputEcho}>{originalTargetRoleInput}</Text>
-            </>
-          ) : null}
-          {analysisQualityLabel ? (
-            <>
-              <Text style={[styles.identifiedLabel, { marginTop: spacing.sm }]}>Match quality</Text>
-              <Text style={styles.qualityValue}>{analysisQualityLabel}</Text>
-            </>
-          ) : null}
-          {roleMatchStatus === "partial_match" ? (
-            <Text style={styles.roleMatchNote}>We analyzed the closest confirmed target role.</Text>
-          ) : null}
-          {roleMatchStatus === "unsupported" && roleMatchUserAction === "approximate_continue" ? (
-            <Text style={styles.roleMatchWarning}>
-              This scan is based on an approximate target role match and may be less precise.
-            </Text>
-          ) : null}
-        </View>
+        <Text style={styles.heroEyebrow}>Your next roles</Text>
+        <Text style={styles.heroHeadline}>Based on your role as</Text>
+        <Text style={styles.heroRole}>{matched}</Text>
+        {showInputDiff ? (
+          <Text style={styles.inputEcho}>From your input: {originalRoleInput}</Text>
+        ) : null}
+        {analysisQualityLabel ? (
+          <Text style={styles.qualityValue}>{analysisQualityLabel}</Text>
+        ) : null}
+        {roleMatchStatus === "partial_match" ? (
+          <Text style={styles.roleMatchNote}>We used the closest confirmed current role.</Text>
+        ) : null}
+        {roleMatchStatus === "unsupported" && roleMatchUserAction === "approximate_continue" ? (
+          <Text style={styles.roleMatchWarning}>
+            This analysis is based on an approximate current role match and may be less precise.
+          </Text>
+        ) : null}
       </LinearGradient>
     </FadeInView>
   );
@@ -247,10 +212,10 @@ function InsightPanel({
   );
 }
 
-function RecommendationsCard({ items }: { items: CareerDirectionRecommendation[] }) {
+function NextRolesCard({ items }: { items: CareerDirectionRecommendation[] }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Top Career Directions</Text>
+      <Text style={styles.cardTitle}>Top 5 immediate next roles</Text>
       <Text style={styles.recIntro}>{TOP_CAREER_DIRECTIONS_INTRO}</Text>
       {items.map((item, i) => (
         <View key={`${item.role}-${i}`} style={[styles.recBlock, i > 0 && styles.recBlockDivider]}>
@@ -263,13 +228,39 @@ function RecommendationsCard({ items }: { items: CareerDirectionRecommendation[]
             >
               <Text style={styles.recBadgeText}>{i + 1}</Text>
             </LinearGradient>
-            <Text style={styles.recTitle}>{item.role}</Text>
+            <View style={styles.recTitleCol}>
+              <Text style={styles.recTitle}>{item.role}</Text>
+              <Text style={styles.recTransferability}>{item.transferabilityScore}% fit</Text>
+            </View>
           </View>
-          <Text style={styles.recTransferability}>Transferability: {item.transferabilityScore}%</Text>
-          <Text style={styles.recWhyLabel}>Why:</Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaChip}>
+              <Text style={styles.metaChipLabel}>Avg national salary</Text>
+              <Text style={styles.metaChipValue}>{item.salaryLabel ?? "—"}</Text>
+            </View>
+            <View style={styles.metaChip}>
+              <Text style={styles.metaChipLabel}>Transition time</Text>
+              <Text style={styles.metaChipValue}>{item.transitionLabel ?? "—"}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.recWhyLabel}>Transferable skills</Text>
+          <View style={styles.skillRow}>
+            {(item.transferableSkills ?? []).slice(0, 3).map((skill) => (
+              <View key={skill} style={styles.skillChip}>
+                <Text style={styles.skillChipText}>{skill}</Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.recWhyLabel}>Why this fits</Text>
           <Text style={styles.recWhyText}>{item.why}</Text>
         </View>
       ))}
+      <Text style={styles.salaryNote}>
+        Salary ranges are curated national estimates for planning — not live market quotes or guarantees.
+      </Text>
     </View>
   );
 }
@@ -315,7 +306,6 @@ export function ScanResultsScreen({ route, navigation }: Props) {
 
   const { result } = scan;
   const current = result.currentRoleProfile;
-  const target = result.targetRoleProfile;
   const recommendations = normalizeCareerRecommendations(result.initialRoleRecommendations);
 
   return (
@@ -335,47 +325,40 @@ export function ScanResultsScreen({ route, navigation }: Props) {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + spacing.xxl }]}
         showsVerticalScrollIndicator={false}
       >
-        <TransitionHero
+        <ResultsHero
           currentRole={result.currentRole}
-          targetRole={result.targetRole}
-          originalTargetRoleInput={
-            result.originalTargetRoleInput ?? scan.input.originalTargetRole ?? scan.input.roleMatch?.originalRoleInput
-          }
-          normalizedTargetRole={result.normalizedTargetRole ?? result.targetRole}
+          originalRoleInput={result.originalRoleInput ?? scan.input.originalCurrentRole}
+          normalizedCurrentRole={result.normalizedCurrentRole ?? result.currentRole}
           analysisQualityLabel={result.analysisQualityLabel}
           roleMatchStatus={result.roleMatchStatus ?? scan.input.roleMatch?.matchStatus}
           roleMatchUserAction={result.roleMatchUserAction ?? scan.input.roleMatch?.userAction}
         />
 
-        <FadeInView delay={100}>
-          <ScoreCard label="Current role" profile={current} tone="current" scoreDelay={180} />
+        {recommendations.length > 0 ? (
+          <FadeInView delay={80}>
+            <NextRolesCard items={recommendations} />
+          </FadeInView>
+        ) : null}
+
+        <FadeInView delay={160}>
+          <ScoreCard label="Your current role" profile={current} tone="current" scoreDelay={180} />
         </FadeInView>
 
-        <FadeInView delay={180}>
-          <ScoreCard label="Target role" profile={target} tone="target" scoreDelay={260} />
-        </FadeInView>
-
-        <FadeInView delay={260}>
+        <FadeInView delay={220}>
           <InsightPanel title="Strengths" items={current.strengths} tone="strength" />
         </FadeInView>
 
-        <FadeInView delay={320}>
+        <FadeInView delay={280}>
           <InsightPanel title="Risks" items={current.vulnerabilities} tone="watch" />
         </FadeInView>
 
         {current.opportunityZones.length > 0 ? (
-          <FadeInView delay={380}>
+          <FadeInView delay={340}>
             <InsightPanel title="Opportunities" items={current.opportunityZones} tone="opportunity" />
           </FadeInView>
         ) : null}
 
-        {recommendations.length > 0 ? (
-          <FadeInView delay={440}>
-            <RecommendationsCard items={recommendations} />
-          </FadeInView>
-        ) : null}
-
-        <FadeInView delay={500}>
+        <FadeInView delay={400}>
           <PrimaryButton
             label="Open AI Disruption Radar"
             onPress={() => navigation.navigate("MainTabs", { screen: "Radar" })}
@@ -383,16 +366,16 @@ export function ScanResultsScreen({ route, navigation }: Props) {
           <SecondaryButton label="Scan history" onPress={() => navigation.navigate("ScanHistory")} />
         </FadeInView>
 
-        <FadeInView delay={560}>
+        <FadeInView delay={460}>
           <ComingSoonCard
             title="Career X-Ray — Early Access"
-            body="Deep skill-gap analysis and transition roles are coming soon. Join Early Access to get notified at launch."
+            body="Deep skill-gap analysis and personalized roadmaps are coming soon. Join Early Access to get notified at launch."
             actionLabel="Join Early Access"
             onAction={() => navigation.navigate("Waitlist")}
           />
         </FadeInView>
 
-        <FadeInView delay={620}>
+        <FadeInView delay={520}>
           <Text style={styles.footerDisclaimer}>{CAREER_ANALYSIS_SOURCE}</Text>
           <Text style={styles.footerNote}>Results saved on this device.</Text>
           <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
@@ -433,6 +416,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: spacing.sm,
   },
+  heroHeadline: {
+    color: colors.muted,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  heroRole: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 28,
+  },
   identifiedProfileBox: {
     borderRadius: radius.md,
     borderWidth: 1,
@@ -454,10 +450,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 4,
   },
-  inputEcho: { color: colors.muted, fontSize: 14, marginTop: 4 },
-  qualityValue: { color: colors.accent, fontSize: 14, fontWeight: "600", marginTop: 4 },
-  roleMatchNote: { color: colors.muted, fontSize: 12, marginTop: spacing.sm, fontStyle: "italic" },
-  roleMatchWarning: { color: colors.warning, fontSize: 12, marginTop: spacing.sm, fontStyle: "italic" },
+  inputEcho: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, textAlign: "center" },
+  qualityValue: { color: colors.accent, fontSize: 13, fontWeight: "600", marginTop: spacing.sm, textAlign: "center" },
+  roleMatchNote: { color: colors.muted, fontSize: 12, marginTop: spacing.sm, fontStyle: "italic", textAlign: "center" },
+  roleMatchWarning: { color: colors.warning, fontSize: 12, marginTop: spacing.sm, fontStyle: "italic", textAlign: "center" },
   transitionRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   roleBlock: { flex: 1 },
   roleLabel: {
@@ -558,10 +554,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   recBadgeText: { color: colors.text, fontSize: 12, fontWeight: "700" },
-  recTitle: { flex: 1, color: colors.text, fontSize: 15, fontWeight: "700", lineHeight: 21, paddingTop: 2 },
-  recTransferability: { color: colors.accentGold, fontSize: 13, fontWeight: "700", marginTop: spacing.sm, marginLeft: 38 },
-  recWhyLabel: { color: colors.muted, fontSize: 12, fontWeight: "700", marginTop: spacing.sm, marginLeft: 38 },
-  recWhyText: { color: colors.text, fontSize: 14, lineHeight: 21, marginTop: 4, marginLeft: 38 },
+  recTitleCol: { flex: 1 },
+  recTitle: { color: colors.text, fontSize: 16, fontWeight: "700", lineHeight: 22 },
+  recTransferability: { color: colors.accentGold, fontSize: 13, fontWeight: "700", marginTop: 4 },
+  metaRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  metaChip: {
+    flex: 1,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.elevated,
+    padding: spacing.sm,
+  },
+  metaChipLabel: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  metaChipValue: { color: colors.text, fontSize: 14, fontWeight: "700", marginTop: 4 },
+  skillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  skillChip: {
+    borderRadius: radius.pill,
+    backgroundColor: `${colors.accent}18`,
+    borderWidth: 1,
+    borderColor: `${colors.accent}44`,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  skillChipText: { color: colors.accent, fontSize: 12, fontWeight: "600" },
+  recWhyLabel: { color: colors.muted, fontSize: 12, fontWeight: "700", marginTop: spacing.sm },
+  recWhyText: { color: colors.text, fontSize: 14, lineHeight: 21, marginTop: 4 },
+  salaryNote: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: spacing.lg, fontStyle: "italic" },
 
   comingSoonCard: { borderColor: `${colors.accentPurple}44` },
   comingSoonTitle: { color: colors.accentPurple, fontSize: 16, fontWeight: "700" },

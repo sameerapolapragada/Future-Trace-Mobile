@@ -118,9 +118,9 @@ export function ScanHistoryScreen({ navigation }: Props) {
 
         {scans.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.empty}>No scans yet. Run a Career Scan to see results here.</Text>
+            <Text style={styles.empty}>No scans yet. Find your next roles to see results here.</Text>
             <PrimaryButton
-              label="Start Career Scan"
+              label="Find my next roles"
               onPress={() => navigation.navigate("MainTabs", { screen: "Scan" })}
             />
           </View>

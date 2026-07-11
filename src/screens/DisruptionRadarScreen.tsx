@@ -176,7 +176,7 @@ function RoleCard({
 }) {
   const isCurrent = variant === "current";
   const accent = isCurrent ? colors.accent : colors.success;
-  const badgeLabel = isCurrent ? "CURRENT ROLE" : "TARGET ROLE";
+  const badgeLabel = isCurrent ? "CURRENT ROLE" : "TOP NEXT ROLE";
   const linkColor = isCurrent ? colors.accent : colors.success;
   const primaryIconColor = isCurrent ? colors.warning : colors.success;
   const secondaryIconColor = isCurrent ? colors.accent : colors.success;
@@ -259,8 +259,8 @@ export function DisruptionRadarScreen() {
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <View style={styles.emptyWrap}>
           <Title>AI Disruption Radar</Title>
-          <Subtitle>Run a Career Scan first to generate an informational disruption snapshot.</Subtitle>
-          <PrimaryButton label="Start Career Scan" onPress={() => navigation.navigate("Scan")} />
+          <Subtitle>Find your next roles first to generate an informational disruption snapshot.</Subtitle>
+          <PrimaryButton label="Find my next roles" onPress={() => navigation.navigate("Scan")} />
         </View>
       </SafeAreaView>
     );
@@ -277,7 +277,7 @@ export function DisruptionRadarScreen() {
           <View style={styles.headerTextWrap}>
             <Text style={styles.pageTitle}>AI Disruption Radar</Text>
             <Text style={styles.pageSubtitle}>
-              Understand how AI may impact your current role and the target role you entered.
+              Understand how AI may impact your current role and your top recommended next role.
             </Text>
           </View>
           <InfoHelpButton />

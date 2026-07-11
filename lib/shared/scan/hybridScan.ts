@@ -13,7 +13,6 @@ import {
   buildRecommendations,
   buildResilienceProfile,
   getArchetypeExposureLevel,
-  transitionGapScore,
 } from "../scan/profileHelpers";
 
 export type HybridScanConfig = {
@@ -62,20 +61,6 @@ function mergeProfile(
   };
 }
 
-function buildHybridSummary(
-  input: NormalizedScanInput,
-  current: RoleScanProfile,
-  target: RoleScanProfile,
-  explanationText: string,
-  whyLevel: string
-): string {
-  const gap = transitionGapScore(input.currentRole, input.targetRole);
-  const difficulty =
-    gap >= 55 ? "a meaningful transition that will take focused upskilling" : "a realistic next step with steady preparation";
-
-  return `${explanationText} ${whyLevel} Your scan compares ${formatRoleLabel(input.currentRole)} with a target of ${formatRoleLabel(input.targetRole)} in ${input.industry}. Current role resilience is ${current.resilienceScore}/100; target role resilience is ${target.resilienceScore}/100. Moving toward your target looks like ${difficulty}.`;
-}
-
 async function scoreRole(
   input: NormalizedScanInput,
   role: string,
@@ -92,7 +77,16 @@ async function scoreRole(
   return { exposure: fallbackExposureFromArchetype(archetypeLevel), match: null };
 }
 
-/** Hybrid Career Scan: bundled O*NET mapping + on-device scoring + optional explanation. */
+function buildNextRolesSummary(
+  input: NormalizedScanInput,
+  current: RoleScanProfile,
+  topRole: string,
+  explanationText: string
+): string {
+  return `${explanationText} Based on your role as ${formatRoleLabel(input.currentRole)} in ${input.industry}, we identified realistic next roles you can move into. Your current role resilience is ${current.resilienceScore}/100. Top path: ${formatRoleLabel(topRole)}. Salaries and timelines are national estimates for planning — not guarantees.`;
+}
+
+/** Hybrid Career Scan: current-role analysis + top next-role recommendations. */
 export async function generateHybridScan(
   input: NormalizedScanInput,
   config: HybridScanConfig = {}
@@ -104,44 +98,35 @@ export async function generateHybridScan(
     ? calculateExposureScore(currentScoringInput)
     : fallbackExposureFromArchetype(getArchetypeExposureLevel(input.currentRole));
 
-  const { exposure: targetExposure } = await scoreRole(input, input.targetRole, provider);
-
   const explanation = await generateExposureExplanation(
     currentScoringInput,
     currentExposure,
     config.explanation ?? {}
   );
 
-  const currentRoleProfile = mergeProfile(
-    input,
-    input.currentRole,
-    false,
-    currentExposure
-  );
+  const recommendations = buildRecommendations(input);
+  const primaryNextRole = recommendations[0]?.role ?? input.currentRole;
 
-  const targetRoleProfile = mergeProfile(
-    input,
-    input.targetRole,
-    true,
-    targetExposure
-  );
+  const { exposure: nextRoleExposure } = await scoreRole(input, primaryNextRole, provider);
 
-  const summary = buildHybridSummary(
+  const currentRoleProfile = mergeProfile(input, input.currentRole, false, currentExposure);
+  const targetRoleProfile = mergeProfile(input, primaryNextRole, true, nextRoleExposure);
+
+  const summary = buildNextRolesSummary(
     input,
     currentRoleProfile,
-    targetRoleProfile,
-    explanation.explanation,
-    explanation.whyThisLevel
+    primaryNextRole,
+    explanation.explanation
   );
 
   return {
     currentRole: formatRoleLabel(input.currentRole),
-    targetRole: formatRoleLabel(input.targetRole),
+    targetRole: formatRoleLabel(primaryNextRole),
     identifiedCareerProfile: input.identifiedCareerProfile,
     currentRoleProfile,
     targetRoleProfile,
     summary,
-    initialRoleRecommendations: buildRecommendations(input),
+    initialRoleRecommendations: recommendations,
     exposureMeta: {
       onetOccupationCode: currentMatch?.occupation.code,
       onetOccupationTitle: currentMatch?.occupation.title,

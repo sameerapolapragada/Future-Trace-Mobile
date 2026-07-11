@@ -25,10 +25,10 @@ export function WelcomeScreen({ navigation }: Props) {
       </View>
 
       <Card>
-        <Text style={styles.cardTitle}>Free Career Scan</Text>
+        <Text style={styles.cardTitle}>Find my next roles</Text>
         <Text style={styles.cardBody}>
-          Run a rule-based Career Scan on your device. Career X-Ray Early Access and AI Career Roadmap are coming
-          soon — no login required.
+          Enter your current role and get top next-step careers on your device — with salary estimates, transferable
+          skills, and transition time. No login required.
         </Text>
       </Card>
 

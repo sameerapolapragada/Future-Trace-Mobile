@@ -40,8 +40,8 @@ const POPULAR_TRANSITIONS = [
 const UNLOCK_ITEMS = [
   {
     id: "scan",
-    title: "Career Scan",
-    desc: "Discover where you stand today.",
+    title: "Find my next roles",
+    desc: "See realistic next roles from where you are today.",
     price: "Free",
     priceBg: `${colors.accentPurple}33`,
     priceColor: colors.accentPurple,
@@ -158,7 +158,7 @@ export function HomeScreen() {
             <StarIcon />
           </View>
           <Text style={styles.motivationText}>
-            Your future is built one smart step at a time. Start your scan and unlock your possibilities.
+            Your future is built one smart step at a time. Find your next roles and unlock your possibilities.
           </Text>
           <ChevronIcon />
         </Pressable>
@@ -184,9 +184,10 @@ function FreeScanCard({ onPress }: { onPress: () => void }) {
       <View style={styles.freeScanRow}>
         <View style={styles.freeScanCopy}>
           <Text style={styles.freeBadge}>Free</Text>
-          <Text style={styles.freeScanTitle}>Start Your Free Career Scan</Text>
+          <Text style={styles.freeScanTitle}>Find my next roles</Text>
           <Text style={styles.freeScanBody}>
-            Get a personalized snapshot of your AI exposure, strengths, and future opportunities.
+            Enter your current role and get top next-step careers with salary estimates, transferable skills, and
+            transition time.
           </Text>
 
           <View style={styles.featureList}>
@@ -214,7 +215,7 @@ function FreeScanCard({ onPress }: { onPress: () => void }) {
           >
             <ScanFrameIcon />
           </LinearGradient>
-          <Text style={styles.scanButtonLabel}>Start Scan</Text>
+          <Text style={styles.scanButtonLabel}>Find roles</Text>
         </Pressable>
       </View>
     </LinearGradient>

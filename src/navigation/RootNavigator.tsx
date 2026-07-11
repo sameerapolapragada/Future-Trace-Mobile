@@ -67,7 +67,7 @@ function MainTabs() {
         name="Scan"
         component={ScanFormScreen}
         options={{
-          tabBarLabel: "Career Scan",
+          tabBarLabel: "Next Roles",
           tabBarIcon: ({ focused }) => (
             <TabIconWrap active={focused}>
               <ScanTabIcon active={focused} color={tabIconColor(focused)} />

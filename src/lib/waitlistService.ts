@@ -50,7 +50,7 @@ export async function submitWaitlistEntrySafe(entry: WaitlistEntry): Promise<Wai
     return { ok: false, message: "Enter your current role." };
   }
   if (!targetRole) {
-    return { ok: false, message: "Enter your target role." };
+    return { ok: false, message: "Enter your next role of interest." };
   }
 
   const supabase = getSupabase();

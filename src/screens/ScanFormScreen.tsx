@@ -1,11 +1,17 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  formatWorkPreferenceHelpAlert,
+  filterTechnologyCurrentRoles,
+  isOtherRoleSelection,
+  isTechnologyCurrentRole,
+  OTHER_ROLE_OPTION,
+  resolveScanFormRoleInput,
+  TECHNOLOGY_DOMAIN_MESSAGE,
+  TECHNOLOGY_CURRENT_ROLES,
+  TECHNOLOGY_INDUSTRY_OPTIONS,
   type ScanFormInput,
-  type WorkPreference,
   validateScanForm,
 } from "../../lib/shared";
 import { AI_DISCLAIMER } from "../../lib/shared/legal/content";
@@ -14,30 +20,123 @@ import { Card, Disclaimer, Field, PrimaryButton, SecondaryButton, Subtitle, Titl
 import { getScanCount } from "../lib/scanStorage";
 import { runRoleMatch } from "../lib/roleMatchService";
 import { setPendingScanForm, setPendingRoleMatch } from "../lib/scanSession";
+import {
+  fetchTechnologyJobRoles,
+  recordTechnologyJobRoleSelection,
+} from "../lib/technologyRolesService";
 import { useAppNavigation } from "../navigation/hooks";
-
-const WORK_PREFS: WorkPreference[] = ["Technical", "Business", "Hybrid"];
 
 const EMPTY: ScanFormInput = {
   currentRole: "",
-  targetRole: "",
+  otherRoleName: "",
   industry: "",
   yearsExperience: "",
   skills: "",
   tools: "",
-  careerGoal: "",
-  workPreference: "Hybrid",
 };
+
+function IndustryPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <View style={styles.picker}>
+      <Text style={styles.pickerLabel}>Industry / domain (optional)</Text>
+      <View style={styles.optionList}>
+        {TECHNOLOGY_INDUSTRY_OPTIONS.map((option) => {
+          const active = value === option;
+          return (
+            <Pressable
+              key={option}
+              onPress={() => onChange(active ? "" : option)}
+              style={[styles.option, active && styles.optionActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.optionText, active && styles.optionTextActive]}>{option}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function RoleAutocomplete({
+  value,
+  roles,
+  onChange,
+}: {
+  value: string;
+  roles: readonly string[];
+  onChange: (next: string) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const suggestions = useMemo(
+    () => filterTechnologyCurrentRoles(value, roles),
+    [value, roles]
+  );
+  const showSuggestions =
+    focused && !isTechnologyCurrentRole(value, roles) && !isOtherRoleSelection(value);
+
+  return (
+    <View style={styles.picker}>
+      <Text style={styles.pickerLabel}>Current role *</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setTimeout(() => setFocused(false), 150);
+        }}
+        placeholder="Start typing a technology role"
+        placeholderTextColor={colors.muted}
+        autoCapitalize="words"
+        autoCorrect={false}
+        style={styles.input}
+      />
+      {showSuggestions ? (
+        <View style={styles.suggestionList}>
+          {suggestions.map((role) => (
+            <Pressable
+              key={role}
+              onPress={() => {
+                onChange(role);
+                setFocused(false);
+              }}
+              style={styles.suggestionRow}
+            >
+              <Text
+                style={[
+                  styles.suggestionText,
+                  isOtherRoleSelection(role) && styles.suggestionOther,
+                ]}
+              >
+                {role}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 export function ScanFormScreen() {
   const navigation = useAppNavigation();
   const [form, setForm] = useState<ScanFormInput>(EMPTY);
+  const [roleOptions, setRoleOptions] = useState<string[]>([...TECHNOLOGY_CURRENT_ROLES]);
   const [submitting, setSubmitting] = useState(false);
   const [scanCount, setScanCount] = useState(0);
+  const otherSelected = isOtherRoleSelection(form.currentRole);
 
   useFocusEffect(
     useCallback(() => {
       getScanCount().then(setScanCount);
+      void fetchTechnologyJobRoles().then(setRoleOptions);
     }, [])
   );
 
@@ -52,17 +151,36 @@ export function ScanFormScreen() {
       return;
     }
 
+    const picklistValue = form.currentRole.trim();
+    const roleInput = resolveScanFormRoleInput(form);
+    const pendingForm: ScanFormInput = {
+      ...form,
+      currentRole: roleInput,
+      otherRoleName: otherSelected ? form.otherRoleName : undefined,
+    };
+
     setSubmitting(true);
     try {
-      setPendingScanForm(form);
+      setPendingScanForm(pendingForm);
       const snapshot = await runRoleMatch({
-        originalRoleInput: form.targetRole.trim(),
+        originalRoleInput: roleInput,
         industry: form.industry.trim() || undefined,
         yearsExperience: parseInt(form.yearsExperience, 10) || 0,
         skills: form.skills.trim() || undefined,
         tools: form.tools.trim() || undefined,
       });
       setPendingRoleMatch(snapshot);
+
+      void recordTechnologyJobRoleSelection({
+        selectedPicklistValue: picklistValue,
+        roleInputForMatch: roleInput,
+        match: snapshot,
+      });
+
+      if (snapshot.outOfTechnologyDomain) {
+        Alert.alert("Technology domain required", TECHNOLOGY_DOMAIN_MESSAGE);
+        return;
+      }
 
       if (snapshot.matchStatus === "matched") {
         navigation.navigate("ScanReviewRole");
@@ -79,61 +197,67 @@ export function ScanFormScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Title>Career Scan</Title>
+        <Title>Find Your Next Roles</Title>
         <Subtitle>
-          Tell us about your role today and where you want to go. Analysis runs on your device — no login or email
-          required.
+          Start typing your current technology role and pick from the suggestions. Can&apos;t find it? Choose{" "}
+          {OTHER_ROLE_OPTION} and enter your title — we&apos;ll try to match it.
         </Subtitle>
 
         <Card>
-          <Field label="Current role *" value={form.currentRole} onChangeText={(v) => setField("currentRole", v)} placeholder="e.g. Salesforce Administrator" />
-          <Text style={styles.fieldHint}>Your current role is used as entered for the transition analysis.</Text>
-          <Field label="Target role *" value={form.targetRole} onChangeText={(v) => setField("targetRole", v)} placeholder="e.g. RevOps Analyst" />
-          <Text style={styles.fieldHint}>We match and verify your target role before running the scan.</Text>
-          <Field label="Industry (optional)" value={form.industry} onChangeText={(v) => setField("industry", v)} placeholder="e.g. SaaS" />
+          <RoleAutocomplete
+            value={form.currentRole}
+            roles={roleOptions}
+            onChange={(role) => {
+              setForm((prev) => ({
+                ...prev,
+                currentRole: role,
+                otherRoleName: isOtherRoleSelection(role) ? prev.otherRoleName ?? "" : "",
+              }));
+            }}
+          />
+          <Text style={styles.fieldHint}>Suggestions appear A–Z as you type. Pick one to continue.</Text>
+
+          {otherSelected ? (
+            <>
+              <Field
+                label="Role name *"
+                value={form.otherRoleName ?? ""}
+                onChangeText={(v) => setField("otherRoleName", v)}
+                placeholder="e.g. Revenue Operations Manager"
+              />
+              <Text style={styles.fieldHint}>
+                We&apos;ll match this against supported technology roles when possible.
+              </Text>
+            </>
+          ) : null}
+
+          <IndustryPicker value={form.industry} onChange={(industry) => setField("industry", industry)} />
+          <Text style={styles.fieldHint}>Optional — helps tailor recommendations when provided.</Text>
+
           <Field
-            label="Years of experience"
+            label="Years of experience (optional)"
             value={form.yearsExperience}
             onChangeText={(v) => setField("yearsExperience", v)}
             placeholder="5"
             keyboardType="numeric"
           />
-          <Field label="Key skills (optional)" value={form.skills} onChangeText={(v) => setField("skills", v)} placeholder="Comma-separated" multiline />
-          <Field label="Tools & platforms (optional)" value={form.tools} onChangeText={(v) => setField("tools", v)} placeholder="Salesforce, HubSpot…" multiline />
-          <Field label="Career goal (optional)" value={form.careerGoal} onChangeText={(v) => setField("careerGoal", v)} placeholder="Optional — e.g. transition into AI/ML leadership" multiline />
-
-          <View style={styles.labelRow}>
-            <Text style={styles.inlineLabel}>Work preference</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="What is work preference and how does it affect your scan?"
-              hitSlop={8}
-              onPress={() => {
-                const { title, message } = formatWorkPreferenceHelpAlert();
-                Alert.alert(title, message);
-              }}
-              style={styles.helpBtn}
-            >
-              <Text style={styles.helpBtnText}>?</Text>
-            </Pressable>
-          </View>
-          <View style={styles.chips}>
-            {WORK_PREFS.map((pref) => {
-              const active = form.workPreference === pref;
-              return (
-                <Pressable
-                  key={pref}
-                  onPress={() => setField("workPreference", pref)}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{pref}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Field
+            label="Key skills (optional)"
+            value={form.skills}
+            onChangeText={(v) => setField("skills", v)}
+            placeholder="Comma-separated"
+            multiline
+          />
+          <Field
+            label="Tools & platforms (optional)"
+            value={form.tools}
+            onChangeText={(v) => setField("tools", v)}
+            placeholder="Salesforce, HubSpot…"
+            multiline
+          />
         </Card>
 
-        <PrimaryButton label="Run Career Scan" onPress={onSubmit} loading={submitting} />
+        <PrimaryButton label="Find my next roles" onPress={onSubmit} loading={submitting} />
         {scanCount > 0 ? (
           <SecondaryButton label="Scan history" onPress={() => navigation.navigate("ScanHistory")} />
         ) : null}
@@ -146,37 +270,51 @@ export function ScanFormScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  fieldLabel: { color: colors.muted, fontSize: 12, fontWeight: "600", marginTop: spacing.md, marginBottom: 6 },
-  fieldHint: { color: colors.muted, fontSize: 12, marginTop: -4, marginBottom: spacing.sm, fontStyle: "italic" },
-  inlineLabel: { color: colors.muted, fontSize: 12, fontWeight: "600" },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing.md,
-    marginBottom: 6,
+  fieldHint: {
+    color: colors.muted,
+    fontSize: 12,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    fontStyle: "italic",
   },
-  helpBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
+  picker: { marginTop: spacing.md },
+  pickerLabel: { color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 },
+  input: {
     backgroundColor: colors.elevated,
-  },
-  helpBtnText: { color: colors.muted, fontSize: 11, fontWeight: "700", lineHeight: 13 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  chip: {
-    borderRadius: radius.pill,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    color: colors.text,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+    paddingVertical: 14,
+    fontSize: 15,
+  },
+  suggestionList: {
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.elevated,
+    overflow: "hidden",
+  },
+  suggestionRow: {
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  suggestionText: { color: colors.text, fontSize: 15, fontWeight: "600" },
+  suggestionOther: { color: colors.accent, fontStyle: "italic" },
+  optionList: { gap: spacing.sm },
+  option: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.elevated,
   },
-  chipActive: { borderColor: colors.accent, backgroundColor: "rgba(0,180,255,0.12)" },
-  chipText: { color: colors.muted, fontSize: 13, fontWeight: "600" },
-  chipTextActive: { color: colors.accent },
+  optionActive: { borderColor: colors.accent, backgroundColor: "rgba(0,180,255,0.1)" },
+  optionText: { color: colors.text, fontSize: 15, fontWeight: "600" },
+  optionTextActive: { color: colors.accent },
 });

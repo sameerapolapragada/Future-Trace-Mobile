@@ -4,13 +4,16 @@ export type WorkPreferenceNormalized = "technical" | "business" | "hybrid";
 
 export type ScanFormInput = {
   currentRole: string;
-  targetRole: string;
+  /** Free-text role when currentRole is "Other". */
+  otherRoleName?: string;
+  /** Optional — unused by next-roles MVP; kept for legacy payloads. */
+  targetRole?: string;
   industry: string;
   yearsExperience: string;
   skills: string;
   tools: string;
-  careerGoal: string;
-  workPreference: WorkPreference;
+  careerGoal?: string;
+  workPreference?: WorkPreference;
 };
 
 export type RoleMatchStatus = "matched" | "partial_match" | "unsupported" | "no_match";
@@ -37,6 +40,7 @@ export type RoleMatchSnapshot = {
   needsMoreInfo: boolean;
   analysisQuality: RoleMatchAnalysisQuality;
   genericResultFlag: boolean;
+  outOfTechnologyDomain?: boolean;
   userAction?: RoleMatchUserAction;
   userSelectedRole?: string;
 };
@@ -86,20 +90,34 @@ export type CareerDirectionRecommendation = {
   role: string;
   transferabilityScore: number;
   why: string;
+  /** Midpoint of curated national salary estimate (USD). */
+  avgNationalSalaryUsd?: number;
+  salaryRangeUsd?: { min: number; max: number };
+  /** Display string e.g. "$95k–$125k". */
+  salaryLabel?: string;
+  /** Exactly three transferable skill labels when present. */
+  transferableSkills?: string[];
+  transitionMonths?: { min: number; max: number };
+  /** Display string e.g. "3–6 months". */
+  transitionLabel?: string;
 };
 
 export type FreeScanResult = {
   currentRole: string;
+  /**
+   * Primary next-role path (usually #1 recommendation).
+   * Kept for radar/history compatibility after removing user-entered target.
+   */
   targetRole: string;
   /** Canonical career profile identified from the user's current role input. */
   identifiedCareerProfile: string;
   /** Original user-entered current role for transparency. */
   originalRoleInput?: string;
-  /** Original user-entered target role for transparency. */
+  /** Original user-entered target role for transparency (legacy). */
   originalTargetRoleInput?: string;
   /** Normalized role used for analysis. */
   normalizedCurrentRole?: string;
-  /** Matched target role used for analysis. */
+  /** Matched / inferred primary next role. */
   normalizedTargetRole?: string;
   roleMatchStatus?: RoleMatchStatus;
   roleMatchUserAction?: RoleMatchUserAction;
@@ -107,6 +125,7 @@ export type FreeScanResult = {
   currentRoleProfile: RoleScanProfile;
   targetRoleProfile: RoleScanProfile;
   summary: string;
+  /** Top next-role recommendations (up to 5). */
   initialRoleRecommendations: CareerDirectionRecommendation[];
   /** O*NET + scoring metadata — informational only. */
   exposureMeta?: ExposureMeta;

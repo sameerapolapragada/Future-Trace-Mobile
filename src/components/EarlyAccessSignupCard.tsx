@@ -150,7 +150,7 @@ export function EarlyAccessSignupCard({
             placeholder="e.g. Salesforce Administrator"
           />
           <Field
-            label="Target role *"
+            label="Next role of interest *"
             value={targetRole}
             onChangeText={(value) => {
               setTargetRole(value);

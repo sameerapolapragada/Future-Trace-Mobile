@@ -138,7 +138,7 @@ export function WaitlistScreen({ navigation }: Props) {
                 placeholder="e.g. Salesforce Administrator"
               />
               <Field
-                label="Target role *"
+                label="Next role of interest *"
                 value={targetRole}
                 onChangeText={(v) => {
                   setTargetRole(v);

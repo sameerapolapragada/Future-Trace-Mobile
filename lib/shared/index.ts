@@ -6,6 +6,7 @@ export {
   firstCareerRecommendationRole,
   normalizeCareerRecommendations,
   TOP_CAREER_DIRECTIONS_INTRO,
+  NEXT_ROLES_COUNT,
 } from "./scan/careerRecommendations";
 export {
   resolveCanonicalRole,
@@ -21,6 +22,14 @@ export {
   shouldTrackUnknownRole,
   normalizeRoleInputForTracking,
   confidenceLabelFromScore,
+  TECHNOLOGY_CURRENT_ROLES,
+  TECHNOLOGY_INDUSTRY_OPTIONS,
+  DEFAULT_TECHNOLOGY_INDUSTRY,
+  OTHER_ROLE_OPTION,
+  filterTechnologyCurrentRoles,
+  isTechnologyCurrentRole,
+  isOtherRoleSelection,
+  resolveScanFormRoleInput,
   type RoleMatchInput,
   type RoleMatchResult,
   type MatchStatus,
@@ -30,6 +39,10 @@ export {
 } from "./scan/roleMatch";
 export { normalizeScanInput, normalizeWorkPreference, clampYearsExperience } from "./scan/normalize";
 export { validateScanForm, type ScanValidationError } from "./scan/validation";
+export {
+  isTechnologyDomain,
+  TECHNOLOGY_DOMAIN_MESSAGE,
+} from "./scan/technologyDomain";
 export {
   WORK_PREFERENCE_OPTIONS,
   WORK_PREFERENCE_SCAN_IMPACT,

@@ -2,7 +2,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { canGenerateScan } from "../../lib/shared";
+import { canGenerateScan, TECHNOLOGY_DOMAIN_MESSAGE } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, Field, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
 import { runRoleMatch, updateRoleMatchUserAction } from "../lib/roleMatchService";
@@ -47,7 +47,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
     setPendingScanForm(updatedForm);
 
     const snapshot = await runRoleMatch({
-      originalRoleInput: form!.targetRole.trim(),
+      originalRoleInput: form!.currentRole.trim(),
       industry: form!.industry,
       yearsExperience: parseInt(form!.yearsExperience, 10) || 0,
       skills: updatedForm.skills,
@@ -64,6 +64,11 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
 
     setPendingRoleMatch(snapshot);
     setRetrying(false);
+
+    if (snapshot.outOfTechnologyDomain) {
+      Alert.alert("Technology domain required", TECHNOLOGY_DOMAIN_MESSAGE);
+      return;
+    }
 
     if (snapshot.matchStatus === "matched") {
       navigation.replace("ScanReviewRole");
@@ -115,22 +120,16 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Title>{isNoMatch ? "Target role not identified" : "Target role needs more info"}</Title>
+        <Title>{isNoMatch ? "Current role not identified" : "Current role needs more info"}</Title>
         <Subtitle>
           {isNoMatch
-            ? "We couldn't identify your target role. Please edit your job title or choose a common role."
-            : "We don't fully support your target role yet. Help us understand it better or choose the closest supported role."}
+            ? "We couldn't identify your current role. Please edit your job title or choose a common role."
+            : "We don't fully support your current role yet. Help us understand it better or choose the closest supported role."}
         </Subtitle>
 
         <Card>
-          <Text style={styles.label}>Your target role input</Text>
+          <Text style={styles.label}>Your current role input</Text>
           <Text style={styles.inputValue}>{match.originalRoleInput}</Text>
-        </Card>
-
-        <Card>
-          <Text style={styles.label}>Your current role</Text>
-          <Text style={styles.inputValue}>{form.currentRole.trim()}</Text>
-          <Text style={styles.contextHint}>Your current role is used as entered for the transition scan.</Text>
         </Card>
 
         {!isNoMatch ? (
@@ -155,7 +154,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
 
         {match.suggestedRoles.length > 0 ? (
           <>
-            <Text style={styles.sectionLabel}>Suggested supported target roles</Text>
+            <Text style={styles.sectionLabel}>Suggested supported current roles</Text>
             {match.suggestedRoles.map((option) => {
               const active = selectedRole === option.role;
               return (
@@ -182,7 +181,7 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
           </>
         ) : null}
 
-        <SecondaryButton label="Edit target role" onPress={() => navigation.goBack()} />
+        <SecondaryButton label="Edit current role" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>
   );

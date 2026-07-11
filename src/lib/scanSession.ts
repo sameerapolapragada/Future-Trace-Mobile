@@ -47,33 +47,30 @@ export function clearScanSession(): void {
   pendingScanInput = null;
 }
 
-/** Build scan input after target role match — current role stays as entered. */
+/** Build scan input after current-role match — no user-entered target role. */
 export function buildPendingScanInput(
   form: ScanFormInput,
-  matchedTargetRole: string,
+  matchedCurrentRole: string,
   match?: RoleMatchSnapshot | null,
   userAction?: RoleMatchUserAction
 ): NormalizedScanInput {
-  const userCurrentRole = form.currentRole.trim();
   const normalized = normalizeScanInput({
     ...form,
-    currentRole: userCurrentRole,
-    targetRole: matchedTargetRole,
+    currentRole: matchedCurrentRole,
+    targetRole: "",
   });
 
   const resolvedAction = userAction ?? match?.userAction;
 
   return {
     ...normalized,
-    currentRole: normalized.currentRole,
-    targetRole: matchedTargetRole,
-    identifiedCareerProfile: normalized.identifiedCareerProfile,
-    originalCurrentRole: userCurrentRole,
-    originalTargetRole: match?.originalRoleInput ?? form.targetRole.trim(),
+    currentRole: matchedCurrentRole,
+    identifiedCareerProfile: matchedCurrentRole,
+    originalCurrentRole: match?.originalRoleInput ?? form.currentRole.trim(),
     roleMatch: match
       ? {
           ...match,
-          userSelectedRole: matchedTargetRole,
+          userSelectedRole: matchedCurrentRole,
           ...(resolvedAction ? { userAction: resolvedAction } : {}),
         }
       : undefined,

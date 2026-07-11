@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
@@ -26,12 +26,11 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
     return (
       <SafeAreaView style={styles.safe}>
         <Text style={styles.error}>Session expired. Please enter your role again.</Text>
-        <SecondaryButton label="Back to scan form" onPress={() => navigation.navigate("MainTabs")} />
+        <SecondaryButton label="Back to form" onPress={() => navigation.navigate("MainTabs")} />
       </SafeAreaView>
     );
   }
 
-  const currentRole = form.currentRole.trim();
   const options = [
     ...(match.normalizedRole ? [{ role: match.normalizedRole, confidence: match.confidenceScore }] : []),
     ...match.suggestedRoles.filter((s) => s.role !== match.normalizedRole),
@@ -53,25 +52,19 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Title>Confirm your target role</Title>
+        <Title>Confirm your current role</Title>
         <Subtitle>
-          Your target role title looks like a specialized version of a supported role. Confirm the closest match
-          before we generate your scan.
+          Your title looks like a specialized version of a supported role. Confirm the closest match before we find
+          your next roles.
         </Subtitle>
 
         <Card>
-          <Text style={styles.label}>Your target role input</Text>
+          <Text style={styles.label}>Your current role input</Text>
           <Text style={styles.inputValue}>{match.originalRoleInput}</Text>
-          <Text style={styles.hint}>We analyzed the closest confirmed role for your target position.</Text>
+          <Text style={styles.hint}>We analyzed the closest confirmed role for your current position.</Text>
         </Card>
 
-        <Card>
-          <Text style={styles.label}>Your current role</Text>
-          <Text style={styles.inputValue}>{currentRole}</Text>
-          <Text style={styles.contextHint}>Your current role is used as entered for the transition scan.</Text>
-        </Card>
-
-        <Text style={styles.sectionLabel}>Suggested target roles</Text>
+        <Text style={styles.sectionLabel}>Suggested current roles</Text>
         {options.map((option) => {
           const active = selectedRole === option.role;
           return (
@@ -86,8 +79,8 @@ export function ScanRoleConfirmScreen({ navigation }: Props) {
           );
         })}
 
-        <PrimaryButton label="Confirm and continue" onPress={onConfirm} disabled={!selectedRole} />
-        <SecondaryButton label="Edit roles" onPress={() => navigation.goBack()} />
+        <PrimaryButton label="Confirm and find my next roles" onPress={onConfirm} disabled={!selectedRole} />
+        <SecondaryButton label="Edit role" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -100,7 +93,6 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: 12, fontWeight: "600" },
   inputValue: { color: colors.text, fontSize: 17, fontWeight: "600", marginTop: 4 },
   hint: { color: colors.warning, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
-  contextHint: { color: colors.muted, fontSize: 13, marginTop: spacing.sm, fontStyle: "italic" },
   sectionLabel: { color: colors.text, fontSize: 14, fontWeight: "700", marginTop: spacing.lg, marginBottom: spacing.sm },
   option: {
     borderRadius: radius.md,
