@@ -9,13 +9,16 @@ import { DeleteDataScreen } from "../screens/DeleteDataScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { LegalWebViewScreen } from "../screens/LegalWebViewScreen";
 import { ScanHistoryScreen } from "../screens/ScanHistoryScreen";
-import { ScanFormScreen } from "../screens/ScanFormScreen";
 import { ScanLoadingScreen } from "../screens/ScanLoadingScreen";
+import { ScanCurrentRoleScreen } from "../screens/ScanCurrentRoleScreen";
+import { ScanContextScreen } from "../screens/ScanContextScreen";
+import { NextRolesIntroScreen } from "../screens/NextRolesIntroScreen";
 import { ScanReviewRoleScreen } from "../screens/ScanReviewRoleScreen";
 import { ScanRoleConfirmScreen } from "../screens/ScanRoleConfirmScreen";
 import { ScanRoleNeedsInfoScreen } from "../screens/ScanRoleNeedsInfoScreen";
 import { AdminUnknownRolesScreen } from "../screens/AdminUnknownRolesScreen";
 import { ScanResultsScreen } from "../screens/ScanResultsScreen";
+import { NextRoleDetailScreen } from "../screens/NextRoleDetailScreen";
 import { RoleDisruptionAnalysisScreen } from "../screens/RoleDisruptionAnalysisScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { WaitlistScreen } from "../screens/WaitlistScreen";
@@ -65,7 +68,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Scan"
-        component={ScanFormScreen}
+        component={NextRolesIntroScreen}
         options={{
           tabBarLabel: "Next Roles",
           tabBarIcon: ({ focused }) => (
@@ -147,6 +150,11 @@ export function RootNavigator({ showWelcome }: { showWelcome: boolean }) {
         options={{ title: "Your Results", headerShown: false }}
       />
       <Stack.Screen
+        name="NextRoleDetail"
+        component={NextRoleDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="ScanHistory"
         component={ScanHistoryScreen}
         options={{ title: "Scan History", headerShown: false }}
@@ -168,6 +176,21 @@ export function RootNavigator({ showWelcome }: { showWelcome: boolean }) {
       />
       <Stack.Screen name="DeleteData" component={DeleteDataScreen} options={{ title: "Delete My Local Data" }} />
       <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="NextRolesIntro"
+        component={NextRolesIntroScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ScanCurrentRole"
+        component={ScanCurrentRoleScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ScanContext"
+        component={ScanContextScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="AdminUnknownRoles"
         component={AdminUnknownRolesScreen}

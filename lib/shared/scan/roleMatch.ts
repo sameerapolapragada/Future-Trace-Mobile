@@ -1,6 +1,6 @@
 import { formatRoleLabel } from "./inferTargetRole";
 import { normalizeRoleText, roleStringSimilarity } from "./roleCanonicalization";
-import { isTechnologyDomain } from "./technologyDomain";
+import { isSupportedIndustry } from "./technologyDomain";
 
 export type MatchStatus = "matched" | "partial_match" | "unsupported" | "no_match";
 export type ConfidenceLabel = "excellent" | "high" | "medium" | "low" | "none";
@@ -372,11 +372,6 @@ export function resolveScanFormRoleInput(input: {
   return input.currentRole.trim();
 }
 
-/** Common technology industries for the scan form picker. */
-export const TECHNOLOGY_INDUSTRY_OPTIONS = ["Technology", "SaaS", "IT", "Software", "Cloud"] as const;
-
-export const DEFAULT_TECHNOLOGY_INDUSTRY = TECHNOLOGY_INDUSTRY_OPTIONS[0];
-
 function scoreToPercent(score: number): number {
   return Math.min(100, Math.max(0, Math.round(score * 100)));
 }
@@ -502,7 +497,7 @@ export function matchRole(input: RoleMatchInput): RoleMatchResult {
     };
   }
 
-  if (input.industry != null && input.industry.trim() && !isTechnologyDomain(input.industry)) {
+  if (input.industry != null && input.industry.trim() && !isSupportedIndustry(input.industry)) {
     return outOfDomainResult(originalRoleInput, 0, null);
   }
 

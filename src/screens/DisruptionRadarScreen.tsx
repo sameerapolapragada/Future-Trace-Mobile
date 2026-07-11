@@ -226,8 +226,8 @@ function RoleCard({
 function EarlyAccessCard({ scan }: { scan: StoredScan }) {
   return (
     <EarlyAccessSignupCard
-      title="Join Career X-Ray Early Access"
-      body="Get notified when deeper career insights, skills gap analysis, and personalized roadmaps become available."
+      title="Join AI Career Transition Early Access"
+      body="Get notified when weekly transition roadmaps and guided next-role plans become available."
       source="ios_app"
       defaultCurrentRole={scan.result.identifiedCareerProfile ?? scan.result.currentRole}
       defaultTargetRole={scan.result.targetRole}
@@ -260,7 +260,7 @@ export function DisruptionRadarScreen() {
         <View style={styles.emptyWrap}>
           <Title>AI Disruption Radar</Title>
           <Subtitle>Find your next roles first to generate an informational disruption snapshot.</Subtitle>
-          <PrimaryButton label="Find my next roles" onPress={() => navigation.navigate("Scan")} />
+          <PrimaryButton label="Find my next roles" onPress={() => navigation.navigate("NextRolesIntro")} />
         </View>
       </SafeAreaView>
     );

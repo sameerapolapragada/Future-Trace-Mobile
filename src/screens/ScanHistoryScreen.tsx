@@ -121,7 +121,7 @@ export function ScanHistoryScreen({ navigation }: Props) {
             <Text style={styles.empty}>No scans yet. Find your next roles to see results here.</Text>
             <PrimaryButton
               label="Find my next roles"
-              onPress={() => navigation.navigate("MainTabs", { screen: "Scan" })}
+              onPress={() => navigation.navigate("NextRolesIntro")}
             />
           </View>
         ) : (

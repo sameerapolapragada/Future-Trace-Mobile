@@ -9,7 +9,7 @@ const WAITLIST_DRAFT_KEY = "ft_waitlist_draft_v1";
 const WAITLIST_JOINED_KEY = "ft_waitlist_joined_v1";
 
 export const EARLY_ACCESS_JOINED_MESSAGE =
-  "You're on the Early Access list. We'll notify you when Career X-Ray launches.";
+  "You're on the Early Access list. We'll notify you when AI Career Transition launches.";
 
 export type WaitlistDraft = {
   email: string;

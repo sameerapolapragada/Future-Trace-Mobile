@@ -480,9 +480,9 @@ export function SettingsScreen() {
           <SectionHeader icon={<RocketIcon />} title="Early Access" />
           <View style={styles.earlyAccessRow}>
             <View style={styles.earlyAccessCopy}>
-              <Text style={styles.earlyAccessTitle}>Join Future Trace Early Access</Text>
+              <Text style={styles.earlyAccessTitle}>AI Career Transition Early Access</Text>
               <Text style={styles.earlyAccessSubtitle}>
-                Be the first to access new features and insights.
+                Get notified when weekly next-role roadmaps launch.
               </Text>
             </View>
             <Pressable

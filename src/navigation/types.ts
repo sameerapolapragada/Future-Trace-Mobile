@@ -6,10 +6,14 @@ export type RootStackParamList = {
   ScanRoleConfirm: undefined;
   ScanRoleNeedsInfo: undefined;
   ScanResults: { scanId: string };
+  NextRoleDetail: { scanId: string; roleIndex: number };
   ScanHistory: undefined;
   LegalWebView: { title: string; html: string; returnTab?: keyof MainTabParamList };
   DeleteData: { returnTab?: keyof MainTabParamList } | undefined;
   Waitlist: undefined;
+  NextRolesIntro: undefined;
+  ScanCurrentRole: undefined;
+  ScanContext: undefined;
   RoleDisruptionAnalysis: { scanId: string; focus: "current" | "target" };
   CareerTransition: undefined;
   AdminUnknownRoles: undefined;

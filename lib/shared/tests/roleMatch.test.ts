@@ -87,13 +87,23 @@ describe("matchRole", () => {
     assert.equal(canGenerateScan(result), false);
   });
 
-  it("blocks non-technology industries", () => {
+  it("blocks industries outside the supported picklist", () => {
+    const result = matchRole({
+      originalRoleInput: "Salesforce Administrator",
+      industry: "Agriculture",
+    });
+    assert.equal(result.outOfTechnologyDomain, true);
+    assert.equal(canGenerateScan(result), false);
+  });
+
+  it("allows Healthcare industry with a technology role", () => {
     const result = matchRole({
       originalRoleInput: "Salesforce Administrator",
       industry: "Healthcare",
     });
-    assert.equal(result.outOfTechnologyDomain, true);
-    assert.equal(canGenerateScan(result), false);
+    assert.notEqual(result.outOfTechnologyDomain, true);
+    assert.equal(result.matchStatus, "matched");
+    assert.equal(canGenerateScan(result), true);
   });
 
   it("exposes curated technology roles for the form picker", () => {

@@ -13,30 +13,6 @@ import LogoMark from "../../components/LogoMark";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { useAppNavigation } from "../navigation/hooks";
 
-const POPULAR_TRANSITIONS = [
-  {
-    from: "Salesforce Admin",
-    to: "AI Operations Analyst",
-    tag: "High Demand",
-    tagBg: `${colors.accentPurple}33`,
-    tagColor: colors.accentPurple,
-  },
-  {
-    from: "Business Analyst",
-    to: "AI Product Manager",
-    tag: "High Growth",
-    tagBg: `${colors.success}33`,
-    tagColor: colors.success,
-  },
-  {
-    from: "Project Manager",
-    to: "AI Governance Analyst",
-    tag: "High Opportunity",
-    tagBg: `${colors.accentGold}33`,
-    tagColor: colors.accentGold,
-  },
-];
-
 const UNLOCK_ITEMS = [
   {
     id: "scan",
@@ -49,19 +25,9 @@ const UNLOCK_ITEMS = [
     icon: "scan" as const,
   },
   {
-    id: "xray",
-    title: "Career X-Ray",
-    desc: "Deep dive into a specific career transition.",
-    price: "Early Access",
-    priceBg: `${colors.accentGold}33`,
-    priceColor: colors.accentGold,
-    iconColor: colors.accentGold,
-    icon: "target" as const,
-  },
-  {
     id: "transition",
     title: "AI Career Transition",
-    desc: "Get a weekly roadmap to reach your goal.",
+    desc: "Get a weekly roadmap to reach your next role.",
     price: "Coming Soon",
     priceBg: `${colors.accent}33`,
     priceColor: colors.accent,
@@ -70,16 +36,36 @@ const UNLOCK_ITEMS = [
   },
 ];
 
+const TRUST_ITEMS = [
+  {
+    id: "privacy",
+    title: "Privacy First",
+    subtitle: "Your data stays on your device.",
+    icon: "shield" as const,
+  },
+  {
+    id: "free",
+    title: "100% Free",
+    subtitle: "No sign up. No credit card.",
+    icon: "lock" as const,
+  },
+  {
+    id: "ai",
+    title: "AI-Powered",
+    subtitle: "Smart. Fast. Actionable.",
+    icon: "bolt" as const,
+  },
+];
+
 export function HomeScreen() {
   const navigation = useAppNavigation();
 
-  const startScan = useCallback(() => navigation.navigate("Scan"), [navigation]);
+  const startScan = useCallback(() => navigation.navigate("NextRolesIntro"), [navigation]);
 
   const onUnlockPress = useCallback(
     (id: string) => {
-      if (id === "scan") navigation.navigate("Scan");
-      else if (id === "xray") navigation.navigate("Waitlist");
-      else navigation.navigate("CareerTransition");
+      if (id === "scan") navigation.navigate("NextRolesIntro");
+      else navigation.navigate("Waitlist");
     },
     [navigation]
   );
@@ -117,39 +103,6 @@ export function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabelInline}>Popular career transitions</Text>
-          <Pressable onPress={startScan} hitSlop={8}>
-            <Text style={styles.viewAll}>View all →</Text>
-          </Pressable>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.transitionsScroll}
-        >
-          {POPULAR_TRANSITIONS.map((item) => (
-            <Pressable
-              key={item.from}
-              onPress={startScan}
-              style={({ pressed }) => [styles.transitionCard, pressed && styles.pressed]}
-            >
-              <View style={styles.transitionIcons}>
-                <RoleIcon variant="from" />
-                <ArrowIcon />
-                <RoleIcon variant="to" />
-              </View>
-              <Text style={styles.transitionText}>
-                {item.from} → {item.to}
-              </Text>
-              <Text style={[styles.transitionTag, { backgroundColor: item.tagBg, color: item.tagColor }]}>
-                {item.tag}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
         <Pressable
           onPress={startScan}
           style={({ pressed }) => [styles.motivationBanner, pressed && styles.pressed]}
@@ -162,6 +115,16 @@ export function HomeScreen() {
           </Text>
           <ChevronIcon />
         </Pressable>
+
+        <View style={styles.trustBar}>
+          {TRUST_ITEMS.map((item, index) => (
+            <View key={item.id} style={[styles.trustItem, index > 0 && styles.trustItemDivider]}>
+              <TrustIcon type={item.icon} />
+              <Text style={styles.trustTitle}>{item.title}</Text>
+              <Text style={styles.trustSubtitle}>{item.subtitle}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -247,38 +210,36 @@ function UnlockIcon({ type, color }: { type: "scan" | "target" | "flag"; color: 
   );
 }
 
-function RoleIcon({ variant }: { variant: "from" | "to" }) {
-  const bg = variant === "from" ? `${colors.accent}26` : `${colors.accentPurple}26`;
-  const tint = variant === "from" ? colors.accent : colors.accentPurple;
-  return (
-    <View style={[styles.roleIcon, { backgroundColor: bg }]}>
-      {variant === "from" ? (
-        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-          <Rect x={3} y={7} width={18} height={13} rx={2} stroke={tint} strokeWidth={2} />
-          <Path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke={tint} strokeWidth={2} />
-        </Svg>
-      ) : (
-        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M12 4a4 4 0 0 0-4 4v1a3 3 0 0 0-3 3 3 3 0 0 0 3 3h1v2h6v-2h1a3 3 0 0 0 3-3 3 3 0 0 0-3-3V8a4 4 0 0 0-4-4z"
-            stroke={tint}
-            strokeWidth={2}
-          />
-        </Svg>
-      )}
-    </View>
-  );
-}
-
-function ArrowIcon() {
+function TrustIcon({ type }: { type: "shield" | "lock" | "bolt" }) {
+  const color = colors.muted;
+  if (type === "shield") {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M12 3l8 4v6c0 4.5-3.5 7.5-8 8-4.5-.5-8-3.5-8-8V7l8-4z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+        />
+      </Svg>
+    );
+  }
+  if (type === "lock") {
+    return (
+      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+        <Path d="M7 11h10v9H7z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+        <Path d="M9 11V8a3 3 0 0 1 6 0v3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+      </Svg>
+    );
+  }
   return (
     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M5 12h14M13 6l6 6-6 6"
-        stroke={colors.muted}
-        strokeWidth={2}
-        strokeLinecap="round"
+        d="M13 2 4 14h7l-1 8 10-14h-7l1-6z"
+        stroke={color}
+        strokeWidth={1.8}
         strokeLinejoin="round"
+        strokeLinecap="round"
       />
     </Svg>
   );
@@ -465,25 +426,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.6,
     textTransform: "uppercase",
   },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  sectionLabelInline: {
-    color: colors.text,
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1.6,
-    textTransform: "uppercase",
-    flex: 1,
-  },
-  viewAll: {
-    color: colors.accent,
-    fontSize: 11,
-    fontWeight: "500",
-  },
   unlockRow: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -494,8 +436,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 10,
-    minHeight: 132,
+    padding: 12,
+    minHeight: 148,
   },
   unlockIcon: {
     width: 32,
@@ -507,65 +449,23 @@ const styles = StyleSheet.create({
   },
   unlockTitle: {
     color: colors.text,
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: "700",
-    lineHeight: 14,
+    lineHeight: 17,
   },
   unlockDesc: {
     color: colors.muted,
-    fontSize: 9,
-    lineHeight: 13,
-    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 5,
     flex: 1,
   },
   unlockPrice: {
     alignSelf: "flex-start",
     marginTop: spacing.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
     borderRadius: 4,
-    fontSize: 8,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    overflow: "hidden",
-  },
-  transitionsScroll: {
-    gap: spacing.md,
-    paddingRight: spacing.lg,
-  },
-  transitionCard: {
-    width: 260,
-    backgroundColor: colors.card,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-  },
-  transitionIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  roleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  transitionText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-    marginTop: spacing.md,
-  },
-  transitionTag: {
-    alignSelf: "flex-start",
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
     fontSize: 9,
     fontWeight: "700",
     textTransform: "uppercase",
@@ -595,6 +495,37 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11,
     lineHeight: 16,
+  },
+  trustBar: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: spacing.sm,
+    paddingTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  trustItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 6,
+    gap: 4,
+  },
+  trustItemDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: colors.border,
+  },
+  trustTitle: {
+    color: colors.muted,
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 0.2,
+  },
+  trustSubtitle: {
+    color: `${colors.muted}B3`,
+    fontSize: 9,
+    lineHeight: 12,
+    textAlign: "center",
   },
   pressed: { opacity: 0.85 },
 });

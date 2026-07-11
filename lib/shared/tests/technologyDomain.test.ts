@@ -1,19 +1,37 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isTechnologyDomain } from "../scan/technologyDomain";
+import {
+  filterSupportedIndustries,
+  isSupportedIndustry,
+  isTechnologyDomain,
+  SUPPORTED_INDUSTRY_OPTIONS,
+} from "../scan/technologyDomain";
 import { validateScanForm } from "../scan/validation";
 
 describe("technologyDomain", () => {
-  it("accepts technology industries", () => {
-    for (const industry of ["Technology", "SaaS", "IT", "Software", "Fintech", "Cloud"]) {
+  it("exposes 10 supported industries including Healthcare", () => {
+    assert.equal(SUPPORTED_INDUSTRY_OPTIONS.length, 10);
+    assert.ok(SUPPORTED_INDUSTRY_OPTIONS.includes("Healthcare"));
+    assert.ok(SUPPORTED_INDUSTRY_OPTIONS.includes("Technology"));
+  });
+
+  it("accepts picklist industries including Healthcare", () => {
+    for (const industry of SUPPORTED_INDUSTRY_OPTIONS) {
+      assert.equal(isSupportedIndustry(industry), true, industry);
       assert.equal(isTechnologyDomain(industry), true, industry);
+    }
+    assert.equal(isSupportedIndustry(""), true);
+  });
+
+  it("rejects industries outside the picklist", () => {
+    for (const industry of ["Nursing", "Agriculture", "Real Estate", "Mining"]) {
+      assert.equal(isSupportedIndustry(industry), false, industry);
     }
   });
 
-  it("rejects non-technology industries", () => {
-    for (const industry of ["", "Healthcare", "Nursing", "Legal", "Government", "Retail"]) {
-      assert.equal(isTechnologyDomain(industry), false, industry);
-    }
+  it("filters industries alphabetically as you type", () => {
+    const matches = filterSupportedIndustries("health");
+    assert.deepEqual(matches, ["Healthcare"]);
   });
 
   it("does not require industry on the scan form", () => {
@@ -29,25 +47,14 @@ describe("technologyDomain", () => {
       "Please choose a role from the suggested technology roles, or select Other."
     );
 
-    const otherMissingName = validateScanForm({
-      currentRole: "Other",
-      otherRoleName: "",
-      industry: "",
-      yearsExperience: "",
+    const okWithHealthcare = validateScanForm({
+      currentRole: "Salesforce Administrator",
+      industry: "Healthcare",
+      yearsExperience: "5",
       skills: "",
       tools: "",
     });
-    assert.equal(otherMissingName?.message, "Enter your role name.");
-
-    const otherOk = validateScanForm({
-      currentRole: "Other",
-      otherRoleName: "Platform Product Analyst",
-      industry: "",
-      yearsExperience: "",
-      skills: "",
-      tools: "",
-    });
-    assert.equal(otherOk, null);
+    assert.equal(okWithHealthcare, null);
 
     const okWithoutIndustry = validateScanForm({
       currentRole: "Salesforce Administrator",

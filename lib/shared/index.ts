@@ -8,6 +8,7 @@ export {
   TOP_CAREER_DIRECTIONS_INTRO,
   NEXT_ROLES_COUNT,
 } from "./scan/careerRecommendations";
+export { buildNextRoleDetailModel, type NextRoleDetailModel } from "./scan/nextRoleDetail";
 export {
   resolveCanonicalRole,
   resolveCanonicalRoles,
@@ -23,8 +24,6 @@ export {
   normalizeRoleInputForTracking,
   confidenceLabelFromScore,
   TECHNOLOGY_CURRENT_ROLES,
-  TECHNOLOGY_INDUSTRY_OPTIONS,
-  DEFAULT_TECHNOLOGY_INDUSTRY,
   OTHER_ROLE_OPTION,
   filterTechnologyCurrentRoles,
   isTechnologyCurrentRole,
@@ -41,7 +40,12 @@ export { normalizeScanInput, normalizeWorkPreference, clampYearsExperience } fro
 export { validateScanForm, type ScanValidationError } from "./scan/validation";
 export {
   isTechnologyDomain,
+  isSupportedIndustry,
+  filterSupportedIndustries,
   TECHNOLOGY_DOMAIN_MESSAGE,
+  TECHNOLOGY_INDUSTRY_OPTIONS,
+  SUPPORTED_INDUSTRY_OPTIONS,
+  DEFAULT_TECHNOLOGY_INDUSTRY,
 } from "./scan/technologyDomain";
 export {
   WORK_PREFERENCE_OPTIONS,
@@ -80,6 +84,12 @@ export {
 export { resolveOccupation } from "./onet/client";
 export { calculateExposureScore, scoreToExposureLevel, fallbackExposureFromArchetype } from "./exposure/scoringEngine";
 export { matchLocalOccupation } from "./onet/matchOccupation";
+export {
+  occupationSimilarity,
+  rankRelatedOccupations,
+  sharedOccupationSkills,
+  resolveLocalOccupation,
+} from "./onet/skillDistance";
 export { createOnetCacheAdapter, InMemoryOnetCache, onetCacheKey } from "./onet/cache";
 export {
   createBundledOccupationProvider,

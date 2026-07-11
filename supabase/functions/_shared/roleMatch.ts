@@ -96,13 +96,23 @@ type CatalogEntry = {
   technologyDomain: boolean;
 };
 
-const TECHNOLOGY_INDUSTRY_PATTERN =
-  /\b(technology|technologies|tech|software|saas|information technology|\bit\b|computer|cyber|cybersecurity|cloud|devops|fintech|edtech|artificial intelligence|\bai\b|data|analytics|digital|platform|startup|semiconductor|electronics)\b/i;
+const SUPPORTED_INDUSTRIES = [
+  "Consulting",
+  "Education",
+  "Financial Services",
+  "Government",
+  "Healthcare",
+  "Manufacturing",
+  "Media & Entertainment",
+  "Retail & E-commerce",
+  "SaaS",
+  "Technology",
+];
 
 function isTechnologyDomain(industry: string): boolean {
   const trimmed = industry.trim();
-  if (!trimmed) return false;
-  return TECHNOLOGY_INDUSTRY_PATTERN.test(trimmed);
+  if (!trimmed) return true;
+  return SUPPORTED_INDUSTRIES.some((entry) => entry.toLowerCase() === trimmed.toLowerCase());
 }
 
 const ROLE_CATALOG: CatalogEntry[] = [

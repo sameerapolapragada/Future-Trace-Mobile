@@ -10,7 +10,7 @@ import {
   resolveScanFormRoleInput,
   TECHNOLOGY_DOMAIN_MESSAGE,
   TECHNOLOGY_CURRENT_ROLES,
-  TECHNOLOGY_INDUSTRY_OPTIONS,
+  SUPPORTED_INDUSTRY_OPTIONS,
   type ScanFormInput,
   validateScanForm,
 } from "../../lib/shared";
@@ -20,6 +20,10 @@ import { Card, Disclaimer, Field, PrimaryButton, SecondaryButton, Subtitle, Titl
 import { getScanCount } from "../lib/scanStorage";
 import { runRoleMatch } from "../lib/roleMatchService";
 import { setPendingScanForm, setPendingRoleMatch } from "../lib/scanSession";
+import {
+  fetchTechnologyIndustries,
+  recordTechnologyIndustrySelection,
+} from "../lib/technologyIndustriesService";
 import {
   fetchTechnologyJobRoles,
   recordTechnologyJobRoleSelection,
@@ -38,15 +42,17 @@ const EMPTY: ScanFormInput = {
 function IndustryPicker({
   value,
   onChange,
+  options,
 }: {
   value: string;
   onChange: (next: string) => void;
+  options: readonly string[];
 }) {
   return (
     <View style={styles.picker}>
       <Text style={styles.pickerLabel}>Industry / domain (optional)</Text>
       <View style={styles.optionList}>
-        {TECHNOLOGY_INDUSTRY_OPTIONS.map((option) => {
+        {options.map((option) => {
           const active = value === option;
           return (
             <Pressable
@@ -129,6 +135,7 @@ export function ScanFormScreen() {
   const navigation = useAppNavigation();
   const [form, setForm] = useState<ScanFormInput>(EMPTY);
   const [roleOptions, setRoleOptions] = useState<string[]>([...TECHNOLOGY_CURRENT_ROLES]);
+  const [industryOptions, setIndustryOptions] = useState<string[]>([...SUPPORTED_INDUSTRY_OPTIONS]);
   const [submitting, setSubmitting] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const otherSelected = isOtherRoleSelection(form.currentRole);
@@ -137,6 +144,7 @@ export function ScanFormScreen() {
     useCallback(() => {
       getScanCount().then(setScanCount);
       void fetchTechnologyJobRoles().then(setRoleOptions);
+      void fetchTechnologyIndustries().then(setIndustryOptions);
     }, [])
   );
 
@@ -176,6 +184,7 @@ export function ScanFormScreen() {
         roleInputForMatch: roleInput,
         match: snapshot,
       });
+      void recordTechnologyIndustrySelection(form.industry);
 
       if (snapshot.outOfTechnologyDomain) {
         Alert.alert("Technology domain required", TECHNOLOGY_DOMAIN_MESSAGE);
@@ -231,7 +240,11 @@ export function ScanFormScreen() {
             </>
           ) : null}
 
-          <IndustryPicker value={form.industry} onChange={(industry) => setField("industry", industry)} />
+          <IndustryPicker
+            value={form.industry}
+            onChange={(industry) => setField("industry", industry)}
+            options={industryOptions}
+          />
           <Text style={styles.fieldHint}>Optional — helps tailor recommendations when provided.</Text>
 
           <Field

@@ -104,9 +104,9 @@ export function WaitlistScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Title>Career X-Ray — Early Access</Title>
+        <Title>AI Career Transition — Early Access</Title>
         <Subtitle>
-          Coming soon — deep transition analysis for your career path. No charge today. Join Early Access to get
+          Coming soon — a weekly roadmap to move into your next role. No charge today. Join Early Access to get
           notified at launch.
         </Subtitle>
 
@@ -116,7 +116,7 @@ export function WaitlistScreen({ navigation }: Props) {
           <>
             <Card>
               <Text style={styles.cardBody}>
-                Share your email and roles so we can notify you when Career X-Ray is ready.
+                Share your email and roles so we can notify you when AI Career Transition is ready.
               </Text>
               <Field
                 label="Email *"

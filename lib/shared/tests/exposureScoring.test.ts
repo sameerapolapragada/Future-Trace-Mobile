@@ -24,8 +24,14 @@ describe("O*NET matching", () => {
   it("matches a known role to local O*NET occupation", () => {
     const match = matchLocalOccupation("Salesforce Administrator");
     assert.ok(match);
-    assert.match(match!.occupation.title, /Administrative|Secretaries/i);
+    assert.match(match!.occupation.title, /Computer Systems Analysts/i);
     assert.ok(match!.matchScore >= 0.35);
+  });
+
+  it("matches cybersecurity analyst to information security occupation", () => {
+    const match = matchLocalOccupation("Cybersecurity Analyst");
+    assert.ok(match);
+    assert.match(match!.occupation.title, /Information Security/i);
   });
 
   it("returns null for unrecognized role without crashing", () => {
