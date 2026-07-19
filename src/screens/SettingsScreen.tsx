@@ -520,7 +520,7 @@ export function SettingsScreen() {
             label="Terms of Use"
             onPress={() =>
               navigation.navigate("LegalWebView", {
-                title: "Terms of Service",
+                title: "Terms of Use",
                 html: TERMS_HTML,
                 returnTab: "Settings",
               })
