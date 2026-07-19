@@ -25,7 +25,7 @@ import {
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { PrimaryButton, Subtitle, Title } from "../components/ui";
 import { EarlyAccessSignupCard } from "../components/EarlyAccessSignupCard";
-import { getLatestScan } from "../lib/scanStorage";
+import { listScans } from "../lib/scanStorage";
 import { useAppNavigation } from "../navigation/hooks";
 
 function radarTone(status: DisruptionRadarStatus): string {
@@ -235,26 +235,116 @@ function EarlyAccessCard({ scan }: { scan: StoredScan }) {
   );
 }
 
+function formatScanDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function ScanRadarAccordion({
+  scan,
+  page,
+  expanded,
+  onToggle,
+  onOpenAnalysis,
+}: {
+  scan: StoredScan;
+  page: DisruptionRadarPageModel;
+  expanded: boolean;
+  onToggle: () => void;
+  onOpenAnalysis: (focus: "current" | "target") => void;
+}) {
+  const currentTitle = scan.result.identifiedCareerProfile ?? scan.result.currentRole;
+  const nextTitle = page.targetRole.title;
+  const status = page.currentRole.status;
+  const tone = radarTone(status);
+
+  return (
+    <View style={[styles.accordion, expanded && styles.accordionExpanded]}>
+      <Pressable
+        onPress={onToggle}
+        style={({ pressed }) => [styles.accordionHeader, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`${currentTitle} disruption radar`}
+      >
+        <View style={styles.accordionHeaderText}>
+          <Text style={styles.accordionTitle} numberOfLines={1}>
+            {currentTitle}
+          </Text>
+          <Text style={styles.accordionSubtitle} numberOfLines={1}>
+            → {nextTitle}
+          </Text>
+          <View style={styles.accordionMetaRow}>
+            <View style={[styles.accordionStatusPill, { backgroundColor: `${tone}22`, borderColor: `${tone}55` }]}>
+              <LevelIcon status={status} color={tone} />
+              <Text style={[styles.accordionStatusText, { color: tone }]}>{status}</Text>
+            </View>
+            <Text style={styles.accordionDate}>{formatScanDate(scan.createdAt)}</Text>
+          </View>
+        </View>
+        <Text style={[styles.accordionChevron, expanded && styles.accordionChevronOpen]}>▾</Text>
+      </Pressable>
+
+      {expanded ? (
+        <View style={styles.accordionBody}>
+          <View style={styles.compareWrap}>
+            <View style={styles.compareRow}>
+              <RoleCard
+                variant="current"
+                card={page.currentRole}
+                onViewAnalysis={() => onOpenAnalysis("current")}
+              />
+              <RoleCard
+                variant="target"
+                card={page.targetRole}
+                onViewAnalysis={() => onOpenAnalysis("target")}
+              />
+            </View>
+            <View style={styles.vsBadge}>
+              <LinearGradient
+                colors={[colors.accentPurple, colors.accentGold]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.vsBadgeInner}
+              >
+                <Text style={styles.vsBadgeText}>VS</Text>
+              </LinearGradient>
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+type ScanRadarItem = {
+  scan: StoredScan;
+  page: DisruptionRadarPageModel;
+};
+
 export function DisruptionRadarScreen() {
   const navigation = useAppNavigation();
-  const [scan, setScan] = useState<StoredScan | null>(null);
-  const [page, setPage] = useState<DisruptionRadarPageModel | null>(null);
+  const [items, setItems] = useState<ScanRadarItem[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      getLatestScan().then((latest) => {
-        if (!latest) {
-          setScan(null);
-          setPage(null);
-          return;
-        }
-        setScan(latest);
-        setPage(buildDisruptionRadarPageModel(latest.result));
+      listScans().then((scans) => {
+        const next = scans.map((scan) => ({
+          scan,
+          page: buildDisruptionRadarPageModel(scan.result),
+        }));
+        setItems(next);
+        setExpandedId((prev) => {
+          if (prev && next.some((item) => item.scan.id === prev)) return prev;
+          return next[0]?.scan.id ?? null;
+        });
       });
     }, [])
   );
 
-  if (!scan || !page) {
+  if (items.length === 0) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <View style={styles.emptyWrap}>
@@ -266,9 +356,7 @@ export function DisruptionRadarScreen() {
     );
   }
 
-  function openFullAnalysis(focus: "current" | "target") {
-    navigation.navigate("RoleDisruptionAnalysis", { scanId: scan.id, focus });
-  }
+  const latestScan = items[0]!.scan;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -277,7 +365,7 @@ export function DisruptionRadarScreen() {
           <View style={styles.headerTextWrap}>
             <Text style={styles.pageTitle}>AI Disruption Radar</Text>
             <Text style={styles.pageSubtitle}>
-              Understand how AI may impact your current role and your top recommended next role.
+              Expand any scan to compare how AI may impact your current role and top next role.
             </Text>
           </View>
           <InfoHelpButton />
@@ -285,24 +373,23 @@ export function DisruptionRadarScreen() {
 
         <LegendCard />
 
-        <View style={styles.compareWrap}>
-          <View style={styles.compareRow}>
-            <RoleCard variant="current" card={page.currentRole} onViewAnalysis={() => openFullAnalysis("current")} />
-            <RoleCard variant="target" card={page.targetRole} onViewAnalysis={() => openFullAnalysis("target")} />
-          </View>
-          <View style={styles.vsBadge}>
-            <LinearGradient
-              colors={[colors.accentPurple, colors.accentGold]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.vsBadgeInner}
-            >
-              <Text style={styles.vsBadgeText}>VS</Text>
-            </LinearGradient>
-          </View>
-        </View>
+        <Text style={styles.listLabel}>Your scans</Text>
+        {items.map(({ scan, page }) => (
+          <ScanRadarAccordion
+            key={scan.id}
+            scan={scan}
+            page={page}
+            expanded={expandedId === scan.id}
+            onToggle={() =>
+              setExpandedId((prev) => (prev === scan.id ? null : scan.id))
+            }
+            onOpenAnalysis={(focus) =>
+              navigation.navigate("RoleDisruptionAnalysis", { scanId: scan.id, focus })
+            }
+          />
+        ))}
 
-        <EarlyAccessCard scan={scan} />
+        <EarlyAccessCard scan={latestScan} />
 
         <Text style={styles.footerSource}>{CAREER_ANALYSIS_SOURCE}</Text>
         <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
@@ -352,6 +439,77 @@ const styles = StyleSheet.create({
   legendStatus: { fontSize: 13, fontWeight: "700" },
   legendDescription: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 2 },
 
+  listLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: -spacing.sm,
+  },
+
+  accordion: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  accordionExpanded: {
+    borderColor: `${colors.accent}44`,
+  },
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
+  accordionHeaderText: { flex: 1, minWidth: 0 },
+  accordionTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  accordionSubtitle: {
+    color: colors.muted,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  accordionMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  accordionStatusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  accordionStatusText: { fontSize: 11, fontWeight: "700" },
+  accordionDate: { color: colors.muted, fontSize: 11, fontWeight: "600" },
+  accordionChevron: {
+    color: colors.muted,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  accordionChevronOpen: {
+    transform: [{ rotate: "180deg" }],
+    color: colors.accent,
+  },
+  accordionBody: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+  },
+
   compareWrap: { position: "relative" },
   compareRow: { flexDirection: "row", gap: spacing.sm, alignItems: "stretch" },
   vsBadge: {
@@ -374,7 +532,7 @@ const styles = StyleSheet.create({
 
   roleCard: {
     flex: 1,
-    backgroundColor: colors.card,
+    backgroundColor: colors.elevated,
     borderRadius: radius.lg,
     borderWidth: 1,
     padding: spacing.md,
@@ -396,7 +554,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.elevated,
+    backgroundColor: colors.card,
     alignItems: "center",
     justifyContent: "center",
   },

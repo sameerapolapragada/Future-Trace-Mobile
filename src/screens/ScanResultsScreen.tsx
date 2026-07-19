@@ -1,8 +1,18 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import type { CareerDirectionRecommendation, StoredScan } from "../../lib/shared";
 import {
   AI_DISCLAIMER,
@@ -15,7 +25,7 @@ import {
 } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { PrimaryButton, SecondaryButton } from "../components/ui";
-import { getScan } from "../lib/scanStorage";
+import { getScan, getTrackedRole, setTrackedRole, type TrackedRole } from "../lib/scanStorage";
 import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ScanResults">;
@@ -39,6 +49,19 @@ function formatCompactSalary(item: CareerDirectionRecommendation): string {
   const match = label.match(/\$?([\d.]+)\s*k/i);
   if (match) return `$${Math.round(Number(match[1]))}K`;
   return label;
+}
+
+function BookmarkIcon({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 4h12a1 1 0 0 1 1 1v16l-7-4-7 4V5a1 1 0 0 1 1-1z"
+        stroke={color}
+        strokeWidth={1.8}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
 }
 
 function InfoButton({
@@ -93,11 +116,15 @@ function SnapshotCard({
 function RoleResultCard({
   item,
   index,
+  isTracked,
   onPress,
+  onTrack,
 }: {
   item: CareerDirectionRecommendation;
   index: number;
+  isTracked: boolean;
   onPress: () => void;
+  onTrack: () => void;
 }) {
   const skills = (item.transferableSkills ?? []).slice(0, 4);
 
@@ -151,17 +178,70 @@ function RoleResultCard({
           </View>
         </>
       ) : null}
+
+      <View style={styles.trackRow}>
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onTrack();
+          }}
+          style={({ pressed }) => [
+            styles.trackButton,
+            isTracked && styles.trackButtonActive,
+            pressed && styles.pressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={isTracked ? `${item.role} is being tracked` : `Track ${item.role}`}
+        >
+          <BookmarkIcon color={isTracked ? colors.text : colors.accent} />
+          <Text style={[styles.trackButtonText, isTracked && styles.trackButtonTextActive]}>
+            {isTracked ? "Tracking" : "Track This Role"}
+          </Text>
+        </Pressable>
+      </View>
     </Pressable>
   );
 }
 
 export function ScanResultsScreen({ route, navigation }: Props) {
   const [scan, setScan] = useState<StoredScan | null>(null);
+  const [tracked, setTracked] = useState<TrackedRole | null>(null);
+  const [pendingRole, setPendingRole] = useState<CareerDirectionRecommendation | null>(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getScan(route.params.scanId).then(setScan);
   }, [route.params.scanId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getTrackedRole().then(setTracked);
+    }, [])
+  );
+
+  async function saveTracked(item: CareerDirectionRecommendation) {
+    const next: TrackedRole = {
+      role: item.role,
+      scanId: route.params.scanId,
+      salaryLabel: formatCompactSalary(item),
+      transitionLabel: item.transitionLabel,
+      trackedAt: new Date().toISOString(),
+    };
+    await setTrackedRole(next);
+    setTracked(next);
+    setPendingRole(null);
+  }
+
+  function onTrackPress(item: CareerDirectionRecommendation) {
+    if (tracked?.role === item.role) return;
+
+    if (tracked && tracked.role !== item.role) {
+      setPendingRole(item);
+      return;
+    }
+
+    void saveTracked(item);
+  }
 
   if (!scan) {
     return (
@@ -235,12 +315,14 @@ export function ScanResultsScreen({ route, navigation }: Props) {
             key={`${item.role}-${index}`}
             item={item}
             index={index}
+            isTracked={tracked?.role === item.role}
             onPress={() =>
               navigation.navigate("NextRoleDetail", {
                 scanId: scan.id,
                 roleIndex: index,
               })
             }
+            onTrack={() => onTrackPress(item)}
           />
         ))}
 
@@ -258,6 +340,36 @@ export function ScanResultsScreen({ route, navigation }: Props) {
         <Text style={styles.footerDisclaimer}>{CAREER_ANALYSIS_SOURCE}</Text>
         <Text style={styles.footerNote}>{AI_DISCLAIMER}</Text>
       </ScrollView>
+
+      <Modal
+        visible={!!pendingRole && !!tracked}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPendingRole(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setPendingRole(null)}>
+          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Replace Career Goal?</Text>
+            <Text style={styles.modalBody}>
+              You already have a goal set as {tracked?.role}. Do you want to replace it with {pendingRole?.role}?
+            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.modalPrimary, pressed && styles.pressed]}
+              onPress={() => {
+                if (pendingRole) void saveTracked(pendingRole);
+              }}
+            >
+              <Text style={styles.modalPrimaryText}>Replace Goal</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.modalCancel, pressed && styles.pressed]}
+              onPress={() => setPendingRole(null)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -366,6 +478,84 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   skillChipText: { color: colors.text, fontSize: 12, fontWeight: "600" },
+
+  trackRow: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  trackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: `${colors.accent}22`,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: `${colors.accent}44`,
+  },
+  trackButtonActive: {
+    backgroundColor: `${colors.accent}55`,
+    borderColor: colors.accent,
+  },
+  trackButtonText: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  trackButtonTextActive: {
+    color: colors.text,
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+  },
+  modalCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  modalBody: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center",
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  modalPrimary: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  modalPrimaryText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  modalCancel: {
+    marginTop: spacing.md,
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  modalCancelText: {
+    color: colors.muted,
+    fontSize: 15,
+    fontWeight: "600",
+  },
 
   salaryNote: { color: colors.muted, fontSize: 11, lineHeight: 16, fontStyle: "italic" },
   footerDisclaimer: { color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: "center" },

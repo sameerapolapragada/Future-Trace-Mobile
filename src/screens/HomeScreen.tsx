@@ -1,5 +1,6 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -11,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import LogoMark from "../../components/LogoMark";
 import { colors, radius, spacing } from "../../lib/shared/theme";
+import { getTrackedRole, type TrackedRole } from "../lib/scanStorage";
 import { useAppNavigation } from "../navigation/hooks";
 
 const UNLOCK_ITEMS = [
@@ -59,6 +61,13 @@ const TRUST_ITEMS = [
 
 export function HomeScreen() {
   const navigation = useAppNavigation();
+  const [tracked, setTracked] = useState<TrackedRole | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      getTrackedRole().then(setTracked);
+    }, [])
+  );
 
   const startScan = useCallback(() => navigation.navigate("NextRolesIntro"), [navigation]);
 
@@ -70,6 +79,11 @@ export function HomeScreen() {
     [navigation]
   );
 
+  const openTrackedGoal = useCallback(() => {
+    if (!tracked?.scanId) return;
+    navigation.navigate("ScanResults", { scanId: tracked.scanId });
+  }, [navigation, tracked]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -80,6 +94,8 @@ export function HomeScreen() {
             <Text style={styles.brandTagline}>Your AI Career Intelligence</Text>
           </View>
         </View>
+
+        {tracked ? <CurrentCareerGoalCard tracked={tracked} onPress={openTrackedGoal} /> : null}
 
         <FreeScanCard onPress={startScan} />
 
@@ -127,6 +143,81 @@ export function HomeScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function formatTrackedSalary(label?: string): string {
+  if (!label) return "—";
+  const trimmed = label.trim();
+  if (/\/\s*yr/i.test(trimmed)) return trimmed;
+  return `${trimmed} / yr`;
+}
+
+function formatSelectedDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function CurrentCareerGoalCard({
+  tracked,
+  onPress,
+}: {
+  tracked: TrackedRole;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.goalCard, pressed && styles.pressed]}>
+      <View style={styles.goalTopRow}>
+        <View style={styles.goalCopy}>
+          <Text style={styles.goalEyebrow}>Current Career Goal</Text>
+          <Text style={styles.goalRole} numberOfLines={2}>
+            {tracked.role}
+          </Text>
+        </View>
+        <View style={styles.goalIconWrap}>
+          <TargetGoalIcon />
+        </View>
+      </View>
+
+      <View style={styles.goalMetrics}>
+        <View style={styles.goalMetric}>
+          <Text style={styles.goalMetricLabel}>Average Salary</Text>
+          <Text style={styles.goalMetricValueGreen}>{formatTrackedSalary(tracked.salaryLabel)}</Text>
+        </View>
+        <View style={styles.goalMetric}>
+          <Text style={styles.goalMetricLabel}>Est. Transition Time</Text>
+          <Text style={styles.goalMetricValueGreen}>{tracked.transitionLabel ?? "—"}</Text>
+        </View>
+      </View>
+
+      <View style={styles.goalSelectedRow}>
+        <Text style={styles.goalMetricLabel}>Selected on</Text>
+        <Text style={styles.goalSelectedDate}>{formatSelectedDate(tracked.trackedAt)}</Text>
+      </View>
+
+      <View style={styles.goalBadge}>
+        <Text style={styles.goalBadgeText}>Roadmap coming soon</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function TargetGoalIcon() {
+  return (
+    <Svg width={40} height={40} viewBox="0 0 40 40" fill="none">
+      <Circle cx="20" cy="22" r="12" stroke={colors.accent} strokeWidth="2" />
+      <Circle cx="20" cy="22" r="7" stroke={colors.accent} strokeWidth="2" />
+      <Circle cx="20" cy="22" r="2.5" fill={colors.accent} />
+      <Path
+        d="M28 8l6-2-1 6-5-1 0-3z"
+        fill={colors.accentPurple}
+        stroke={colors.accentPurple}
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+      <Path d="M28 10l-6 8" stroke={colors.accentPurple} strokeWidth="2" strokeLinecap="round" />
+    </Svg>
   );
 }
 
@@ -348,6 +439,82 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     marginTop: 4,
+  },
+  goalCard: {
+    backgroundColor: `${colors.accent}14`,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: `${colors.accent}33`,
+    padding: spacing.lg,
+  },
+  goalTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  goalCopy: { flex: 1, minWidth: 0 },
+  goalEyebrow: {
+    color: colors.accent,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  goalRole: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+    marginTop: 6,
+    lineHeight: 28,
+  },
+  goalIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: `${colors.accent}18`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  goalMetrics: {
+    flexDirection: "row",
+    gap: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  goalMetric: { flex: 1 },
+  goalMetricLabel: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  goalMetricValueGreen: {
+    color: colors.success,
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+  goalSelectedRow: {
+    marginTop: spacing.md,
+  },
+  goalSelectedDate: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  goalBadge: {
+    alignSelf: "center",
+    marginTop: spacing.lg,
+    backgroundColor: `${colors.accent}26`,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+  },
+  goalBadgeText: {
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: "700",
   },
   freeScanCard: {
     borderRadius: radius.xl,

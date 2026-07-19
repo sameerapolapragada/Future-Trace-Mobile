@@ -7,6 +7,7 @@ const WELCOME_KEY = "ft_welcome_seen_v1";
 const WAITLIST_EMAIL_KEY = "ft_waitlist_email_v1";
 const WAITLIST_DRAFT_KEY = "ft_waitlist_draft_v1";
 const WAITLIST_JOINED_KEY = "ft_waitlist_joined_v1";
+const TRACKED_ROLE_KEY = "ft_tracked_role_v1";
 
 export const EARLY_ACCESS_JOINED_MESSAGE =
   "You're on the Early Access list. We'll notify you when AI Career Transition launches.";
@@ -15,6 +16,15 @@ export type WaitlistDraft = {
   email: string;
   currentRole: string;
   targetRole: string;
+};
+
+/** Single career goal the user is tracking from next-role recommendations. */
+export type TrackedRole = {
+  role: string;
+  scanId: string;
+  salaryLabel?: string;
+  transitionLabel?: string;
+  trackedAt: string;
 };
 
 function newId(): string {
@@ -111,7 +121,33 @@ export async function setWaitlistDraft(draft: WaitlistDraft): Promise<void> {
   await AsyncStorage.setItem(WAITLIST_DRAFT_KEY, JSON.stringify(draft));
 }
 
+export async function getTrackedRole(): Promise<TrackedRole | null> {
+  const raw = await AsyncStorage.getItem(TRACKED_ROLE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as TrackedRole;
+    if (!parsed?.role?.trim()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export async function setTrackedRole(tracked: TrackedRole): Promise<void> {
+  await AsyncStorage.setItem(TRACKED_ROLE_KEY, JSON.stringify(tracked));
+}
+
+export async function clearTrackedRole(): Promise<void> {
+  await AsyncStorage.removeItem(TRACKED_ROLE_KEY);
+}
+
 export async function deleteAllLocalData(): Promise<void> {
   await deleteLocalScans();
-  await AsyncStorage.multiRemove([WELCOME_KEY, WAITLIST_EMAIL_KEY, WAITLIST_DRAFT_KEY, WAITLIST_JOINED_KEY]);
+  await AsyncStorage.multiRemove([
+    WELCOME_KEY,
+    WAITLIST_EMAIL_KEY,
+    WAITLIST_DRAFT_KEY,
+    WAITLIST_JOINED_KEY,
+    TRACKED_ROLE_KEY,
+  ]);
 }
