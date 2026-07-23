@@ -277,7 +277,50 @@ main {
 
 .footer-links {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+}
+
+.support-contact {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.35rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.support-contact h2 {
+  margin-top: 0;
+}
+
+.support-contact p {
+  margin: 0.5rem 0 0;
+}
+
+.faq-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.faq-item {
+  margin: 0 0 1rem;
+  padding: 1rem 1.15rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.faq-item dt {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--text);
+}
+
+.faq-item dd {
+  margin: 0.45rem 0 0;
+  color: #ccc;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 720px) {
