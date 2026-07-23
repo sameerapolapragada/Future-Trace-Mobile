@@ -3,69 +3,343 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Future Trace — AI Career Intelligence</title>
+    <title>Future Trace – AI Career Intelligence and Career Path Insights</title>
     <meta
       name="description"
-      content="Future Trace helps you understand AI disruption, find realistic next roles, and plan your career path."
+      content="Discover how AI may impact your current role, explore realistic next career paths, compare salary estimates, and plan your career transition with Future Trace."
     />
+    <meta name="theme-color" content="#000000" />
+    <link rel="canonical" href="https://futuretrace.ai/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://futuretrace.ai/" />
+    <meta property="og:title" content="Future Trace – AI Career Intelligence and Career Path Insights" />
+    <meta
+      property="og:description"
+      content="Discover how AI may impact your current role, explore realistic next career paths, compare salary estimates, and plan your career transition with Future Trace."
+    />
+    <meta property="og:image" content="https://futuretrace.ai/logo.png" />
+    <meta property="og:site_name" content="Future Trace" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Future Trace – AI Career Intelligence and Career Path Insights" />
+    <meta
+      name="twitter:description"
+      content="Discover how AI may impact your current role, explore realistic next career paths, and plan your career transition with Future Trace."
+    />
+    <meta name="twitter:image" content="https://futuretrace.ai/logo.png" />
+
     <link rel="icon" href="/logo.png" type="image/png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="site-header">
+    <!--
+      App Store download URL placeholder.
+      Replace APP_STORE_URL in /config.js when the listing is live.
+    -->
+    <script src="/config.js"></script>
+
+    <header class="site-header sticky-header">
       <a class="brand" href="/">
         <img src="/logo.png" alt="" width="40" height="40" />
         <span>Future Trace</span>
       </a>
-      <nav class="nav" aria-label="Primary">
-        <a href="/support">Support</a>
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="primary-nav"
+        aria-label="Open menu"
+      >
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav" id="primary-nav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
         <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
+        <a href="/support">Support</a>
+        <a class="btn btn-nav app-store-link" href="#download">Download App</a>
       </nav>
     </header>
 
     <main>
-      <section class="hero">
-        <div class="hero-brand">
-          <img src="/logo.png" alt="" width="64" height="64" />
-          <span>Future Trace</span>
+      <section class="hero hero-landing" aria-labelledby="hero-heading">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Career Intelligence for iPhone</p>
+          <h1 id="hero-heading">See where your career is headed in the age of AI.</h1>
+          <p class="hero-lead">
+            Future Trace helps you understand how AI may impact your current role, discover realistic next career
+            paths, and make more informed career decisions.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary app-store-link" id="download" href="#download">Download on the App Store</a>
+            <a class="btn btn-secondary" href="#how-it-works">See How It Works</a>
+          </div>
+          <p class="trust-note">No account required. Career scans are stored locally on your device.</p>
         </div>
-        <h1>Your AI Career Intelligence</h1>
-        <p>
-          See how AI may impact your role, discover realistic next careers, and track a goal — free on your device.
-        </p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="/support">Get support</a>
-          <a class="btn btn-secondary" href="/privacy">Privacy Policy</a>
+
+        <aside class="phone-mockup" aria-label="Example Future Trace scan preview">
+          <div class="phone-frame">
+            <div class="phone-notch" aria-hidden="true"></div>
+            <div class="phone-screen">
+              <p class="phone-label">Career Scan</p>
+              <h2 class="phone-title">Salesforce Administrator</h2>
+              <div class="metric-grid">
+                <div class="metric">
+                  <span class="metric-label">AI Disruption</span>
+                  <span class="metric-value">42</span>
+                  <span class="metric-sub">Moderate</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Resilience</span>
+                  <span class="metric-value accent">68</span>
+                  <span class="metric-sub">Steady</span>
+                </div>
+              </div>
+              <div class="phone-card">
+                <span class="phone-card-label">Suggested next role</span>
+                <strong>CRM Product Owner</strong>
+              </div>
+              <p class="phone-footnote">Illustrative example — not a guarantee of outcomes.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="value-strip" aria-label="Key value">
+        <div class="value-item">
+          <strong>Personalized career insights</strong>
+          <span>Role-specific disruption and resilience views</span>
+        </div>
+        <div class="value-item">
+          <strong>Five realistic next-role options</strong>
+          <span>Adjacent paths with salary and timeline estimates</span>
+        </div>
+        <div class="value-item">
+          <strong>Privacy-first experience</strong>
+          <span>Scans stay on your device by default</span>
         </div>
       </section>
 
-      <section class="features" aria-label="What you get">
-        <article class="feature">
-          <h2>Find next roles</h2>
-          <p>Get top adjacent career paths with salary estimates and transition timelines.</p>
-        </article>
-        <article class="feature">
-          <h2>AI Disruption Radar</h2>
-          <p>Compare how AI may affect your current role and recommended next step.</p>
-        </article>
-        <article class="feature">
-          <h2>Privacy first</h2>
-          <p>Career scans stay on your device. Join the waitlist only if you want updates.</p>
-        </article>
+      <section class="section problem" aria-labelledby="problem-heading">
+        <div class="section-inner two-col">
+          <div>
+            <h2 id="problem-heading">AI is changing work faster than most career tools can explain it.</h2>
+            <p>
+              Professionals often need clearer guidance than generic job boards or resume tips can provide — especially
+              when technology is reshaping day-to-day work.
+            </p>
+          </div>
+          <ul class="problem-list">
+            <li>How exposed a role may be to AI</li>
+            <li>Which skills remain valuable</li>
+            <li>Which career transitions are realistic</li>
+            <li>How long a transition may take</li>
+            <li>Whether the next role may offer better resilience and salary potential</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="features" aria-labelledby="features-heading">
+        <div class="section-intro">
+          <h2 id="features-heading">Career intelligence built for real decisions</h2>
+          <p>Explore informational insights designed to help you understand options — not promise outcomes.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>AI Disruption Score</h3>
+            <p>Understand how AI may influence your current role through a clear, easy-to-read assessment.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Career Resilience Insights</h3>
+            <p>See how adaptable your profession may be as technology, automation, and job expectations evolve.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Five Realistic Next Roles</h3>
+            <p>Explore practical adjacent career paths based on your current role and transferable experience.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Salary Estimates</h3>
+            <p>Compare estimated compensation across recommended career paths.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Transition Timeline</h3>
+            <p>Understand the estimated time and effort that may be required to move into a new role.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Transferable Skills</h3>
+            <p>Identify which existing skills may support your transition and where further development may help.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section alt" id="how-it-works" aria-labelledby="how-heading">
+        <div class="section-intro">
+          <h2 id="how-heading">How it works</h2>
+          <p>Three simple steps from your current role to clearer next options.</p>
+        </div>
+        <ol class="steps">
+          <li class="step-card">
+            <span class="step-num">1</span>
+            <h3>Enter your current role</h3>
+            <p>Provide your current job title and optional career context.</p>
+          </li>
+          <li class="step-card">
+            <span class="step-num">2</span>
+            <h3>Receive personalized career intelligence</h3>
+            <p>Review an AI Disruption Score, resilience insights, and five possible next roles.</p>
+          </li>
+          <li class="step-card">
+            <span class="step-num">3</span>
+            <h3>Explore and track your direction</h3>
+            <p>
+              Compare salary estimates, transition timelines, transferable skills, scan history, and one active career
+              goal.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section" id="preview" aria-labelledby="preview-heading">
+        <div class="section-intro">
+          <h2 id="preview-heading">Example career path preview</h2>
+          <p>
+            Illustrative values for a sample role. Estimates may be incomplete or outdated and are not guarantees.
+          </p>
+        </div>
+        <div class="preview-panel">
+          <p class="preview-current">
+            Current role example: <strong>Salesforce Administrator</strong>
+          </p>
+          <div class="path-grid">
+            <article class="path-card">
+              <h3>Salesforce Business Analyst</h3>
+              <ul>
+                <li><span>Est. salary</span><strong>$95k–$125k</strong></li>
+                <li><span>Est. transition</span><strong>~3–6 months</strong></li>
+                <li><span>Resilience</span><strong>Strong</strong></li>
+              </ul>
+            </article>
+            <article class="path-card">
+              <h3>CRM Product Owner</h3>
+              <ul>
+                <li><span>Est. salary</span><strong>$110k–$145k</strong></li>
+                <li><span>Est. transition</span><strong>~6–12 months</strong></li>
+                <li><span>Resilience</span><strong>Strong</strong></li>
+              </ul>
+            </article>
+            <article class="path-card">
+              <h3>Revenue Operations Analyst</h3>
+              <ul>
+                <li><span>Est. salary</span><strong>$90k–$120k</strong></li>
+                <li><span>Est. transition</span><strong>~4–8 months</strong></li>
+                <li><span>Resilience</span><strong>Steady</strong></li>
+              </ul>
+            </article>
+            <article class="path-card">
+              <h3>Salesforce Consultant</h3>
+              <ul>
+                <li><span>Est. salary</span><strong>$100k–$140k</strong></li>
+                <li><span>Est. transition</span><strong>~3–9 months</strong></li>
+                <li><span>Resilience</span><strong>Strong</strong></li>
+              </ul>
+            </article>
+            <article class="path-card">
+              <h3>Business Systems Analyst</h3>
+              <ul>
+                <li><span>Est. salary</span><strong>$85k–$115k</strong></li>
+                <li><span>Est. transition</span><strong>~3–6 months</strong></li>
+                <li><span>Resilience</span><strong>Steady</strong></li>
+              </ul>
+            </article>
+          </div>
+          <p class="preview-note">Illustrative example only. Not employment, financial, or professional advice.</p>
+        </div>
+      </section>
+
+      <section class="section privacy-block" id="privacy" aria-labelledby="privacy-heading">
+        <div class="section-inner two-col">
+          <div>
+            <h2 id="privacy-heading">Your career exploration stays private.</h2>
+            <p>
+              Future Trace is built for career exploration without requiring an account for the current MVP experience.
+            </p>
+            <a class="text-link" href="/privacy">Read the Privacy Policy →</a>
+          </div>
+          <ul class="check-list">
+            <li>No account required for the current MVP</li>
+            <li>Career scan history is stored locally on the device</li>
+            <li>You can clear local history in Settings</li>
+            <li>Email is collected only if you voluntarily join Early Access</li>
+            <li>Personal information is not sold</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="audience-heading">
+        <div class="section-intro">
+          <h2 id="audience-heading">Built for people preparing for what comes next.</h2>
+        </div>
+        <div class="audience-grid">
+          <article class="audience-card">Professionals adapting to AI</article>
+          <article class="audience-card">Career changers</article>
+          <article class="audience-card">Technology professionals</article>
+          <article class="audience-card">Business professionals</article>
+          <article class="audience-card">Students and early-career users</article>
+          <article class="audience-card">Managers planning long-term growth</article>
+        </div>
+      </section>
+
+      <section class="disclaimer" aria-label="Important disclaimer">
+        <p>
+          <strong>Disclaimer.</strong> Future Trace provides AI-generated educational and informational career
+          insights. Disruption scores, salary estimates, transition timelines, and career recommendations may be
+          incomplete, inaccurate, or outdated and should not be treated as employment, financial, legal, or professional
+          career advice.
+        </p>
+      </section>
+
+      <section class="final-cta" aria-labelledby="final-heading">
+        <h2 id="final-heading">Your next career move starts with understanding your current one.</h2>
+        <p>Explore how AI may affect your role and discover realistic paths forward with Future Trace.</p>
+        <a class="btn btn-primary app-store-link" href="#download">Download Future Trace</a>
+        <p class="final-sub">Available for iPhone.</p>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div class="site-footer-inner">
-        <span>© 2026 Future Trace</span>
-        <div class="footer-links">
-          <a href="/support">Support</a>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Use</a>
-          <a href="mailto:support@futuretrace.ai">support@futuretrace.ai</a>
+      <div class="site-footer-inner footer-rich">
+        <div class="footer-brand">
+          <a class="brand" href="/">
+            <img src="/logo.png" alt="" width="36" height="36" />
+            <span>Future Trace</span>
+          </a>
+          <p>AI career intelligence to explore disruption risk, next roles, and career direction.</p>
+        </div>
+        <div class="footer-cols">
+          <div>
+            <h3>Product</h3>
+            <a href="/">Home</a>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+          </div>
+          <div>
+            <h3>Legal</h3>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Use</a>
+            <a href="/support">Support</a>
+          </div>
+          <div>
+            <h3>Contact</h3>
+            <a href="mailto:support@futuretrace.ai">support@futuretrace.ai</a>
+          </div>
         </div>
       </div>
+      <div class="site-footer-inner footer-bottom">
+        <span>© <span id="year">2026</span> Future Trace</span>
+      </div>
     </footer>
+
+    <script src="/main.js" defer></script>
   </body>
 </html>
