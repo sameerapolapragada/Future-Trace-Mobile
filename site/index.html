@@ -8,8 +8,10 @@
       name="description"
       content="Discover how AI may impact your current role, explore realistic next career paths, compare salary estimates, and plan your career transition with Future Trace."
     />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#05070d" />
+    <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://futuretrace.ai/" />
+    <link rel="apple-touch-icon" href="/logo.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://futuretrace.ai/" />
@@ -39,34 +41,40 @@
     -->
     <script src="/config.js"></script>
 
-    <header class="site-header sticky-header">
-      <a class="brand" href="/">
-        <img src="/logo.png" alt="" width="40" height="40" />
-        <span>Future Trace</span>
-      </a>
-      <button
-        class="nav-toggle"
-        type="button"
-        aria-expanded="false"
-        aria-controls="primary-nav"
-        aria-label="Open menu"
-      >
-        <span></span><span></span><span></span>
-      </button>
-      <nav class="nav" id="primary-nav" aria-label="Primary">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="/privacy">Privacy</a>
-        <a href="/support">Support</a>
-        <a class="btn btn-nav app-store-link" href="#download">Download App</a>
-      </nav>
+    <header class="site-header sticky-header" id="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/">
+          <img src="/logo.png" alt="" width="36" height="36" />
+          <span>Future Trace</span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="primary-nav"
+          aria-label="Open menu"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="nav" id="primary-nav" aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/support">Support</a>
+          <a class="btn btn-primary btn-nav app-store-link" href="#download">Download App</a>
+        </nav>
+      </div>
     </header>
 
     <main>
       <section class="hero hero-landing" aria-labelledby="hero-heading">
+        <div class="hero-glow" aria-hidden="true"></div>
         <div class="hero-copy">
           <p class="eyebrow">AI Career Intelligence for iPhone</p>
-          <h1 id="hero-heading">See where your career is headed in the age of AI.</h1>
+          <h1 id="hero-heading">
+            See where your career is headed<br class="br-desktop" />
+            in the age of AI.
+          </h1>
           <p class="hero-lead">
             Future Trace helps you understand how AI may impact your current role, discover realistic next career
             paths, and make more informed career decisions.
@@ -80,20 +88,31 @@
 
         <aside class="phone-mockup" aria-label="Example Future Trace scan preview">
           <div class="phone-frame">
-            <div class="phone-notch" aria-hidden="true"></div>
             <div class="phone-screen">
+              <div class="status-bar" aria-hidden="true">
+                <span>9:41</span>
+                <span class="status-icons">■■■ ▔</span>
+              </div>
               <p class="phone-label">Career Scan</p>
               <h2 class="phone-title">Salesforce Administrator</h2>
               <div class="metric-grid">
                 <div class="metric">
-                  <span class="metric-label">AI Disruption</span>
-                  <span class="metric-value">42</span>
-                  <span class="metric-sub">Moderate</span>
+                  <div class="ring ring-signal" style="--p: 42" aria-hidden="true">
+                    <span>42</span>
+                  </div>
+                  <div class="metric-copy">
+                    <span class="metric-label">AI Disruption</span>
+                    <span class="pill pill-moderate">Moderate</span>
+                  </div>
                 </div>
                 <div class="metric">
-                  <span class="metric-label">Resilience</span>
-                  <span class="metric-value accent">68</span>
-                  <span class="metric-sub">Steady</span>
+                  <div class="ring ring-accent" style="--p: 68" aria-hidden="true">
+                    <span>68</span>
+                  </div>
+                  <div class="metric-copy">
+                    <span class="metric-label">Resilience</span>
+                    <span class="pill pill-steady">Steady</span>
+                  </div>
                 </div>
               </div>
               <div class="phone-card">
@@ -108,20 +127,35 @@
 
       <section class="value-strip" aria-label="Key value">
         <div class="value-item">
-          <strong>Personalized career insights</strong>
-          <span>Role-specific disruption and resilience views</span>
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5L19 8.2l-3.5 3.4.8 4.9L12 14.8 7.7 16.5l.8-4.9L5 8.2l4.8-.7L12 3z"/></svg>
+          </span>
+          <div>
+            <strong>Personalized career insights</strong>
+            <span>Role-specific disruption and resilience views</span>
+          </div>
         </div>
         <div class="value-item">
-          <strong>Five realistic next-role options</strong>
-          <span>Adjacent paths with salary and timeline estimates</span>
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="17" r="3"/></svg>
+          </span>
+          <div>
+            <strong>Five realistic next-role options</strong>
+            <span>Adjacent paths with salary and timeline estimates</span>
+          </div>
         </div>
         <div class="value-item">
-          <strong>Privacy-first experience</strong>
-          <span>Scans stay on your device by default</span>
+          <span class="value-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>
+          </span>
+          <div>
+            <strong>Privacy-first experience</strong>
+            <span>Scans stay on your device by default</span>
+          </div>
         </div>
       </section>
 
-      <section class="section problem" aria-labelledby="problem-heading">
+      <section class="section problem panel" aria-labelledby="problem-heading">
         <div class="section-inner two-col">
           <div>
             <h2 id="problem-heading">AI is changing work faster than most career tools can explain it.</h2>
@@ -131,11 +165,26 @@
             </p>
           </div>
           <ul class="problem-list">
-            <li>How exposed a role may be to AI</li>
-            <li>Which skills remain valuable</li>
-            <li>Which career transitions are realistic</li>
-            <li>How long a transition may take</li>
-            <li>Whether the next role may offer better resilience and salary potential</li>
+            <li>
+              <span class="problem-icon" aria-hidden="true">◎</span>
+              <span>How exposed a role may be to <em>AI</em></span>
+            </li>
+            <li>
+              <span class="problem-icon" aria-hidden="true">◎</span>
+              <span>Which <em>valuable skills</em> remain useful</span>
+            </li>
+            <li>
+              <span class="problem-icon" aria-hidden="true">◎</span>
+              <span>Which career transitions are <em>realistic</em></span>
+            </li>
+            <li>
+              <span class="problem-icon" aria-hidden="true">◎</span>
+              <span>How long a <em>transition</em> may take</span>
+            </li>
+            <li>
+              <span class="problem-icon" aria-hidden="true">◎</span>
+              <span>Whether the next role may offer better <em>resilience</em> and <em>salary potential</em></span>
+            </li>
           </ul>
         </div>
       </section>
@@ -146,51 +195,57 @@
           <p>Explore informational insights designed to help you understand options — not promise outcomes.</p>
         </div>
         <div class="feature-grid">
-          <article class="feature-card">
+          <article class="feature-card feature-card-spotlight">
+            <span class="feature-icon" aria-hidden="true">◆</span>
             <h3>AI Disruption Score</h3>
             <p>Understand how AI may influence your current role through a clear, easy-to-read assessment.</p>
           </article>
           <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">◇</span>
             <h3>Career Resilience Insights</h3>
             <p>See how adaptable your profession may be as technology, automation, and job expectations evolve.</p>
           </article>
           <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">▣</span>
             <h3>Five Realistic Next Roles</h3>
             <p>Explore practical adjacent career paths based on your current role and transferable experience.</p>
           </article>
           <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">$</span>
             <h3>Salary Estimates</h3>
             <p>Compare estimated compensation across recommended career paths.</p>
           </article>
           <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">◷</span>
             <h3>Transition Timeline</h3>
             <p>Understand the estimated time and effort that may be required to move into a new role.</p>
           </article>
           <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">⇄</span>
             <h3>Transferable Skills</h3>
             <p>Identify which existing skills may support your transition and where further development may help.</p>
           </article>
         </div>
       </section>
 
-      <section class="section alt" id="how-it-works" aria-labelledby="how-heading">
+      <section class="section panel" id="how-it-works" aria-labelledby="how-heading">
         <div class="section-intro">
           <h2 id="how-heading">How it works</h2>
           <p>Three simple steps from your current role to clearer next options.</p>
         </div>
         <ol class="steps">
           <li class="step-card">
-            <span class="step-num">1</span>
+            <span class="step-num" aria-hidden="true">1</span>
             <h3>Enter your current role</h3>
             <p>Provide your current job title and optional career context.</p>
           </li>
           <li class="step-card">
-            <span class="step-num">2</span>
+            <span class="step-num" aria-hidden="true">2</span>
             <h3>Receive personalized career intelligence</h3>
             <p>Review an AI Disruption Score, resilience insights, and five possible next roles.</p>
           </li>
           <li class="step-card">
-            <span class="step-num">3</span>
+            <span class="step-num" aria-hidden="true">3</span>
             <h3>Explore and track your direction</h3>
             <p>
               Compare salary estimates, transition timelines, transferable skills, scan history, and one active career
@@ -208,49 +263,52 @@
           </p>
         </div>
         <div class="preview-panel">
-          <p class="preview-current">
-            Current role example: <strong>Salesforce Administrator</strong>
-          </p>
+          <div class="current-role-card">
+            <span class="chip chip-muted">Current role</span>
+            <strong>Salesforce Administrator</strong>
+            <span class="chip chip-illustrative">Illustrative</span>
+          </div>
+          <div class="path-connector" aria-hidden="true"></div>
           <div class="path-grid">
             <article class="path-card">
               <h3>Salesforce Business Analyst</h3>
-              <ul>
-                <li><span>Est. salary</span><strong>$95k–$125k</strong></li>
-                <li><span>Est. transition</span><strong>~3–6 months</strong></li>
-                <li><span>Resilience</span><strong>Strong</strong></li>
-              </ul>
+              <dl>
+                <div><dt>Est. salary</dt><dd>$95k–$125k</dd></div>
+                <div><dt>Est. transition</dt><dd>~3–6 months</dd></div>
+                <div><dt>Resilience</dt><dd><span class="pill pill-strong">Strong</span></dd></div>
+              </dl>
             </article>
             <article class="path-card">
               <h3>CRM Product Owner</h3>
-              <ul>
-                <li><span>Est. salary</span><strong>$110k–$145k</strong></li>
-                <li><span>Est. transition</span><strong>~6–12 months</strong></li>
-                <li><span>Resilience</span><strong>Strong</strong></li>
-              </ul>
+              <dl>
+                <div><dt>Est. salary</dt><dd>$110k–$145k</dd></div>
+                <div><dt>Est. transition</dt><dd>~6–12 months</dd></div>
+                <div><dt>Resilience</dt><dd><span class="pill pill-strong">Strong</span></dd></div>
+              </dl>
             </article>
             <article class="path-card">
               <h3>Revenue Operations Analyst</h3>
-              <ul>
-                <li><span>Est. salary</span><strong>$90k–$120k</strong></li>
-                <li><span>Est. transition</span><strong>~4–8 months</strong></li>
-                <li><span>Resilience</span><strong>Steady</strong></li>
-              </ul>
+              <dl>
+                <div><dt>Est. salary</dt><dd>$90k–$120k</dd></div>
+                <div><dt>Est. transition</dt><dd>~4–8 months</dd></div>
+                <div><dt>Resilience</dt><dd><span class="pill pill-steady">Steady</span></dd></div>
+              </dl>
             </article>
             <article class="path-card">
               <h3>Salesforce Consultant</h3>
-              <ul>
-                <li><span>Est. salary</span><strong>$100k–$140k</strong></li>
-                <li><span>Est. transition</span><strong>~3–9 months</strong></li>
-                <li><span>Resilience</span><strong>Strong</strong></li>
-              </ul>
+              <dl>
+                <div><dt>Est. salary</dt><dd>$100k–$140k</dd></div>
+                <div><dt>Est. transition</dt><dd>~3–9 months</dd></div>
+                <div><dt>Resilience</dt><dd><span class="pill pill-strong">Strong</span></dd></div>
+              </dl>
             </article>
             <article class="path-card">
               <h3>Business Systems Analyst</h3>
-              <ul>
-                <li><span>Est. salary</span><strong>$85k–$115k</strong></li>
-                <li><span>Est. transition</span><strong>~3–6 months</strong></li>
-                <li><span>Resilience</span><strong>Steady</strong></li>
-              </ul>
+              <dl>
+                <div><dt>Est. salary</dt><dd>$85k–$115k</dd></div>
+                <div><dt>Est. transition</dt><dd>~3–6 months</dd></div>
+                <div><dt>Resilience</dt><dd><span class="pill pill-steady">Steady</span></dd></div>
+              </dl>
             </article>
           </div>
           <p class="preview-note">Illustrative example only. Not employment, financial, or professional advice.</p>
@@ -258,8 +316,11 @@
       </section>
 
       <section class="section privacy-block" id="privacy" aria-labelledby="privacy-heading">
-        <div class="section-inner two-col">
-          <div>
+        <div class="privacy-panel">
+          <div class="privacy-copy">
+            <span class="privacy-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>
+            </span>
             <h2 id="privacy-heading">Your career exploration stays private.</h2>
             <p>
               Future Trace is built for career exploration without requiring an account for the current MVP experience.
@@ -276,21 +337,22 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="audience-heading">
-        <div class="section-intro">
+      <section class="section audience-section" aria-labelledby="audience-heading">
+        <div class="section-intro compact">
           <h2 id="audience-heading">Built for people preparing for what comes next.</h2>
         </div>
         <div class="audience-grid">
-          <article class="audience-card">Professionals adapting to AI</article>
-          <article class="audience-card">Career changers</article>
-          <article class="audience-card">Technology professionals</article>
-          <article class="audience-card">Business professionals</article>
-          <article class="audience-card">Students and early-career users</article>
-          <article class="audience-card">Managers planning long-term growth</article>
+          <span class="audience-chip">Professionals adapting to AI</span>
+          <span class="audience-chip">Career changers</span>
+          <span class="audience-chip">Technology professionals</span>
+          <span class="audience-chip">Business professionals</span>
+          <span class="audience-chip">Students and early-career users</span>
+          <span class="audience-chip">Managers planning long-term growth</span>
         </div>
       </section>
 
       <section class="disclaimer" aria-label="Important disclaimer">
+        <span class="disclaimer-icon" aria-hidden="true">i</span>
         <p>
           <strong>Disclaimer.</strong> Future Trace provides AI-generated educational and informational career
           insights. Disruption scores, salary estimates, transition timelines, and career recommendations may be
@@ -300,6 +362,7 @@
       </section>
 
       <section class="final-cta" aria-labelledby="final-heading">
+        <img class="final-icon" src="/logo.png" alt="" width="56" height="56" loading="lazy" />
         <h2 id="final-heading">Your next career move starts with understanding your current one.</h2>
         <p>Explore how AI may affect your role and discover realistic paths forward with Future Trace.</p>
         <a class="btn btn-primary app-store-link" href="#download">Download Future Trace</a>
@@ -311,7 +374,7 @@
       <div class="site-footer-inner footer-rich">
         <div class="footer-brand">
           <a class="brand" href="/">
-            <img src="/logo.png" alt="" width="36" height="36" />
+            <img src="/logo.png" alt="" width="32" height="32" loading="lazy" />
             <span>Future Trace</span>
           </a>
           <p>AI career intelligence to explore disruption risk, next roles, and career direction.</p>
