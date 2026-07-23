@@ -9,14 +9,18 @@
   --text-secondary: #c5cedb;
   --muted: #939cb0;
   --accent: #00b4ff;
-  --accent-soft: #3d8bff;
+  --accent-soft: #007bff;
   --accent-dim: rgba(0, 180, 255, 0.14);
-  --signal: #ff6a2a;
-  --signal-dim: rgba(255, 106, 42, 0.16);
-  --success: #3ecf8e;
-  --success-dim: rgba(62, 207, 142, 0.14);
-  --moderate: #f0b429;
-  --moderate-dim: rgba(240, 180, 41, 0.16);
+  /* App primary CTA palette (matches mobile PrimaryButton) */
+  --btn-start: #ff5500;
+  --btn-end: #ffd700;
+  --btn-shadow: rgba(255, 85, 0, 0.35);
+  --signal: #ff5500;
+  --signal-dim: rgba(255, 85, 0, 0.16);
+  --success: #34d399;
+  --success-dim: rgba(52, 211, 153, 0.14);
+  --moderate: #ffd700;
+  --moderate-dim: rgba(255, 215, 0, 0.16);
   --radius: 16px;
   --radius-lg: 24px;
   --max: 720px;
@@ -160,8 +164,8 @@ button:focus-visible {
   height: 40px !important;
   padding: 0 1.05rem !important;
   font-size: 0.86rem !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 20px rgba(0, 180, 255, 0.18) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 20px var(--btn-shadow) !important;
 }
 
 .nav-toggle {
@@ -250,7 +254,7 @@ main {
   justify-content: center;
   height: var(--btn-h);
   padding: 0 1.35rem;
-  border-radius: 14px;
+  border-radius: 16px;
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
@@ -265,24 +269,24 @@ main {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
-  color: #041018;
-  box-shadow: 0 12px 28px rgba(0, 180, 255, 0.22);
+  background: linear-gradient(90deg, var(--btn-start) 0%, var(--btn-end) 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px var(--btn-shadow);
 }
 
 .btn-primary:hover {
-  opacity: 0.96;
+  opacity: 0.9;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--border-strong);
-  color: var(--text);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .btn-secondary:hover {
-  border-color: rgba(0, 180, 255, 0.35);
-  background: rgba(0, 180, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .cta-row {
