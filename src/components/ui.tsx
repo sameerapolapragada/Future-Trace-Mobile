@@ -73,6 +73,8 @@ export function Field({
   placeholder,
   multiline,
   keyboardType,
+  maxLength,
+  autoCorrect,
 }: {
   label: string;
   value: string;
@@ -80,6 +82,8 @@ export function Field({
   placeholder?: string;
   multiline?: boolean;
   keyboardType?: "default" | "numeric" | "email-address";
+  maxLength?: number;
+  autoCorrect?: boolean;
 }) {
   return (
     <View style={styles.field}>
@@ -91,6 +95,8 @@ export function Field({
         placeholderTextColor={colors.muted}
         multiline={multiline}
         keyboardType={keyboardType}
+        maxLength={maxLength}
+        autoCorrect={autoCorrect}
         autoCapitalize={multiline ? "sentences" : "words"}
         style={[styles.input, multiline && styles.inputMultiline]}
       />

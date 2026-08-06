@@ -396,10 +396,42 @@ function analysisQualityFromStatus(status: MatchStatus, label: ConfidenceLabel):
   return "medium";
 }
 
+const LIFESTYLE_ROLE_BLOCKLIST = [
+  "eat",
+  "sleep",
+  "food",
+  "nap",
+  "rest",
+  "play",
+  "game",
+  "gaming",
+  "netflix",
+  "youtube",
+  "hobby",
+  "party",
+  "drink",
+  "nothing",
+  "blah",
+  "asdf",
+  "qwerty",
+  "lorem",
+  "ipsum",
+  "foo",
+  "bar",
+  "hello",
+  "world",
+];
+
 function isLikelyNonsense(normalized: string, scorePercent: number): boolean {
   if (!normalized) return true;
   if (normalized.length < 3) return true;
   if (scorePercent <= 30 && normalized.split(" ").length <= 2) return true;
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const lifestyleHits = tokens.filter((t) => LIFESTYLE_ROLE_BLOCKLIST.includes(t)).length;
+  if (tokens.length > 0 && lifestyleHits / tokens.length >= 0.5 && scorePercent < 70) {
+    return true;
+  }
 
   const vowelRatio =
     normalized.replace(/[^aeiou]/g, "").length / Math.max(normalized.replace(/\s/g, "").length, 1);

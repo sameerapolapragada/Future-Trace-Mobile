@@ -37,7 +37,18 @@ export {
   type SuggestedRole,
 } from "./scan/roleMatch";
 export { normalizeScanInput, normalizeWorkPreference, clampYearsExperience } from "./scan/normalize";
-export { validateScanForm, type ScanValidationError } from "./scan/validation";
+export {
+  validateScanForm,
+  validateScanContext,
+  type ScanValidationError,
+} from "./scan/validation";
+export {
+  validateJobTitle,
+  validateResponsibilities,
+  validateCertifications,
+  isLikelyNonsenseJobTitle,
+  SCAN_INPUT_LIMITS,
+} from "./scan/inputValidation";
 export {
   isTechnologyDomain,
   isSupportedIndustry,
