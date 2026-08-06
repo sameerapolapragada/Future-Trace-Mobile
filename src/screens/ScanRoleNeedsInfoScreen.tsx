@@ -2,7 +2,12 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { canGenerateScan, TECHNOLOGY_DOMAIN_MESSAGE } from "../../lib/shared";
+import {
+  canGenerateScan,
+  SCAN_INPUT_LIMITS,
+  TECHNOLOGY_DOMAIN_MESSAGE,
+  validateResponsibilities,
+} from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { Card, Field, PrimaryButton, SecondaryButton, Subtitle, Title } from "../components/ui";
 import { runRoleMatch, updateRoleMatchUserAction } from "../lib/roleMatchService";
@@ -38,6 +43,12 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
   }
 
   async function onRetryMatch() {
+    const responsibilitiesError = validateResponsibilities(responsibilities);
+    if (responsibilitiesError) {
+      Alert.alert("Check responsibilities", responsibilitiesError);
+      return;
+    }
+
     setRetrying(true);
     const updatedForm = {
       ...form!,
@@ -135,11 +146,12 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
         {!isNoMatch ? (
           <Card>
             <Field
-              label="Key responsibilities"
+              label="Key responsibilities *"
               value={responsibilities}
               onChangeText={setResponsibilities}
-              placeholder="What do you do day-to-day?"
+              placeholder="e.g. Build reports, manage CRM workflows, support sales users"
               multiline
+              maxLength={SCAN_INPUT_LIMITS.responsibilitiesMax}
             />
             <Field
               label="Tools & platforms"
@@ -147,6 +159,8 @@ export function ScanRoleNeedsInfoScreen({ navigation }: Props) {
               onChangeText={setTools}
               placeholder="Salesforce, HubSpot…"
               multiline
+              maxLength={SCAN_INPUT_LIMITS.certificationsMax}
+              autoCorrect={false}
             />
             <PrimaryButton label="Retry role match" onPress={onRetryMatch} loading={retrying} />
           </Card>

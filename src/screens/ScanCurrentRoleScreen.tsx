@@ -15,6 +15,7 @@ import {
   isOtherRoleSelection,
   isTechnologyCurrentRole,
   OTHER_ROLE_OPTION,
+  SCAN_INPUT_LIMITS,
   TECHNOLOGY_CURRENT_ROLES,
   type ScanFormInput,
   validateScanForm,
@@ -51,6 +52,7 @@ function RoleAutocomplete({
         placeholderTextColor={colors.muted}
         autoCapitalize="words"
         autoCorrect={false}
+        maxLength={SCAN_INPUT_LIMITS.jobTitleMax}
         style={styles.input}
       />
       {showSuggestions ? (
@@ -143,6 +145,8 @@ export function ScanCurrentRoleScreen() {
             value={otherRoleName}
             onChangeText={setOtherRoleName}
             placeholder="e.g. Revenue Operations Manager"
+            maxLength={SCAN_INPUT_LIMITS.jobTitleMax}
+            autoCorrect={false}
           />
         ) : null}
       </ScrollView>

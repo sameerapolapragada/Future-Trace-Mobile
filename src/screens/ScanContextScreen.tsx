@@ -16,9 +16,11 @@ import {
   isOtherRoleSelection,
   isSupportedIndustry,
   resolveScanFormRoleInput,
+  SCAN_INPUT_LIMITS,
   SUPPORTED_INDUSTRY_OPTIONS,
   TECHNOLOGY_DOMAIN_MESSAGE,
   type ScanFormInput,
+  validateScanContext,
 } from "../../lib/shared";
 import { colors, radius, spacing } from "../../lib/shared/theme";
 import { ScanFlowProgress } from "../components/ScanFlowProgress";
@@ -92,7 +94,7 @@ function IndustryAutocomplete({
           )}
         </View>
       ) : null}
-      <Text style={styles.hint}>Optional — choose from the list (includes Healthcare).</Text>
+      <Text style={styles.hint}>Required — choose from the suggested list.</Text>
     </View>
   );
 }
@@ -123,21 +125,27 @@ export function ScanContextScreen() {
       return;
     }
 
-    if (industry.trim() && !isSupportedIndustry(industry, industryOptions)) {
-      Alert.alert("Check industry", TECHNOLOGY_DOMAIN_MESSAGE);
-      return;
-    }
-
     const picklistValue = existing.currentRole.trim();
     const roleInput = resolveScanFormRoleInput(existing);
     const form: ScanFormInput = {
-      currentRole: roleInput,
-      otherRoleName: isOtherRoleSelection(picklistValue) ? existing.otherRoleName : undefined,
+      currentRole: picklistValue,
+      otherRoleName: isOtherRoleSelection(picklistValue) ? existing.otherRoleName : "",
       skills: dailyWork.trim(),
       industry: industry.trim(),
       yearsExperience: yearsExperience.trim(),
       tools: certifications.trim(),
     };
+
+    const validationError = validateScanContext(form);
+    if (validationError) {
+      Alert.alert("Check your details", validationError.message);
+      return;
+    }
+
+    if (!isSupportedIndustry(industry, industryOptions)) {
+      Alert.alert("Check industry", TECHNOLOGY_DOMAIN_MESSAGE);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -150,6 +158,11 @@ export function ScanContextScreen() {
         yearsExperience: yearsExperience.trim(),
         tools: certifications.trim(),
       });
+
+      const matchForm: ScanFormInput = {
+        ...form,
+        currentRole: roleInput,
+      };
 
       const snapshot = await runRoleMatch({
         originalRoleInput: roleInput,
@@ -167,14 +180,17 @@ export function ScanContextScreen() {
       });
       void recordTechnologyIndustrySelection(form.industry);
 
-      if (snapshot.outOfTechnologyDomain) {
-        Alert.alert("Technology roles only", "Please choose a supported technology role, or try Other with a tech title.");
+      if (snapshot.outOfTechnologyDomain || snapshot.matchStatus === "no_match") {
+        Alert.alert(
+          "Technology roles only",
+          "Please choose a supported technology role from the list, or enter a clearer tech job title under Other."
+        );
         return;
       }
 
       if (snapshot.matchStatus === "matched") {
         const matchedRole = snapshot.normalizedRole ?? roleInput;
-        setPendingScanInput(buildPendingScanInput(form, matchedRole, snapshot, "auto_accepted"));
+        setPendingScanInput(buildPendingScanInput(matchForm, matchedRole, snapshot, "auto_accepted"));
         navigation.navigate("ScanLoading");
         return;
       }
@@ -209,17 +225,21 @@ export function ScanContextScreen() {
         <Text style={styles.subtitle}>This helps our AI understand your experience better.</Text>
 
         <Field
-          label="What do you do on a daily basis?"
+          label="What do you do on a daily basis? *"
           value={dailyWork}
           onChangeText={setDailyWork}
-          placeholder="Describe your key responsibilities"
+          placeholder="e.g. Configure Salesforce workflows, support users, and report on CRM adoption"
           multiline
+          maxLength={SCAN_INPUT_LIMITS.responsibilitiesMax}
         />
+        <Text style={styles.hint}>
+          Required — describe professional tasks, tools, or outcomes (not everyday activities).
+        </Text>
 
         <IndustryAutocomplete value={industry} onChange={setIndustry} options={industryOptions} />
 
         <View style={styles.fieldWrap}>
-          <Text style={styles.fieldLabel}>Years of Experience</Text>
+          <Text style={styles.fieldLabel}>Years of Experience *</Text>
           <Pressable style={styles.select} onPress={() => setYearsOpen(true)}>
             <Text style={[styles.selectText, !yearsExperience && styles.selectPlaceholder]}>
               {yearsLabel}
@@ -233,6 +253,8 @@ export function ScanContextScreen() {
           value={certifications}
           onChangeText={setCertifications}
           placeholder="e.g. Salesforce Admin, AWS, PMP"
+          maxLength={SCAN_INPUT_LIMITS.certificationsMax}
+          autoCorrect={false}
         />
       </ScrollView>
 

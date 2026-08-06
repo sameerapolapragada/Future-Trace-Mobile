@@ -45,6 +45,13 @@ describe("matchRole", () => {
     assert.ok(result.confidenceScore <= 30);
   });
 
+  it("rejects lifestyle titles like eat and sleep as no_match", () => {
+    const result = matchRole({ originalRoleInput: "eat and sleep" });
+    assert.equal(result.matchStatus, "no_match");
+    assert.equal(result.normalizedRole, null);
+    assert.equal(canGenerateScan(result), false);
+  });
+
   it("blocks scan generation for no_match", () => {
     const result = matchRole({ originalRoleInput: "asdfghjkl career ninja" });
     assert.equal(canGenerateScan(result), false);
